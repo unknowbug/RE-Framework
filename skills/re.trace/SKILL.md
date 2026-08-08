@@ -28,6 +28,17 @@ execution: subprocess
 
 > 无 MCP 时的降级：用宿主 shell 调 CLI（如 frida-trace）/ 日志注入，产出格式不变。
 
+### 命令委托模式（subagent 沙箱无 shell 时）
+
+分析 subagent 无 shell / 只读白名单拦截可执行程序时（spec §4.3），trace 采集走**命令委托**：
+
+1. subagent 提交命令模板（`命令 + 参数 + 期望输出`）给主会话
+2. 主会话执行，**不解读**（只执行不解读原则）
+3. 原始输出落盘 `.investigations/<任务>/cmd-output/<NNN>.txt`
+4. subagent 读取落盘输出并解读，转换为 trace source 数据
+
+> 例: subagent 提交 `block_probe -biomeDump 812 73 -337` → 主会话执行落盘 → subagent 解读输出 → 产出 `source="probe:block_probe!SURFBIOME#003"`
+
 ## trace → anchor source 转换
 
 每次观测记录后，按 Anchorlaw §5.5 格式沉淀为 source 字段：

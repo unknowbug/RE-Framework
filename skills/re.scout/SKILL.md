@@ -45,3 +45,4 @@ layer: role
 - 只读勘探，不修改目标代码、不写 .artifacts/。
 - 发现与架构预期不符 → 不自行改架构，交回主会话。
 - 发现可复用模式 → 写入 `knowledge/discovered/`（core.knowledge）。
+- **命令委托**（沙箱无 shell 时）：需要执行探测命令（探针/工具 CLI）→ 提交命令模板给主会话执行（不解读）→ 输出落盘 `.investigations/<任务>/cmd-output/` → 自己读取解读（spec §4.3）。

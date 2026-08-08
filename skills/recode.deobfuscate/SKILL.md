@@ -37,3 +37,5 @@ execution: subprocess
 - 映射表条目必须有来源（官方映射 / 社区映射 / 上下文推断），推断条目标 `candidate`。
 - 批量重命名后必须做**引用完整性检查**（编译或符号解析），否则视为未完成。
 - Minecraft 专用：优先用官方/社区 mapping 而非自行猜测；版本间 mapping 不通用（版本号记录在产物）。
+- 交付代码/映射前过 **subagent 写码强制自检清单**（spec §4.4：类型宽度/move 拷贝/异常路径/对拍点/自检声明）——类型宽度尤其注意 Java long=64 位 vs 目标语言差异。
+- **order-dependence 标注**（spec §1.3）：还原/移植涉及排序/缓存/平局/tie-break/遍历序（如 Minecraft 生物群系判定平局、ThreadLocal 缓存依赖查询序列）时，@anchor 描述 MUST 标注 order-dependence + 验证「确定性 + 查询序列对齐」。

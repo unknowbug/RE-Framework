@@ -33,6 +33,8 @@ execution: inline
     └── <任务>/
         ├── 任务.md
         ├── 假设*.md / 发现*.md
+        ├── cmd-output/           # 命令委托的原始输出落盘（spec §4.3）
+        │   └── <NNN>.txt
         └── 结论.md
 ```
 

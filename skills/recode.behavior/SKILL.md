@@ -27,6 +27,15 @@ execution: subprocess
 | 运行时工具 | 字节码级观测 | JVM 调试器、BTrace/Arthas、Frida（Android） |
 | mod 运行环境 | Minecraft 场景 | 游戏内行为观测、事件断点 |
 
+### 命令委托模式（subagent 沙箱无 shell 时）
+
+re-code 分析 subagent 无执行环境时（spec §4.3），行为采集走**命令委托**：
+
+1. subagent 提交命令模板（如 gradle 测试命令、日志采集脚本）给主会话
+2. 主会话执行，**不解读**（只执行不解读原则）
+3. 原始输出落盘 `.investigations/<任务>/cmd-output/<NNN>.txt`
+4. subagent 读取落盘输出并解读，转换为 behavior source 数据
+
 ## behavior source 格式
 
 代码逆向的 trace 数据按 Anchorlaw §5.5 格式沉淀，载体标注 `behavior`（归入 trace 类，注明观测方式）：

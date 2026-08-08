@@ -34,6 +34,8 @@ execution: subprocess
 - 每个明确可验证的输入→输出对 → `@anchor.test`（source 必填，trace/memory）
 - 每个无法确定的行为边界 → `@anchor.idk`（具体到可验证条件，source 可 static）
 - 缺 source 的 @anchor.test → 视为凭空编造，judge 直接驳回
+- **验证记录落盘**（spec §1.3）：source 引用的验证记录同步落盘 `.investigations/<任务>/regression-record.md`（条目 + 命令 + 输出摘要）——让 judge 能核对「验证真的跑过」，而不是事后补证
+- **order-dependence 标注**（spec §1.3）：还原点涉及排序/缓存/平局/tie-break/遍历序时，@anchor 描述 **MUST 标注 order-dependence**，并验证「确定性 + 与参照实现查询序列对齐」（实战项目实证：C++ 线性 find 平局取首个 vs Java 树序遍历取另一值，且平局结果依赖查询序列）
 
 ## 产物
 
@@ -44,5 +46,6 @@ execution: subprocess
 ## 约束
 
 - 产物默认 `draft`；验证走 Anchorlaw（全功能 test / degraded 声明）。
-- 同一函数 Lift→Verify 循环 ≤ 3 次（Anchorlaw §9.4 retry cap），超限回勘探取新 trace，禁止继续修改假设。
+- **retry cap 区分**（spec §4）：≤3 次只约束**逆向假设的验证轮次**（同一假设验证失败 → 换方向/回勘探取新 trace）；**工程修复/代码迭代不计数**（可迭代至正确）。
+- 交付代码前过 **subagent 写码强制自检清单**（spec §4.4：类型宽度/move 拷贝/异常路径/对拍点/自检声明），结果附在交付物。
 - 不确定部分显式标注 `@anchor.idk`，不许闷在注释里。

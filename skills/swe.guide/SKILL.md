@@ -20,7 +20,15 @@ execution: inline
 
 本模块**不复制 Anchorlaw 实现**，通过两种方式引用：
 
-### 方式1: Anchorlaw skills（安装后直接调用）
+### 执行模式（本模块专属）：主会话为主
+
+**编程任务 = 主会话直接闭环**（spec §4.1/§4.2）：
+
+- 写码 / 重构 / 编译 / 运行 / 调试 / 验证全部在**主会话**内直接执行——工程迭代（改→编译→跑→修）需要即时闭环，隔离执行会阻断迭代（实战项目实证：SearchTree 移植在 subagent 沙箱无编译环境，3 版全崩）。
+- **不派 subagent 做核心写码/迭代**；subagent 仅用于隔离审查（独立 code review、独立验证）。
+- 与逆向路径相反：逆向是「subagent 分析 + 主会话只执行不解读」，编程是「主会话全流程 + subagent 可选审查」。
+
+### 方式1: Anchorlaw skills（标注/扫描，主会话调用）
 
 从 Anchorlaw 仓库 `.reasonix/skills/` 安装 anchor.* skill 集（`install_source` 或复制），主会话按场景调用：
 

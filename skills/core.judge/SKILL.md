@@ -21,11 +21,13 @@ layer: role
 ## 审查清单（对 worker/scout 产物）
 
 1. **证据完整性**: `@anchor.test` 的 source 字段是否满足 Anchorlaw §5.5（trace/memory，非 static）？缺失 → 驳回意见
-2. **置信度合法**: 产物 status 是否合法（draft/candidate；出现 confirmed 且非人类授予 → 标记违规）
-3. **产物契约**: 是否落盘 + index.yaml 已更新（core.artifact）？缺失 → 驳回意见
-4. **噪声卡历史**: 该目标有无未解决噪声卡（Anchorlaw §3）？有 → 意见中标注
-5. **retry cap**: 同一产物 Lift→Verify 循环是否 ≤3（Anchorlaw §9.4）？超限 → 意见中标注"回勘探取新证据"
-6. **模块边界**: 产物是否引用了其他领域模块的 skill 正文（spec §1.6 / §2.5 R5）？违反 → 驳回意见
+2. **证据落盘**: source 引用的验证记录是否有可引用的落盘证据（spec §1.3：`.investigations/*/regression-record.md` 条目 + 命令 + 输出摘要）？缺失 → 意见标注「证据链不完整」
+3. **三源核对（spec §4）**: 审查基线必须交叉核对 ① 交付快照（`.artifacts/`）② **git HEAD + 工作区 diff**（代码应用版——防止审查基于过期/不一致产物）③ regression/验证记录；不一致 → 意见标注差异源
+4. **置信度合法**: 产物 status 是否合法（draft/candidate；出现 confirmed 且非人类授予 → 标记违规）；验证执行者分离——分层标注以实际执行为准（谁跑的/什么环境），无运行时证据却标 candidate → 意见标注
+5. **产物契约**: 是否落盘 + index.yaml 已更新（core.artifact）？缺失 → 驳回意见
+6. **噪声卡历史**: 该目标有无未解决噪声卡（Anchorlaw §3）？有 → 意见中标注
+7. **retry cap**: 逆向假设验证轮次是否 ≤3（Anchorlaw §9.4，spec §4.1 区分）？超限 → 意见中标注"回勘探取新证据"；工程修复迭代不计数
+8. **模块边界**: 产物是否引用了其他领域模块的 skill 正文（spec §1.6 / §2.5 R5）？违反 → 驳回意见
 
 ## 产出
 
