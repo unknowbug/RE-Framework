@@ -128,7 +128,7 @@ AGENTS.md 在任务开始时运行**探测器**，按以下决策树只加载匹
 
 ### 2.5 manifest 校验规则
 
-每个模块安装/更新后运行校验器（对齐 Anchorlaw `test_skills.py` 守护 manifest 的思路）：
+每个模块安装/更新后运行校验器（实现: `scripts/validate_manifest.py`，对齐 Anchorlaw `test_skills.py` 守护 manifest 的思路）：
 
 | 规则 | 说明 |
 |------|------|

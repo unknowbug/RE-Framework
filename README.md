@@ -26,6 +26,9 @@ RE-Framework/
 ├── spec/
 │   ├── engineering-framework-v1.md   # 核心协议（铁律 + 模块化接口契约 + Anchorlaw 引用）
 │   └── legacy-claude-v1.md           # v1 原 42KB CLAUDE.md 归档（历史参考）
+├── scripts/                   # 工程外壳
+│   ├── validate_manifest.py   # manifest 校验器（spec §2.5 R1-R6 实现守护）
+│   └── install.py             # 安装/升级/卸载器（版本戳追踪）
 ├── skills/                    # Skill 参考实现（分发到项目 .reasonix/skills/）
 │   ├── core.plan|artifact|knowledge|version|fanout|judge   # 通用层（必装）
 │   ├── re.lift|classify|trace|scout                        # re-binary 模块
@@ -41,19 +44,28 @@ RE-Framework/
 
 ### 第1步：部署（按需选择模块）
 
+推荐用安装器（自动复制 + 版本戳追踪 + 可卸载）：
+
 ```bash
 # 方式A 最小（仅 core 通用层）——所有工程任务的基础
-#   复制 skills/core.* + templates/ + spec/ 到目标项目
+python RE-Framework/scripts/install.py <你的项目目录> --modules core
 
 # 方式B 标准（core + 目标领域模块）
-#   逆向二进制  → 再加 skills/re.* + skills/modules/re-binary.yaml
-#   逆向代码    → 再加 skills/recode.* + skills/modules/re-code.yaml
-#   编程        → 再加 skills/swe.guide + skills/modules/swe.yaml
+python RE-Framework/scripts/install.py <你的项目目录> --modules core,re-binary   # 逆向二进制
+python RE-Framework/scripts/install.py <你的项目目录> --modules core,re-code     # 逆向代码/Minecraft
+python RE-Framework/scripts/install.py <你的项目目录> --modules core,swe         # 编程
 
 # 方式C 完整（+ Anchorlaw 验证协议）
+python RE-Framework/scripts/install.py <你的项目目录> --modules core,re-binary,re-code,swe --docs
 pip install anchorlaw anchorlaw-scanner
 #   并从 Anchorlaw 仓库安装 anchor.* skills（.reasonix/skills/）
+
+# 升级: 重新运行 install.py（检测版本戳提示覆盖）
+# 卸载: python RE-Framework/scripts/install.py <你的项目目录> --uninstall
+# 校验: python RE-Framework/scripts/validate_manifest.py
 ```
+
+也可手动复制 `skills/` 下需要的模块到项目 `.reasonix/skills/`（无版本追踪，不推荐）。
 
 ### 第2步：初始化项目骨架
 
