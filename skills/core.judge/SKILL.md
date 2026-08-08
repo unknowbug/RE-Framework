@@ -18,6 +18,18 @@ layer: role
 - **只出审查意见，绝不直接修改产物 status。** 状态提升由主会话/宿主人类裁决。
 - `confirmed` 只能由宿主侧人类授予——审查意见只能建议保持 `draft` 或升 `candidate`。
 
+## 触发条件（强制，spec §4.5 执行强制链）
+
+| 触发点 | 级别 |
+|--------|------|
+| confirmed 授予前 | **MUST**（拍板前必须有 judge 意见） |
+| 重大转向（结案重开/根因定论/范围决策） | **MUST** |
+| 收尾交付前（三源核对） | **MUST** |
+| candidate 授予（各阶段结论） | SHOULD |
+
+> judge 步骤应在 core.plan 架构设计阶段**预置进 todo 计划**，不是事后补。
+> 「编程=主会话直接闭环」不豁免 judge——审查门是强制项（实战实证：收敛门被误读为自评后，judge 缺位导致 5 项问题收尾才暴露）。
+
 ## 审查清单（对 worker/scout 产物）
 
 1. **证据完整性**: `@anchor.test` 的 source 字段是否满足 Anchorlaw §5.5（trace/memory，非 static）？缺失 → 驳回意见

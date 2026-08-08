@@ -86,6 +86,8 @@ Phase 0 架构设计（core.plan，强制）→ Phase 1 勘探（scout）→ Pha
 
 人工 HOOK 点: 架构批准 / 重大方向变更 / 多假设竞争（fan-out）/ confirmed 授予。
 
+**执行强制链**（spec §4.5）: judge 触发点——confirmed 授予前 MUST judge、重大转向（结案重开/根因定论/范围决策）MUST judge、candidate 授予 SHOULD judge、收尾交付 MUST judge（三源核对）；judge 随 todo 计划预置。「编程=主会话直接闭环」不豁免 judge。scout 触发——「机制未明」大排查初期 MUST 勘探（禁止直接跳单点定位）。
+
 ---
 
 ## 六、部署
