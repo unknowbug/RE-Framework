@@ -1,0 +1,48 @@
+# re-code 模块声明（代码逆向，独立可卸载）
+
+> Spec: engineering-framework-v1.md §2.1（模块四要件：skill 集 + 触发表 + 依赖声明 + 卸载保证）
+
+## 模块元数据
+
+```yaml
+name: re-code
+domain: re-code
+description: 代码逆向——字节码/源码级还原：反混淆映射、类层次、行为验证（如 Minecraft mod 逆向）
+mandatory: false                      # 可选模块
+```
+
+## Skill 清单
+
+| skill | 层 | 执行 | 职责 |
+|-------|-----|------|------|
+| `recode.deobfuscate` | L2 | subprocess | 反混淆与映射还原（ProGuard/R8/mapping 工作流） |
+| `recode.classmap` | L2 | subprocess | 类层次/事件系统/依赖追踪 |
+| `recode.behavior` | L2 | subprocess | 行为验证（日志/hook/测试 → behavior source） |
+| `recode.scout` | role | subagent | 只读勘探（入口/依赖/混淆评估） |
+
+## 触发表（注册到 AGENTS.md）
+
+| 触发特征 | 加载 |
+|---------|------|
+| 输入为 .jar/.class/.java、字节码、Java/Kotlin/C# 源码 | 本模块全部 |
+| 提到反混淆、混淆映射、mapping、ProGuard、R8、MCP/Forge/Fabric、mod 逆向 | 本模块全部 |
+| 目标是 Minecraft 等 Java 应用的行为/结构还原 | 本模块全部 |
+| 需要建立名称映射/重命名 | `recode.deobfuscate` |
+| 需要类图/事件/依赖链 | `recode.classmap` |
+| 需要运行时行为证据 | `recode.behavior` |
+| 任务开始阶段的只读勘探 | `recode.scout` |
+
+## 依赖声明
+
+| 依赖 | 类型 | 必需 | 缺失时降级 |
+|------|------|------|-----------|
+| 反编译器（CFR/Vineflower/JD）或反编译数据 | 工具/数据 | 是（数据） | 无法开始 re-code 工作（若无现成反编译产物） |
+| 目标语言工具链（JVM/语言运行时） | 工具 | 否 | 静态分析仍可进行；`recode.behavior` 与 Anchorlaw 全功能验证不可用 |
+| 映射数据（官方/社区 mapping） | 数据 | 否 | `recode.deobfuscate` 转为纯上下文推断，标 candidate |
+| Anchorlaw v0.6（协议 + CLI） | 外部协议 | 是（协议语义） | 无 anchorlaw 包 → stub 降级 no-op（Anchorlaw §2） |
+
+## 卸载保证
+
+- 删除 `skills/recode.*` 与 `skills/modules/re-code.yaml` → re-code 触发表行失效，core/其他模块不受影响。
+- `.artifacts/` 中 re-code 产物保留（module 字段标记归属）。
+- 与 re-binary 互不依赖：两模块可单独安装，产物 schema 共享 core（语言无关设计）。

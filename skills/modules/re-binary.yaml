@@ -1,0 +1,46 @@
+# re-binary 模块声明（二进制逆向，独立可卸载）
+
+> Spec: engineering-framework-v1.md §2.1（模块四要件：skill 集 + 触发表 + 依赖声明 + 卸载保证）
+
+## 模块元数据
+
+```yaml
+name: re-binary
+domain: re-binary
+description: 二进制逆向——汇编/机器码/vtable/RTTI/xref/trace 采集
+mandatory: false                      # 可选模块
+```
+
+## Skill 清单
+
+| skill | 层 | 执行 | 职责 |
+|-------|-----|------|------|
+| `re.lift` | L2 | subprocess | 汇编→C++ 六步高精度还原 |
+| `re.classify` | L2 | subprocess | 类结构识别（RTTI/vtable/聚类） |
+| `re.trace` | L2 | subprocess | 动态 trace 采集（anchor source 数据） |
+| `re.scout` | role | subagent | 只读勘探（入口/xref/依赖摸底） |
+
+## 触发表（注册到 AGENTS.md）
+
+| 触发特征 | 加载 |
+|---------|------|
+| 输入为二进制（.dll/.exe/.so/.bin）、汇编/机器码 | 本模块全部 |
+| 提到 IDA/Ghidra/F5/x64dbg/Frida/CheatEngine、vtable、RTTI、xref、脱壳、反调试 | 本模块全部 |
+| 需要高精度还原单个函数 | `re.lift` |
+| 需要还原类/继承/vtable | `re.classify` |
+| 需要动态观测/验证分支 | `re.trace` |
+| 任务开始阶段的只读勘探 | `re.scout` |
+
+## 依赖声明
+
+| 依赖 | 类型 | 必需 | 缺失时降级 |
+|------|------|------|-----------|
+| 调试/分析 MCP（IDA/Frida/x64dbg/CheatEngine） | 宿主工具 | 否 | `re.trace` 用宿主 shell CLI（frida-trace 等），格式不变 |
+| Anchorlaw v0.6（协议 + 可选 CLI） | 外部协议 | 是（协议语义） | 无 anchorlaw 包 → stub 降级 no-op（Anchorlaw §2）；产物标 degraded |
+| 反汇编数据源（IDA 数据库 / Ghidra 项目 / 原始文件） | 数据 | 是 | 无法开始 re-binary 工作 |
+
+## 卸载保证
+
+- 删除 `skills/re-binary/` → re-binary 触发表行失效（AGENTS.md 不报错，只是不再触发）。
+- core 与其他模块不受影响；`.artifacts/` 中 re-binary 产物保留（module 字段标记归属）。
+- 卸载前检查：`index.yaml` 中 `module: re-binary` 的产物仅归档，不删除。

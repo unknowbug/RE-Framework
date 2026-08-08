@@ -1,0 +1,45 @@
+# swe 模块声明（软件工程，独立可卸载）
+
+> Spec: engineering-framework-v1.md §2.1（模块四要件）
+> 与 Anchorlaw 的关系：**协议引用**——不复制实现，anchor.* skills 与 CLI 从 [Anchorlaw 仓库](https://github.com/unknowbug/anchorlaw) 安装（MIT）。
+
+## 模块元数据
+
+```yaml
+name: swe
+domain: swe
+description: 软件工程——常规开发/验证/审查：anchor 标注、静态扫描、行为验证（继承 Anchorlaw 协议）
+mandatory: false                      # 可选模块
+```
+
+## Skill 清单
+
+| skill | 层 | 执行 | 职责 |
+|-------|-----|------|------|
+| `swe.guide` | L0 | inline | 编程任务入口：路由到 anchor.* skill 与 CLI |
+
+> 实际执行 skill 全部来自 Anchorlaw：`anchor.concepts` / `anchor.scan` / `anchor.challenge` / `anchor.write` / `anchor.test` / `anchor.noise` / `anchor.degrade`（L0-L3）。
+
+## 触发表（注册到 AGENTS.md）
+
+| 触发特征 | 加载 |
+|---------|------|
+| 编写/修改/审查代码、重构、协议设计、常规开发 | `swe.guide` → anchor.* |
+| 需要静态审查（防御性模式/缺 anchor） | `anchor.scan`（anchorlaw-scanner） |
+| 实现公开函数后写 anchor 标注 | `anchor.write` |
+| CI 失败 / anchor 验证 | `anchor.test` |
+| 运行时失败 / 噪声卡 | `anchor.noise` |
+
+## 依赖声明
+
+| 依赖 | 类型 | 必需 | 缺失时降级 |
+|------|------|------|-----------|
+| Anchorlaw 协议 v0.6 | 外部协议 | 是（语义） | stub 降级 no-op（Anchorlaw §2）；anchor 语义速查退化为引用协议文档 |
+| anchorlaw + anchorlaw-scanner（pip） | 工具 | 否 | 静态扫描/自动验证不可用；人工审查替代，产物标 degraded |
+| anchor.* skills（Anchorlaw 仓库） | skill 集 | 推荐 | 仅 swe.guide 指路，执行语义引用协议文档 |
+
+## 卸载保证
+
+- 删除 `skills/swe.guide` 与 `skills/modules/swe.yaml` → swe 触发表行失效，core/其他模块不受影响。
+- Anchorlaw 是独立仓库——卸载本模块不影响 Anchorlaw 自身的安装。
+- 产物 schema 复用 core（语言无关设计），与 re-binary / re-code 互不依赖。

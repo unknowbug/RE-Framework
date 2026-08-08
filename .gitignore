@@ -1,0 +1,18 @@
+# Reasonix 会话元数据（不入库）
+.reasonix/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# 编辑器/系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 临时
+*.tmp

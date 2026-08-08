@@ -1,0 +1,45 @@
+# core 模块声明（通用核心，必装）
+
+> Spec: engineering-framework-v1.md §2.1（模块四要件）
+
+## 模块元数据
+
+```yaml
+name: core
+domain: core
+description: 通用核心——置信度状态机/产物落盘/架构设计/审查门/知识库/版本管理，领域无关基线
+mandatory: true                       # 必装模块
+```
+
+## Skill 清单
+
+| skill | 层 | 执行 | 职责 |
+|-------|-----|------|------|
+| `core.plan` | L0 | inline | 架构设计（轻/重分档，强制前置） |
+| `core.artifact` | L1 | inline | 产物落盘规范（.artifacts/.investigations/index.yaml） |
+| `core.knowledge` | L1 | inline | 知识库生长机制 |
+| `core.version` | L1 | inline | 版本管理（.vN/.bN） |
+| `core.fanout` | L2 | inline | fan-out 并行调度 |
+| `core.judge` | role | subagent | 审查门（只出意见，confirmed 留给人类） |
+
+## 触发表（注册到 AGENTS.md）
+
+| 触发特征 | 加载 |
+|---------|------|
+| 任何任务开始前（所有模块通用） | `core.plan`（架构设计） |
+| 任何产物需要落盘/索引 | `core.artifact` |
+| 分析/勘探前 | `core.knowledge`（查 INDEX.md） |
+| 产物更新/多假设竞争 | `core.version` / `core.fanout` |
+| 任何 worker/scout 产物交付后 | `core.judge`（审查门） |
+
+## 依赖声明
+
+| 依赖 | 类型 | 必需 | 缺失时降级 |
+|------|------|------|-----------|
+| 无（自包含） | — | — | — |
+| Anchorlaw 协议（仅当使用验证功能） | 外部协议 | 否 | core 本身不依赖 Anchorlaw；验证功能按模块启用 |
+
+## 卸载保证
+
+- core 是框架基线，**不提供卸载**（mandatory: true）。删除 core 即框架失去工作流。
+- core 产物（.artifacts/.investigations/index.yaml 约定）是所有模块共享的——其他模块卸载不影响 core 继续工作。
