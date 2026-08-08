@@ -55,6 +55,7 @@
 
 ### 1.6 模块边界
 - 模块之间禁止隐式耦合：skill 只能引用自己的模块 + core + Anchorlaw 接口，**不得引用其他领域模块的 skill 正文**。
+- **豁免**：core 模块的执行角色 skill（如 `core.worker`/`core.judge`）允许**引用领域 skill 名称**作操作手册/路由（引用 = 提及名称与职责，非拷贝正文/依赖实现）——协调角色必须知道领域 skill 存在才能路由。
 - 违反 = manifest 校验失败（§2.5）。
 
 ---
@@ -138,7 +139,7 @@ AGENTS.md 在任务开始时运行**探测器**，按以下决策树只加载匹
 | R2 无孤儿引用 | skill 引用的其他 skill 必须存在于 自身模块 ∪ core ∪ Anchorlaw 接口面 |
 | R3 层合法 | layer ∈ {L0, L1, L2, L3, L4, role}，role 必须声明 `runAs: subagent` |
 | R4 触发表一致 | AGENTS.md 注册的每个 skill 都有实体文件，反之亦然 |
-| R5 无跨模块引用 | 引用其他领域模块的 skill 正文 → 校验失败（§1.6） |
+| R5 无跨模块引用 | 引用其他领域模块的 skill 正文 → 校验失败（§1.6）；**豁免**：core 角色 skill（worker/judge）引用领域 skill 名称作路由 |
 
 ---
 
@@ -334,6 +335,10 @@ status: draft | candidate | confirmed
 signature: <签名>
 return_type: <类型>
 anchor_path: <对应 _anchors.py 或等效 anchor 载体路径>
+retry:                          # 逆向假设验证轮次记录（judge 核对用，spec §4.5）
+  count: <N>                    # Lift→Verify 轮次（工程修复迭代不计数，§4.1）
+  over_cap: false               # 是否超限（>3）；超限必须声明 + 回勘探取新证据
+  history: []                   # 可选：每轮摘要（如 "noodle 高频假设 phase11 被证反"）
 uncertain_areas:            # 来自 @anchor.idk
   - '<具体未知项>'
 dependencies: []

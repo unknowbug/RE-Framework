@@ -6,6 +6,10 @@ status: draft | candidate | confirmed
 signature: <签名>
 return_type: <类型>
 anchor_path: <对应 anchor 载体路径>
+retry:                                          # 逆向假设验证轮次（judge 核对，spec §5.3）
+  count: 0
+  over_cap: false
+  history: []
 uncertain_areas:
   - '<具体未知项>'
 notes: |

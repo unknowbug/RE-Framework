@@ -20,6 +20,7 @@ mandatory: true                       # 必装模块
 | `core.knowledge` | L1 | inline | 知识库生长机制 |
 | `core.version` | L1 | inline | 版本管理（.vN/.bN） |
 | `core.fanout` | L2 | inline | fan-out 并行调度 |
+| `core.worker` | role | subagent | 分析/解读角色（加载领域动作 skill，产出 .artifacts/ draft） |
 | `core.judge` | role | subagent | 审查门（只出意见，confirmed 留给人类） |
 
 ## 触发表（注册到 AGENTS.md）

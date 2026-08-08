@@ -47,6 +47,7 @@
 | `core.knowledge` | L1 | inline | core | 知识库生长 |
 | `core.version` | L1 | inline | core | 版本管理（.vN/.bN） |
 | `core.fanout` | L2 | inline | core | fan-out 并行调度 |
+| `core.worker` | role | subagent | core | 分析/解读角色（加载领域动作 skill） |
 | `core.judge` | role | subagent | core | 审查门（只出意见） |
 | `re.lift` | L2 | subprocess | re-binary | 汇编→C++ 六步还原 |
 | `re.classify` | L2 | subprocess | re-binary | 类结构识别 |

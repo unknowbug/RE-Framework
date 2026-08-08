@@ -47,6 +47,9 @@ execution: inline
 ## 范围（含明确不做什么）
 ## 任务拆解（子任务 → 预期产物）
 ## 验证方式
+## judge 预置            # spec §4.5 执行强制链：计划阶段就排 judge 项
+  - 收尾交付 MUST judge（三源核对）
+  - 各阶段结论 candidate 授予 SHOULD judge
 ```
 
 ### 重量（.investigations/000-架构设计/架构设计.md）
@@ -65,6 +68,9 @@ execution: inline
 ## 4. 并行执行计划（第一波/第二波...）
 ## 5. 人工决策 HOOK 点（节点/触发条件/决策内容）
 ## 6. 风险 & 回退
+## 7. judge 步骤预置          # spec §4.5：随计划排 judge 项，不是事后补
+   - 节点: <结论/产物> | 级别: MUST/SHOULD | 审查对象: <快照/git diff/验证记录>
+   - 节点: 收尾交付 | MUST | 三源核对
 ```
 
 ## 约束

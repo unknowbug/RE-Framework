@@ -121,6 +121,10 @@ def main(root=DEFAULT_ROOT):
                 continue  # core 允许被所有模块引用
             ref_mod = entity_skills[ref]['module']
             if ref_mod and ref_mod != info['module']:
+                # R5 豁免：core 模块 role skill（协调角色，如 core.worker 的操作手册路由表）
+                # 引用领域 skill 名称 = 提及名称与职责作路由，非拷贝正文/依赖实现（spec §1.6/§2.5）
+                if info['module'] == 'core' and info['fm'].get('layer') == 'role':
+                    continue
                 errors.append(f'R5: {name}({info["module"]}) 跨模块引用 {ref}({ref_mod})')
 
     # ── R4: AGENTS.md 触发表 ↔ 实体 ──

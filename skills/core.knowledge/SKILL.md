@@ -27,7 +27,8 @@ knowledge/
     ├── compiler-idioms.md          # 编译器/语言惯用法
     ├── f5-bugs.md                  # 还原工具误译模式及修正
     ├── algorithm-fingerprints.md   # 已确认的算法/协议指纹
-    └── anti-patterns.md            # 混淆/反逆向手法
+    ├── anti-patterns.md            # 混淆/反逆向手法
+    └── process-lessons.md          # 流程/执行反模式（judge/scout 缺位等复盘教训）
 ```
 
 ## 触发条件 → 写入位置
@@ -38,6 +39,7 @@ knowledge/
 | 还原工具明确误译且有修正方法 | `f5-bugs.md` |
 | 确认了算法/协议及其常量/特征 | `algorithm-fingerprints.md` |
 | 项目特有的混淆/防御手法 | `anti-patterns.md` |
+| **流程/执行反模式**：跳过 judge/scout、retry cap 超限未记录、主会话越界解读、角色错位（如用勘探角色顶替分析） | **`process-lessons.md`**（复盘/反模式记录，防重走） |
 | 跨模块通用结构模式 | 新建 `<topic>.md` 或写入对应文件 |
 
 ## 写入格式（每条独立，不合并）
