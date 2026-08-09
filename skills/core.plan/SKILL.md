@@ -52,6 +52,8 @@ execution: inline
   - 各阶段结论 candidate 授予 SHOULD judge
 ## fan-out 预置          # spec §4.5：多假设场景计划阶段排 fan-out 项
   - 判定树分叉 ≥2 互斥候选 MUST fan-out（.bN 并行），禁止主会话自推
+## 知识库更新            # spec §4.5 第四条：每 Phase 末尾的知识库步骤标注产出者
+  - 结论性 docs/discovered 写入: subagent 产出草稿（core.worker）+ 主会话应用验证
 ```
 
 ### 重量（.investigations/000-架构设计/架构设计.md）
@@ -75,6 +77,8 @@ execution: inline
    - 节点: 收尾交付 | MUST | 三源核对
 ## 8. fan-out 步骤预置         # spec §4.5：多假设分叉场景随计划排 fan-out 项
    - 节点: <分叉点> | 候选: <互斥假设 a/b/c> | .bN 并行 | 禁止主会话自推
+## 9. 知识库更新               # spec §4.5 第四条：每 Phase 末尾知识库步骤标注产出者
+   - 结论性 docs/discovered: subagent 产出草稿（core.worker）+ 主会话应用验证
 ```
 
 ## 约束
