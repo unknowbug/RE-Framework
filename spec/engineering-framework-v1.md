@@ -1,7 +1,7 @@
 # Engineering Framework v1 — 通用工程方法论协议（多领域模块化）
 
 > **定位**: 从逆向到编程的通用工程方法论框架。领域无关核心（core）+ 按需加载的领域模块（re-binary / re-code / swe）。
-> **来源**: 由 RE-Framework v1（42KB 单文件 CLAUDE.md，BitWarden 方法论）工程化、Skills化、SubAgents化拆分而来；验证协议继承自 [Anchorlaw Protocol v0.6](https://github.com/unknowbug/anchorlaw)（其前身 Practify 即 v1 引用的验证协议）。
+> **来源**: 由 RE-Framework v1（42KB 单文件 CLAUDE.md，BitWarden 方法论）工程化、Skills化、SubAgents化拆分而来；验证协议继承自 [Anchorlaw Protocol v0.9](https://github.com/unknowbug/anchorlaw)（其前身 Practify 即 v1 引用的验证协议）。
 > **状态**: candidate（本协议自身遵守置信度状态机——待实际项目验证后由用户拍板 confirmed）
 > **当前版本**: v1.0
 
@@ -39,7 +39,7 @@
 
 ### 1.3 防幻觉（可追溯性）
 - 每个结论要么有可追溯来源的验证，要么诚实标注 `@anchor.idk`。
-- test anchor 的 source 字段**必填**，来源类型 `trace` / `memory`（不允许 `static`）；缺失 → 审查直接驳回（视为凭空编造）。
+- test anchor 的 source 字段**必填**，来源类型 `trace` / `memory` / `probe`（v0.7）/ `static`（**仅限 `@anchor.idk`**）；缺失 → 审查直接驳回（视为凭空编造）。
 - **source 证据落盘**：source 指向的验证记录 **MUST 有可引用的落盘证据**（`.investigations/*/regression-record.md` 条目 + 命令 + 输出摘要）——judge 按此核对「验证是否真的跑过」（实战项目实证：无此机制时 source 只能靠事后补证）。
 - **order-dependent 语义**：还原点涉及排序/缓存/平局/tie-break/遍历序时（三语言等价的结果等价不足以覆盖），@anchor 描述 MUST 标注 order-dependence，并验证「确定性 + 与参照实现查询序列对齐」（实战项目实证：生物群系平局 tie-break + Java ThreadLocal 缓存依赖查询序列）。
 - `@anchor.idk` 必须具体到可验证的条件，不许模糊标注。
@@ -145,14 +145,19 @@ AGENTS.md 在任务开始时运行**探测器**，按以下决策树只加载匹
 
 ## 3. Anchorlaw 四接口面引用
 
-本框架的验证/执行/集成语义**不自行维护**，全部引用 [Anchorlaw Protocol v0.6](https://github.com/unknowbug/anchorlaw)（MIT），保持单一事实源：
+本框架的验证/执行/集成语义**不自行维护**，全部引用 [Anchorlaw Protocol v0.9](https://github.com/unknowbug/anchorlaw)（MIT），保持单一事实源：
 
 | 接口面 | Anchorlaw 章节 | 本框架的使用方式 |
 |--------|---------------|-----------------|
-| **Claim（声称）** | §13 Anchor Abstraction + §5 Anchor Semantics | `@anchor.test`（description + test_fn + source 必填）/ `@anchor.idk`（具体未知项）；source 类型 `trace`/`memory`/`static` 约束；staleness（90 天）、健康状态（healthy/unverified/degrading/stale_unknown/skeleton/uncompilable） |
+| **Claim（声称）** | §13 Anchor Abstraction + §5 Anchor Semantics | `@anchor.test`（description + test_fn + source 必填）/ `@anchor.idk`（具体未知项）；source 类型 `trace`/`memory`/`probe`（v0.7）/`static`（仅限 idk）；source artifact requirement（v0.7——source 必须有磁盘证据）；staleness（90 天）、健康状态（healthy/unverified/degrading/stale_unknown/skeleton/uncompilable） |
 | **Knowledge（知识）** | §14 Agent Skill Manifest | 本协议 §0 的 Layer 模型、模块 skill 的 frontmatter 格式、manifest 一致性守护（本协议 §2.5） |
-| **Execution（执行）** | §15 Execution Topology | 角色隔离：scout/worker/judge 在 subagent 子进程中运行，只返回最终答案 + 产物引用；retry cap（Lift→Verify ≤3 次） |
-| **Host（宿主）** | §16 Host Integration Contract | AGENTS.md 作为宿主集成点：触发表注册、confirm hook（confirmed 仅人类授予）、产物契约（落盘 + 索引更新） |
+| **Execution（执行）** | §15 Execution Topology | 角色隔离：scout/worker/judge 在 subagent 子进程中运行，只返回最终答案 + 产物引用；retry cap（假设验证 ≤3 次，工程修复不计数，§9.4）；verification termination gates（v0.9——收敛按机械标准终止：外部测试集 + 三档审查意见，blocking 仅限 test/compile/claim 矛盾，3-round cap）；执行模式选择（v0.8——收敛任务 inline / 发散任务 MAY subprocess） |
+| **Host（宿主）** | §16 Host Integration Contract | AGENTS.md 作为宿主集成点：触发表注册、confirm hook（confirmed 仅人类授予）、产物契约（落盘 + 索引更新）；hosts 自供执行者（v0.8——anchor.scout/worker 已从参考实现移除，本框架用 core.worker/core.judge） |
+
+**与 Anchorlaw 的版本同步契约**：本框架对 Anchorlaw 为**协议引用**（单一事实源），升级时对照其 changelog 核对引用条款：
+- 当前引用基线：**Anchorlaw v0.9**（2026-08-09）
+- 已知同源双写：本框架 §4.5 执行强制链 ↔ Anchorlaw §15.4 judge institutionalization（同一批实战反馈双侧落地）——升级 Anchorlaw 时须对照其 changelog 同步核对
+- 检查动作：Anchorlaw 发新版本后，重新 `git grep 'v0\.[0-9]'` 本仓库，核对版本号 + 引用条款是否仍成立
 
 **验证协议三态（Anchorlaw §9）** 在各模块的应用：
 - `re-binary`：.cpp Lift 产物常因外部符号不可编译 → degraded 路径（uncompilable_functions.yaml + 诚实声明）

@@ -10,7 +10,7 @@ execution: inline
 > Module: swe
 > Layer: L0 (Concepts) — 入口指引
 > Execution: inline
-> 协议正文不在此处——引用 [Anchorlaw v0.6](https://github.com/unknowbug/anchorlaw)，单一事实源。
+> 协议正文不在此处——引用 [Anchorlaw v0.9](https://github.com/unknowbug/anchorlaw)，单一事实源。
 
 ## 触发场景
 
@@ -32,15 +32,18 @@ execution: inline
 
 从 Anchorlaw 仓库 `.reasonix/skills/` 安装 anchor.* skill 集（`install_source` 或复制），主会话按场景调用：
 
-| 场景 | 调用 anchor skill | 层 |
-|------|------------------|-----|
-| 写/审 anchor 前语义速查 | `anchor.concepts` | L0 |
-| 改完代码静态审查 | `anchor.scan` | L1 |
-| scanner 疑似误报 | `anchor.challenge` | L1 |
-| 实现/重构公开函数后写标注 | `anchor.write` | L2 |
-| 添加 anchor 后 / CI 失败验证 | `anchor.test` | L2 |
-| 运行时失败 / 噪声卡积压 | `anchor.noise` | L3 |
-| 不可独立编译（RE 场景） | `anchor.degrade` | L2 |
+| 场景 | 调用 anchor skill | 层/执行 |
+|------|------------------|---------|
+| 写/审 anchor 前语义速查 | `anchor.concepts` | L0, inline |
+| 改完代码静态审查 | `anchor.scan` | L1, subprocess |
+| scanner 疑似误报 | `anchor.challenge` | L1, inline |
+| 实现/重构公开函数后写标注 | `anchor.write` | L2, **inline**（v0.8：主会话直接写） |
+| 添加 anchor 后 / CI 失败验证 | `anchor.test` | L2, **inline**（v0.8：主会话直接跑） |
+| 运行时失败 / 噪声卡积压 | `anchor.noise` | L3, inline |
+| 不可独立编译（RE 场景） | `anchor.degrade` | L2, subprocess |
+
+> **执行模式（Anchorlaw v0.8 对齐）**：`anchor.write`/`anchor.test` 为 **inline**（收敛任务主会话直接做，与「编程=主会话为主」一致）；`anchor.scan` 为 subprocess（静态扫描发散面）。
+> **角色变更（v0.8）**：`anchor.scout`/`anchor.worker` 已从 Anchorlaw 参考实现移除——hosts 按 §16 自供执行者；RE-Framework 用 `core.worker`（分析解读）+ `core.judge`（审查）承担。
 
 ### 方式2: Anchorlaw CLI（验证执行）
 

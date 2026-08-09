@@ -1,7 +1,7 @@
 # RE-Framework v2 — AGENTS.md（索引式入口）
 
 > **定位**: 通用工程方法论框架（逆向 + 编程）。本文件是**探测器 + 索引**——协议铁律正文在对应 skill 里按需加载，不在本文件常驻（对齐 Anchorlaw §14 Agent Skill Manifest + §16 Host Integration）。
-> **协议**: `spec/engineering-framework-v1.md`（模块化接口契约）+ [Anchorlaw Protocol v0.6](https://github.com/unknowbug/anchorlaw)（验证协议，协议引用）。
+> **协议**: `spec/engineering-framework-v1.md`（模块化接口契约）+ [Anchorlaw Protocol v0.9](https://github.com/unknowbug/anchorlaw)（验证协议，协议引用）。
 > **旧版**: 原 42KB CLAUDE.md 已归档至 `spec/legacy-claude-v1.md`（v1 历史参考）。
 
 ---
@@ -64,16 +64,16 @@
 
 ---
 
-## 四、验证协议（引用 Anchorlaw v0.6，不自行维护）
+## 四、验证协议（引用 Anchorlaw v0.9，不自行维护）
 
 | 接口面 | 章节 | 本框架使用 |
 |--------|------|-----------|
-| Claim | §13 + §5 | `@anchor.test` / `@anchor.idk`，source 规则，staleness，健康状态 |
+| Claim | §13 + §5 | `@anchor.test` / `@anchor.idk`，source 规则（trace/memory/**probe** v0.7/static 仅 idk），source artifact requirement，staleness，健康状态 |
 | Knowledge | §14 | 本文件 + skills/manifest（模块化按需加载） |
-| Execution | §15 | subagent 角色隔离（scout/worker/judge），retry cap ≤3 |
-| Host | §16 | 本文件是宿主集成点：触发表 / confirm hook / 产物契约 |
+| Execution | §15 | subagent 角色隔离（scout/worker/judge），retry cap ≤3（假设验证轮次），verification termination gates（v0.9），执行模式选择（v0.8：收敛 inline / 发散 subprocess） |
+| Host | §16 | 本文件是宿主集成点：触发表 / confirm hook / 产物契约；hosts 自供执行者（v0.8，本框架用 core.worker/core.judge） |
 
-安装: `pip install anchorlaw anchorlaw-scanner`；无包时 stub 降级 no-op（Anchorlaw §2）。
+> **升级检查**：Anchorlaw 发新版本后，`git grep 'v0\.[0-9]'` 本仓库核对版本号与引用条款（同步契约详见 spec §3）。当前基线 v0.9。
 
 ---
 

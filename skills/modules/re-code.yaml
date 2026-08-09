@@ -39,7 +39,7 @@ mandatory: false                      # 可选模块
 | 反编译器（CFR/Vineflower/JD）或反编译数据 | 工具/数据 | 是（数据） | 无法开始 re-code 工作（若无现成反编译产物） |
 | 目标语言工具链（JVM/语言运行时） | 工具 | 否 | 静态分析仍可进行；`recode.behavior` 与 Anchorlaw 全功能验证不可用 |
 | 映射数据（官方/社区 mapping） | 数据 | 否 | `recode.deobfuscate` 转为纯上下文推断，标 candidate |
-| Anchorlaw v0.6（协议 + CLI） | 外部协议 | 是（协议语义） | 无 anchorlaw 包 → stub 降级 no-op（Anchorlaw §2） |
+| Anchorlaw v0.9（协议 + CLI） | 外部协议 | 是（协议语义） | 无 anchorlaw 包 → stub 降级 no-op（Anchorlaw §2） |
 
 ## 卸载保证
 

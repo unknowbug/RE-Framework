@@ -2,7 +2,7 @@
 
 > 基于《打破传统AI逆向的新思路：多Agent、自主管理上下文》(BitWarden, 看雪学苑 2026.06.18) 的方法论内核，
 > 工程化、Skills化、SubAgents化拆分升级：**领域无关核心 + 按需加载领域模块**，从二进制逆向到代码逆向到常规编程全兼容。
-> 验证协议继承 [Anchorlaw Protocol v0.6](https://github.com/unknowbug/anchorlaw)（MIT，协议引用，不复制实现）。
+> 验证协议继承 [Anchorlaw Protocol v0.9](https://github.com/unknowbug/anchorlaw)（MIT，协议引用，不复制实现）。
 
 ---
 
@@ -12,7 +12,7 @@
 |------|------------------|-----------------|
 | 入口 | CLAUDE.md 全量加载 | AGENTS.md 探测器 → 按任务类型只加载匹配模块 |
 | 领域 | 仅二进制逆向 | `core`（通用）+ `re-binary`（二进制逆向）+ `re-code`（代码逆向/Minecraft）+ `swe`（编程） |
-| 验证协议 | 引用 Practify（已死链） | 协议引用 Anchorlaw v0.6（单一事实源） |
+| 验证协议 | 引用 Practify（已死链） | 协议引用 Anchorlaw v0.9（单一事实源） |
 | 动态 trace | 缺失 | `re.trace` / `recode.behavior`（anchor source 数据来源） |
 | 知识库 | 空壳 TODO | 真实速查条目（calling-conventions/cpp-abi/common-patterns/assembly-reference/anti-re） |
 | 子代理 | 角色概念 | subagent 角色契约（scout/worker/judge，对齐 Anchorlaw §15） |
@@ -94,7 +94,7 @@ pip install anchorlaw anchorlaw-scanner
 
 ## 与 Anchorlaw 的关系
 
-- **协议引用**：`@anchor.test` / `@anchor.idk`、source 规则、staleness、噪声卡、降级验证（uncompilable_functions.yaml / retry cap）——全部指向 [Anchorlaw v0.6](https://github.com/unknowbug/anchorlaw)，本框架不复制实现。
+- **协议引用**：`@anchor.test` / `@anchor.idk`、source 规则、staleness、噪声卡、降级验证（uncompilable_functions.yaml / retry cap）——全部指向 [Anchorlaw v0.9](https://github.com/unknowbug/anchorlaw)，本框架不复制实现。
 - **双向可用**：Anchorlaw 是语言无关的验证协议（Python/TS/C++ 三语言等价）；re-binary 走 degraded 路径，re-code / swe 走全功能路径。
 - 历史渊源：v1 引用的 Practify 即 Anchorlaw 前身（仓库已 rename），本框架与 Anchorlaw 同源。
 
@@ -105,4 +105,4 @@ pip install anchorlaw anchorlaw-scanner
 ## 方法论来源
 
 - 原文：《打破传统AI逆向的新思路：多Agent、自主管理上下文》（BitWarden，看雪学苑 2026.06.18）
-- 验证协议：[Anchorlaw Protocol v0.6](https://github.com/unknowbug/anchorlaw)（MIT，由 Practify 更名而来）
+- 验证协议：[Anchorlaw Protocol v0.9](https://github.com/unknowbug/anchorlaw)（MIT，由 Practify 更名而来）
