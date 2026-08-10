@@ -16,3 +16,7 @@ Thumbs.db
 
 # 临时
 *.tmp
+
+# 框架仓库自身的过程记录（评估/调查不提交公共仓库）
+.investigations/
+.artifacts/

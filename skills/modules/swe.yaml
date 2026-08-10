@@ -18,7 +18,7 @@ mandatory: false                      # 可选模块
 |-------|-----|------|------|
 | `swe.guide` | L0 | inline | 编程任务入口：路由到 anchor.* skill 与 CLI |
 
-> 实际执行 skill 全部来自 Anchorlaw：`anchor.concepts` / `anchor.scan` / `anchor.challenge` / `anchor.write` / `anchor.test` / `anchor.noise` / `anchor.degrade`（L0-L3）。
+> 实际执行 skill 全部来自 Anchorlaw：`anchor.concepts` / `anchor.scan` / `anchor.challenge` / `anchor.write` / `anchor.test` / `anchor.noise` / `anchor.degrade`（L0-L3）+ 流水线角色 `anchor.scout` / `anchor.worker` / `anchor.judge`（v0.10 恢复，subprocess，见 swe.guide）。
 
 ## 触发表（注册到 AGENTS.md）
 
@@ -29,12 +29,13 @@ mandatory: false                      # 可选模块
 | 实现公开函数后写 anchor 标注 | `anchor.write` |
 | CI 失败 / anchor 验证 | `anchor.test` |
 | 运行时失败 / 噪声卡 | `anchor.noise` |
+| 构造域流水线：规范起草 / 模块实施 / 关键节点审查（v0.10 四段流水线） | `anchor.scout` / `anchor.worker` / `anchor.judge`（subprocess） |
 
 ## 依赖声明
 
 | 依赖 | 类型 | 必需 | 缺失时降级 |
 |------|------|------|-----------|
-| Anchorlaw 协议 v0.9 | 外部协议 | 是（语义） | stub 降级 no-op（Anchorlaw §2）；anchor 语义速查退化为引用协议文档 |
+| Anchorlaw 协议 v0.13 | 外部协议 | 是（语义） | stub 降级 no-op（Anchorlaw §2）；anchor 语义速查退化为引用协议文档 |
 | anchorlaw + anchorlaw-scanner（pip） | 工具 | 否 | 静态扫描/自动验证不可用；人工审查替代，产物标 degraded |
 | anchor.* skills（Anchorlaw 仓库） | skill 集 | 推荐 | 仅 swe.guide 指路，执行语义引用协议文档 |
 

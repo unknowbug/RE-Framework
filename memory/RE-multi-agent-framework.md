@@ -1,6 +1,6 @@
 ---
 name: engineering-framework
-description: 通用工程方法论框架（RE-Framework v2）——逆向/编程通用：模块化结构（core 必装 + re-binary/re-code/swe 可选）、置信度状态机、产物落盘、验证协议引用 Anchorlaw v0.9
+description: 通用工程方法论框架（RE-Framework v2）——逆向/编程通用：模块化结构（core 必装 + re-binary/re-code/swe 可选）、置信度状态机、产物落盘、验证协议引用 Anchorlaw v0.13
 metadata:
   type: project
 ---
@@ -10,7 +10,7 @@ metadata:
 当用户进行逆向（二进制/代码）或编程相关工作，且目标项目套用了本框架时，遵循以下模块化流程，而非传统流式对话。
 
 **来源:** 《打破传统AI逆向的新思路：多Agent、自主管理上下文》— BitWarden, 看雪学苑 2026.06.18
-**验证协议:** [Anchorlaw Protocol v0.9](https://github.com/unknowbug/anchorlaw)（协议引用，不复制）
+**验证协议:** [Anchorlaw Protocol v0.13](https://github.com/unknowbug/anchorlaw)（协议引用，不复制）
 **框架包:** RE-Framework/（AGENTS.md 入口 + skills/ + spec/ + templates/）
 
 ## 模块路由（AGENTS.md 探测器）
@@ -39,7 +39,7 @@ Phase 0 架构设计（core.plan，轻/重分档，强制）→ Phase 1 勘探�
 ## 验证协议（引用 Anchorlaw）
 
 - `@anchor.test` / `@anchor.idk`、source 规则（trace/memory/static）、staleness（90 天）、健康状态
-- 噪声卡（noise_cards.json）、降级验证（uncompilable_functions.yaml）、retry cap（≤3 次）
+- 噪声卡（noise_cards.json）、降级验证（uncompilable_functions.yaml）、retry cap = evidence saturation（3 轮无新数据层证据，新证据重置；工程修复不计数）
 - 三语言等价: Python 装饰器 / TS JSDoc / C++ 行注释
 
 ## 知识库

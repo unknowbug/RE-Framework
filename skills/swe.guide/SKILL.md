@@ -10,7 +10,7 @@ execution: inline
 > Module: swe
 > Layer: L0 (Concepts) — 入口指引
 > Execution: inline
-> 协议正文不在此处——引用 [Anchorlaw v0.9](https://github.com/unknowbug/anchorlaw)，单一事实源。
+> 协议正文不在此处——引用 [Anchorlaw v0.13](https://github.com/unknowbug/anchorlaw)，单一事实源。
 
 ## 触发场景
 
@@ -41,9 +41,13 @@ execution: inline
 | 添加 anchor 后 / CI 失败验证 | `anchor.test` | L2, **inline**（v0.8：主会话直接跑） |
 | 运行时失败 / 噪声卡积压 | `anchor.noise` | L3, inline |
 | 不可独立编译（RE 场景） | `anchor.degrade` | L2, subprocess |
+| 规范起草（流水线 stage 1） | `anchor.scout` | 角色, subprocess |
+| 模块实施（流水线 stage 3，Worker） | `anchor.worker` | 角色, subprocess |
+| 审查角色（五触发点 + 隔离验收） | `anchor.judge` | 角色, subprocess |
 
-> **执行模式（Anchorlaw v0.8 对齐）**：`anchor.write`/`anchor.test` 为 **inline**（收敛任务主会话直接做，与「编程=主会话为主」一致）；`anchor.scan` 为 subprocess（静态扫描发散面）。
-> **角色变更（v0.8）**：`anchor.scout`/`anchor.worker` 已从 Anchorlaw 参考实现移除——hosts 按 §16 自供执行者；RE-Framework 用 `core.worker`（分析解读）+ `core.judge`（审查）承担。
+> **流水线（Anchorlaw v0.10/v0.11，域收窄 v0.13）**：编程是**构造型**——Judge 驱动四段流水线：`input contract（已确认需求+规范）→ implementation spec（Scout 起草）→ implementation plan → parallel implementation（Worker 并行）→ delivery`；每段以 Judge 点头终止。**v0.13 域收窄**：该构造性声明仅限 input-contract 域（§11 audit 注册）；**逆向工程明确域外**（探索型）；混合探索-构造任务（如复刻移植）按 §16.1 RE handover 标准——探索部分未收敛不得进入流水线，只为行为模型已稳定的确定子部分调用。
+> **执行模式（Anchorlaw v0.8/v0.13 对齐）**：`anchor.write`/`anchor.test` 为 **inline**（收敛任务主会话直接做，与「编程=主会话为主」一致）；`anchor.scan`/`anchor.degrade` 为 subprocess；Scout/Worker/Judge 为流水线角色（subprocess）。本框架在构造域内仍保留主会话为主执行（§15.3 SHOULD 允许 host 自选；spec §4.1 两域对齐）。
+> **角色（v0.10 恢复）**：`anchor.scout`/`anchor.worker` 在 v0.10 恢复为编程流水线角色（v0.8 曾移除）；`anchor.judge` 为审查角色。RE-Framework 侧用 `core.worker`/`core.judge` 承担宿主执行者职责。
 
 ### 方式2: Anchorlaw CLI（验证执行）
 
