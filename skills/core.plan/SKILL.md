@@ -54,6 +54,12 @@ execution: inline
   - 判定树分叉 ≥2 互斥候选 MUST fan-out（.bN 并行），禁止主会话自推
 ## 知识库更新            # spec §4.5 第四条：每 Phase 末尾的知识库步骤标注产出者
   - 结论性 docs/discovered 写入: subagent 产出草稿（core.worker）+ 主会话应用验证
+## 子角色介入点          # 强初始化 STEP 3：全部子角色介入时机预置，执行只核对不补排
+  - scout: <机制未明勘探? 是/否 — 是则 Phase 1 勘探（管线地图）>
+  - worker: <哪些子任务需要分析解读/代码交付>
+  - fan-out: <潜在分叉点: 无 / 列举互斥假设>
+  - judge: <收尾 MUST + candidate 授予 SHOULD>
+  - knowledge: <结论性落盘 MUST subagent 产出>
 ```
 
 ### 重量（.investigations/000-架构设计/架构设计.md）
@@ -79,6 +85,12 @@ execution: inline
    - 节点: <分叉点> | 候选: <互斥假设 a/b/c> | .bN 并行 | 禁止主会话自推
 ## 9. 知识库更新               # spec §4.5 第四条：每 Phase 末尾知识库步骤标注产出者
    - 结论性 docs/discovered: subagent 产出草稿（core.worker）+ 主会话应用验证
+## 10. 子角色介入点（全部预置，执行不临时起意）   # 强初始化 STEP 3
+   - scout:  节点 <X> | 触发: 机制未明勘探 | 产物: .investigations 管线地图
+   - worker: 节点 <Y> | 触发: 分析解读/代码交付 | 产物: .artifacts draft
+   - fan-out: 节点 <Z> | 候选: <互斥假设 a/b/c> | MUST 并行 .bN
+   - judge:  节点 <W> | 级别: MUST/SHOULD | 审查对象: <快照/git diff/验证记录>
+   - knowledge: 节点 <V> | 结论性落盘 | subagent 产出 + 主会话应用验证
 ```
 
 ## 约束
