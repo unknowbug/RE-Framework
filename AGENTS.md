@@ -1,7 +1,7 @@
 # RE-Framework v2 — AGENTS.md（索引式入口）
 
 > **定位**: 通用工程方法论框架（逆向 + 编程）。本文件是**探测器 + 索引**——协议铁律正文在对应 skill 里按需加载，不在本文件常驻（对齐 Anchorlaw §14 Agent Skill Manifest + §16 Host Integration）。
-> **协议**: `spec/engineering-framework-v1.md`（模块化接口契约）+ [Anchorlaw Protocol v0.13](https://github.com/unknowbug/anchorlaw)（验证协议，协议引用）。
+> **协议**: `spec/engineering-framework-v1.md`（模块化接口契约）+ [Anchorlaw Protocol v0.15](https://github.com/unknowbug/anchorlaw)（验证协议，协议引用）。
 > **旧版**: 原 42KB CLAUDE.md 已归档至 `spec/legacy-claude-v1.md`（v1 历史参考）。
 
 ---
@@ -85,16 +85,16 @@
 
 ---
 
-## 四、验证协议（引用 Anchorlaw v0.13，不自行维护）
+## 四、验证协议（引用 Anchorlaw v0.15，不自行维护）
 
 | 接口面 | 章节 | 本框架使用 |
 |--------|------|-----------|
 | Claim | §13 + §5 | `@anchor.test` / `@anchor.idk`，source 规则（trace/memory/**probe** v0.7/static 仅 idk），source artifact requirement，staleness，健康状态 |
 | Knowledge | §14 | 本文件 + skills/manifest（模块化按需加载） |
-| Execution | §15 | subagent 角色隔离（scout/worker/judge）；**域收窄（v0.13）**——逆向工程明确协议域外（探索型），构造域接 Anchorlaw 流水线；retry cap = **evidence saturation（v0.13）**：3 轮无新数据层证据（trace/probe）强制回数据层，新证据重置；verification termination gates；执行模式选择（收敛 inline / 发散 MAY subprocess） |
-| Host | §16 | 本文件是宿主集成点：触发表 / confirm hook / 产物契约；hosts 自供执行者（本框架用 core.worker/core.judge）；**RE handover（v0.13）**——vanilla 行为模型收敛才交接 confirmed input contract，混合任务按子部分分流 |
+| Execution | §15 | subagent 角色隔离（scout/worker/judge）；**域收窄（v0.13，保留于 v0.15）**——逆向工程明确协议域外（探索型），构造域接 Anchorlaw 流水线；retry cap = **evidence saturation（v0.13）**：3 轮无新数据层证据（trace/probe）强制回数据层，新证据重置；verification termination gates + **C-gate halted escalation（v0.15）**（3 轮未满足 → halt + 人类裁决，无 Judge 预分类）；执行模式选择（收敛 inline / 发散 MAY subprocess） |
+| Host | §16 | 本文件是宿主集成点：触发表 / confirm hook / 产物契约；hosts 自供执行者（本框架用 core.worker/core.judge）；**input-contract 确认标准（v0.14 泛化）**——语义收敛才交接 confirmed input contract（协议中立，不点名 RE framework）；输入契约 = 需求 + 技术约束规范（架构在 stage 1），三协议独立可操作 |
 
-> **升级检查**：Anchorlaw 发新版本后，`git grep 'v0\.[0-9]'` 本仓库核对版本号与引用条款（同步契约详见 spec §3）。当前基线 v0.13。
+> **升级检查**：Anchorlaw 发新版本后，`git grep 'v0\.[0-9]'` 本仓库核对版本号与引用条款（同步契约详见 spec §3）。当前基线 v0.15。
 
 ---
 

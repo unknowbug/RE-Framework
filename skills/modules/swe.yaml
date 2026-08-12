@@ -35,7 +35,7 @@ mandatory: false                      # 可选模块
 
 | 依赖 | 类型 | 必需 | 缺失时降级 |
 |------|------|------|-----------|
-| Anchorlaw 协议 v0.13 | 外部协议 | 是（语义） | stub 降级 no-op（Anchorlaw §2）；anchor 语义速查退化为引用协议文档 |
+| Anchorlaw 协议 v0.15 | 外部协议 | 是（语义） | stub 降级 no-op（Anchorlaw §2）；anchor 语义速查退化为引用协议文档 |
 | anchorlaw + anchorlaw-scanner（pip） | 工具 | 否 | 静态扫描/自动验证不可用；人工审查替代，产物标 degraded |
 | anchor.* skills（Anchorlaw 仓库） | skill 集 | 推荐 | 仅 swe.guide 指路，执行语义引用协议文档 |
 

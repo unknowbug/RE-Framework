@@ -36,7 +36,7 @@ mandatory: false                      # 可选模块
 | 依赖 | 类型 | 必需 | 缺失时降级 |
 |------|------|------|-----------|
 | 调试/分析 MCP（IDA/Frida/x64dbg/CheatEngine） | 宿主工具 | 否 | `re.trace` 用宿主 shell CLI（frida-trace 等），格式不变 |
-| Anchorlaw v0.13（协议 + 可选 CLI） | 外部协议 | 是（协议语义） | 无 anchorlaw 包 → stub 降级 no-op（Anchorlaw §2）；产物标 degraded |
+| Anchorlaw v0.15（协议 + 可选 CLI） | 外部协议 | 是（协议语义） | 无 anchorlaw 包 → stub 降级 no-op（Anchorlaw §2）；产物标 degraded |
 | 反汇编数据源（IDA 数据库 / Ghidra 项目 / 原始文件） | 数据 | 是 | 无法开始 re-binary 工作 |
 
 ## 卸载保证

@@ -30,7 +30,7 @@ execution: subprocess
 
 **步骤5 — 语义折叠**: 识别算法模式（CRC/哈希/加密/压缩等）/ 改有意义变量名 / 修正签名 / 标注置信度低的区域。
 
-**步骤6 — anchor 载体**: 按 [Anchorlaw v0.13](https://github.com/unknowbug/anchorlaw) 协议产出 `@anchor.test` / `@anchor.idk`：
+**步骤6 — anchor 载体**: 按 [Anchorlaw v0.15](https://github.com/unknowbug/anchorlaw) 协议产出 `@anchor.test` / `@anchor.idk`：
 - 每个明确可验证的输入→输出对 → `@anchor.test`（source 必填，trace/memory）
 - 每个无法确定的行为边界 → `@anchor.idk`（具体到可验证条件，source 可 static）
 - 缺 source 的 @anchor.test → 视为凭空编造，judge 直接驳回

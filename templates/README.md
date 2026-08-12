@@ -15,7 +15,7 @@
 
 ## anchor 载体（验证层）
 
-本框架的验证协议继承 [Anchorlaw v0.13](https://github.com/unknowbug/anchorlaw)（不复制实现，协议引用）：
+本框架的验证协议继承 [Anchorlaw v0.15](https://github.com/unknowbug/anchorlaw)（不复制实现，协议引用）：
 - Python anchor 载体：`@anchor.test` / `@anchor.idk`（`anchorlaw` 包，或 `anchorlaw init` 生成的 stub）
 - 无 anchorlaw 安装时：装饰器自动降级为 no-op（Anchorlaw §2 Uninstall Guarantee）
 - 其他语言：Anchorlaw §13 三语言等价（Python 装饰器 / TS JSDoc / C++ 行注释）
