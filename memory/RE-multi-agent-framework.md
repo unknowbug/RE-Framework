@@ -46,6 +46,7 @@ Phase 0 架构设计（core.plan，轻/重分档，强制）→ Phase 1 勘探�
 
 - `knowledge/INDEX.md` 总入口，分析前先查
 - builtin/（预置）+ discovered/（AI 自动写入，发现即写）
+- **优先级: 错误 > 正确**——错误链条独立存放 `discovered/errors/`（error-<NNN>-<slug>.md），INDEX.md 置顶、详实度最高（现象→诊断→排除→发现全链条），已排除错误不删
 - 条目格式: 时间/来源定位/发现阶段/置信度/如何利用
 
 ## 如何应用
