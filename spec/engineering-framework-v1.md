@@ -1,7 +1,7 @@
 # Engineering Framework v1 — 通用工程方法论协议（多领域模块化）
 
 > **定位**: 从逆向到编程的通用工程方法论框架。领域无关核心（core）+ 按需加载的领域模块（re-binary / re-code / swe）。
-> **来源**: 由 RE-Framework v1（42KB 单文件 CLAUDE.md，BitWarden 方法论）工程化、Skills化、SubAgents化拆分而来；验证协议继承自 [Anchorlaw Protocol v0.15](https://github.com/unknowbug/anchorlaw)（其前身 Practify 即 v1 引用的验证协议）。
+> **来源**: 由 RE-Framework v1（42KB 单文件 CLAUDE.md，BitWarden 方法论）工程化、Skills化、SubAgents化拆分而来；验证协议继承自 [Anchorlaw Protocol v0.17](https://github.com/unknowbug/anchorlaw)（其前身 Practify 即 v1 引用的验证协议）。
 > **状态**: candidate（本协议自身遵守置信度状态机——待实际项目验证后由用户拍板 confirmed）
 > **当前版本**: v1.0
 
@@ -145,18 +145,20 @@ AGENTS.md 在任务开始时运行**探测器**，按以下决策树只加载匹
 
 ## 3. Anchorlaw 四接口面引用
 
-本框架的验证/执行/集成语义**不自行维护**，全部引用 [Anchorlaw Protocol v0.15](https://github.com/unknowbug/anchorlaw)（MIT），保持单一事实源：
+本框架的验证/执行/集成语义**不自行维护**，全部引用 [Anchorlaw Protocol v0.17](https://github.com/unknowbug/anchorlaw)（MIT），保持单一事实源：
 
 | 接口面 | Anchorlaw 章节 | 本框架的使用方式 |
 |--------|---------------|-----------------|
 | **Claim（声称）** | §13 Anchor Abstraction + §5 Anchor Semantics | `@anchor.test`（description + test_fn + source 必填）/ `@anchor.idk`（具体未知项）；source 类型 `trace`/`memory`/`probe`（v0.7）/`static`（仅限 idk）；source artifact requirement（v0.7——source 必须有磁盘证据）；staleness（90 天）、健康状态（healthy/unverified/degrading/stale_unknown/skeleton/uncompilable） |
 | **Knowledge（知识）** | §14 Agent Skill Manifest | 本协议 §0 的 Layer 模型、模块 skill 的 frontmatter 格式、manifest 一致性守护（本协议 §2.5） |
-| **Execution（执行）** | §15 Execution Topology | 角色隔离：scout/worker/judge 在 subagent 子进程中运行，只返回最终答案 + 产物引用；**域收窄（v0.13，保留于 v0.15）**——"programming is constructive" 限于 input-contract 域（已注册 §11 audit），**逆向工程明确域外**（探索型、验证无界），两模式互补；retry cap = **evidence saturation（v0.13，§9.4）**：3 轮**无新数据层证据**（trace/probe）强制回数据层/升级人类，产生新证据的轮次重置 streak 不消耗 cap，工程修复不计数；verification termination gates（外部测试集 + 三档审查意见，blocking 仅限 test/compile/claim 矛盾）+ **C-gate halted escalation（v0.15）**：同一验收判据 3 次未满足 → 流水线完全 halt，Judge 提交报告给人类裁决（移除 Judge round-4 预分类）；执行模式选择（收敛任务 inline / 发散任务 MAY subprocess） |
+| **Execution（执行）** | §15 Execution Topology | 角色隔离：scout/worker/judge 在 subagent 子进程中运行，只返回最终答案 + 产物引用；**域收窄（v0.13，保留于 v0.17）**——"programming is constructive" 限于 input-contract 域（已注册 §11 audit），**逆向工程明确域外**（探索型、验证无界），两模式互补；retry cap = **evidence saturation（v0.13，§9.4）**：3 轮**无新数据层证据**（trace/probe）强制回数据层/升级人类，产生新证据的轮次重置 streak 不消耗 cap，工程修复不计数；verification termination gates（外部测试集 + 三档审查意见，blocking 仅限 test/compile/claim 矛盾）+ **C-gate halted escalation（v0.15）**：同一验收判据 3 次未满足 → 流水线完全 halt，Judge 提交报告给人类裁决（移除 Judge round-4 预分类）；执行模式选择（收敛任务 inline / 发散任务 MAY subprocess） |
 | **Host（宿主）** | §16 Host Integration Contract | AGENTS.md 作为宿主集成点：触发表注册、confirm hook（confirmed 仅人类授予）、产物契约（落盘 + 索引更新）；hosts 自供执行者（本框架用 core.worker/core.judge）；**input-contract 确认标准（v0.14 泛化，§16.1）**——协议中立：input contract 仅在**语义收敛**后算 confirmed（v0.13 的 RE handover 表述已泛化为 semantic convergence，不再点名 RE framework）；**输入契约分层（v0.14）**：契约 = 需求 + 技术约束规范（facts），架构设计在流水线 stage 1 产出；三协议（requirements / Anchorlaw / RE）独立可操作 |
 
 **与 Anchorlaw 的版本同步契约**：本框架对 Anchorlaw 为**协议引用**（单一事实源），升级时对照其 changelog 核对引用条款：
-- 当前引用基线：**Anchorlaw v0.15**（2026-08-12）
+- 当前引用基线：**Anchorlaw v0.17**（2026-08-14 升级核对）
 - 已知同源双写：本框架 §4.5 执行强制链 ↔ Anchorlaw §15.4 judge institutionalization（同一批实战反馈双侧落地）——升级 Anchorlaw 时须对照其 changelog 同步核对
+- 已知同源双写（v0.17 新增）：v0.17 变更触发点含「§12 challenge（Reasonix/Go audit）」——parse-error 分类修正 + 注释类语言降级声明由 RE 生态反馈回流协议；升级核对时关注此类回流
+- v0.16/v0.17 引用条款核对（2026-08-14）：§5/§9/§12/§13/§14/§15/§16 全部保留，无语义冲突；v0.16 = Go/Java 注释类语言注册 + Rust 明确不支持（设计决策）；v0.17 = parse-error 工具级标记（INFO，非 P1-P6）+ 注释类语言（C++/Go/Java）仅注解提取、P1-P6 不映射 + P7-P10 可靠性风险模式（LIFECYCLE/STATE_MACHINE/PATH-COORDINATION/COMPLEXITY，语言无关定义，Level 1 不要求）
 - 检查动作：Anchorlaw 发新版本后，重新 `git grep 'v0\.[0-9]'` 本仓库，核对版本号 + 引用条款是否仍成立
 
 **验证协议三态（Anchorlaw §9）** 在各模块的应用：
@@ -188,7 +190,7 @@ Phase 2: 分析（worker 角色，subagent）
 Phase 2.5: 验证（Anchorlaw 协议）
     ├── 全功能（可编译）→ anchorlaw test 运行 @anchor.test
     └── 降级（不可编译）→ uncompilable_functions.yaml + 诚实声明
-    retry cap = evidence saturation（Anchorlaw §9.4, v0.15）: 连续 3 轮无新数据层证据（trace/probe）→ 强制回 Phase 1 数据层采集/升级人类；产生新证据的轮次重置计数；工程修复/代码迭代不计数
+    retry cap = evidence saturation（Anchorlaw §9.4, v0.17）: 连续 3 轮无新数据层证据（trace/probe）→ 强制回 Phase 1 数据层采集/升级人类；产生新证据的轮次重置计数；工程修复/代码迭代不计数
     验证执行者分离: 分层标注（Full/Partial/Degraded）以实际执行为准——谁跑的、什么环境；
                     分析产物在无运行时证据前不得升 candidate（除非显式声明降级）
     │
@@ -220,9 +222,9 @@ Phase 3: 审查（judge 角色，subagent）
 - **编程任务**：写码/重构/编译/运行/调试/验证 → 主会话直接闭环；subagent 仅用于隔离审查（如独立 code review），**不派 subagent 做核心写码/迭代**。
 - **混合任务**（如"逆向 API 并复刻其行为"）：按子任务类型分别路由——逆向部分 subagent，编程部分主会话。
 
-**与 Anchorlaw v0.15 的两域对齐**：Anchorlaw 将 "programming is constructive" 收窄到 input-contract 域（§11 audit 注册），**逆向工程明确协议域外**（探索型、验证无界），两模式互补。本框架的执行模式路由与两域结构**同构**：
+**与 Anchorlaw v0.17 的两域对齐**：Anchorlaw 将 "programming is constructive" 收窄到 input-contract 域（§11 audit 注册），**逆向工程明确协议域外**（探索型、验证无界），两模式互补。本框架的执行模式路由与两域结构**同构**：
 - **RE 探索域（re-binary/re-code）** = Anchorlaw 域外——由本框架自理（subagent 勘探/分析 + 主会话命令委托闭环）；探索收敛后按 §16.1 **input-contract 确认标准**（v0.14 泛化：semantic convergence，协议中立）产出 confirmed input contract
-- **构造域（swe）** = Anchorlaw input-contract 域内——接 Anchorlaw 流水线语义（判据先行 + evidence saturation + C-gate halted escalation v0.15 + Judge 门禁），但执行模式保留主会话为主（§15.3 SHOULD 允许 host 自选；RE 复刻的"确定的子部分"是混合任务切片，非纯构造域）
+- **构造域（swe）** = Anchorlaw input-contract 域内——接 Anchorlaw 流水线语义（判据先行 + evidence saturation + C-gate halted escalation v0.17 + Judge 门禁），但执行模式保留主会话为主（§15.3 SHOULD 允许 host 自选；RE 复刻的"确定的子部分"是混合任务切片，非纯构造域）
 
 > 注：v0.15 之前评估的「编程=主会话为主」与 v0.10「并行 Worker 写码」范式冲突已由域收窄**消解**——并行 Worker 仅约束已收敛构造域，RE 域外由本框架自理，无需偏离声明。v0.14 泛化后 Anchorlaw 不再点名 RE framework（三协议独立可操作），本框架作为其普通宿主，RE 域外保障由 §15.1 域声明保留。
 
@@ -466,7 +468,7 @@ notes: |
 - ❌ 跨模块引用其他领域模块的 skill 正文（§1.6）
 - ❌ @anchor.test 缺 source 字段（视为凭空编造，审查直接驳回）
 - ❌ @anchor.idk 写得模糊（必须具体到可验证的条件）
-- ❌ 连续 3 轮假设验证仍无新数据层证据（evidence saturation 违规，Anchorlaw §9.4 v0.15）— 必须回勘探取新证据，不得继续盲迭代
+- ❌ 连续 3 轮假设验证仍无新数据层证据（evidence saturation 违规，Anchorlaw §9.4 v0.17）— 必须回勘探取新证据，不得继续盲迭代
 
 ---
 

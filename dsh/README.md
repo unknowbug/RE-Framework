@@ -52,4 +52,4 @@ dsh/
 ## 依赖
 
 - Python 3.x（脚本仅 stdlib；`merge_index.py` 需 PyYAML）
-- 验证协议引用 [Anchorlaw v0.15](https://github.com/unknowbug/anchorlaw)（协议引用，不复制实现；swe 模块可选装 anchorlaw CLI）
+- 验证协议引用 [Anchorlaw v0.17](https://github.com/unknowbug/anchorlaw)（协议引用，不复制实现；swe 模块可选装 anchorlaw CLI）

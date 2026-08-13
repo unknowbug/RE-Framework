@@ -1,6 +1,6 @@
 ---
 name: engineering-framework
-description: 通用工程方法论框架（RE-Framework v2）——逆向/编程通用：模块化结构（core 必装 + re-binary/re-code/swe 可选）、置信度状态机、产物落盘、验证协议引用 Anchorlaw v0.15
+description: 通用工程方法论框架（RE-Framework v2）——逆向/编程通用：模块化结构（core 必装 + re-binary/re-code/swe 可选）、置信度状态机、产物落盘、验证协议引用 Anchorlaw v0.17
 metadata:
   type: project
 ---
@@ -10,7 +10,7 @@ metadata:
 当用户进行逆向（二进制/代码）或编程相关工作，且目标项目套用了本框架时，遵循以下模块化流程，而非传统流式对话。
 
 **来源:** 《打破传统AI逆向的新思路：多Agent、自主管理上下文》— BitWarden, 看雪学苑 2026.06.18
-**验证协议:** [Anchorlaw Protocol v0.15](https://github.com/unknowbug/anchorlaw)（协议引用，不复制）
+**验证协议:** [Anchorlaw Protocol v0.17](https://github.com/unknowbug/anchorlaw)（协议引用，不复制）
 **框架包:** RE-Framework/（AGENTS.md 入口 + skills/ + spec/ + templates/）
 
 ## 模块路由（AGENTS.md 探测器）

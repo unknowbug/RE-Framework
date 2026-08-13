@@ -24,7 +24,7 @@ whenToUse: 维护 RE-Framework 的 DSH 适配层（dsh/ 子树）时——任何
 
 ## 上游变更镜像（升级检查）
 
-- `../skills/`、`../spec/engineering-framework-v1.md` 或 Anchorlaw 协议引用版本（当前基线 v0.15，`git grep 'v0\.[0-9]'` 核对）变更后：
+- `../skills/`、`../spec/engineering-framework-v1.md` 或 Anchorlaw 协议引用版本（当前基线 v0.17，`git grep 'v0\.[0-9]'` 核对）变更后：
   1. `python dsh/scripts/sync_skills.py` 重新生成 `dsh/skills/`；
   2. 检查 `dsh/tests/test_manifest.py` 的 EXPECTED 集与正文漂移是否仍通过；
   3. 更新 `dsh/SYNC.md`（来源 commit/时间/差异）；
