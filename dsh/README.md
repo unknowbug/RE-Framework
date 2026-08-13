@@ -10,10 +10,17 @@
 
 | 能力 | DSH 形态 |
 |------|----------|
-| 17 个方法论技能（core/re-binary/re-code/swe 四模块 + ref-maintain） | `skills/` → preset 内嵌（`customSkillDirs`） |
-| 框架自检 / 部署 / 索引合并 / 骨架初始化 | 模型工具 `ref_manifest_validate` / `ref_install` / `ref_merge_index` / `ref_init` / `ref_status` |
+| 17 个方法论技能（core/re-binary/re-code/swe 四模块 + ref-maintain） | `skills/` → **用户级全局 `~/.dsh/skills/`**（任何 preset/工作目录的会话按需加载）+ preset 内嵌（re-framework 完整工作台） |
+| 项目侧工具（status/init/merge-index/install） | 模型工具 `ref_status` / `ref_init` / `ref_merge_index` / `ref_install`，经 **home patch**（`~/.dsh/cordis.patch.yml`）用户级全局，任何项目会话可用、热生效 |
+| 维护工具（框架自检） | `ref_manifest_validate` 仅 re-framework preset（只在框架工作区有意义） |
 | Phase 0-3 工作流 + 执行强制链（scout/fan-out/judge/knowledge） | agent preset `re-framework`（人格 + subagent 隔离） |
 | 正文零漂移守护 | `sync_skills.py`（生成）+ `tests/test_manifest.py`（校验）+ `SYNC.md`（溯源） |
+
+## 可见性设计（v2.1 修订）
+
+- **技能用户级全局**：17 个 ref-* 装到 `~/.dsh/skills/`，任何会话（任何 preset、任何工作目录）按需加载；与 Anchorlaw 的 anchor-*（同样用户级全局）命名空间独立（ref-*/anchor-*），互不冲突。技能是纯指令，加载不触碰工作区外文件，无沙箱问题。
+- **工具分层**：项目侧工具（操作会话工作区数据 + 只读框架源）用户级全局；维护工具（校验框架自身 manifest）仅 preset。两处注册的工具名不重叠。
+- **权限边界**（实测）：跨工作区**读**放行、**写**仅限会话工作区——项目侧工具读框架源 + 写目标项目（工作区内）均可运行。
 
 ## 快速开始
 
@@ -25,14 +32,14 @@ pwsh dsh/scripts/install.ps1
 pwsh dsh/scripts/selfcheck.ps1
 ```
 
-装完后新建会话时选择 **re-framework** preset（工作目录指向仓库根 `E:\PYTHON\RE-Framework`），即可使用 5 个 `ref_*` 工具和 17 个 `ref-*` 技能。
+装完后，**任何 preset 会话**（standard 等）都能在技能目录看到 17 个 ref-* 技能按需加载，项目侧 ref_* 工具全局可用（home patch 热生效，无需重启）；选 **re-framework** preset 另有完整工作台人格 + 维护工具。工作目录指向项目本身（如 `E:\PYTHON\CoreSwap`）即可，无需指向本仓库。
 
 ## 目录结构
 
 ```
 dsh/
 ├── skills/                # 17 个技能事实源（16 个由 sync_skills.py 生成；ref-maintain 手写）
-├── plugins/               # 工具插件事实源（re-framework-tools.js，5 个 ref_* 工具）
+├── plugins/               # 工具插件事实源（re-framework-tools.js，config.tools 控制注册子集）
 ├── preset/                # agent preset 组合源（agent.cordis.yml + preset.yml）
 ├── scripts/               # sync_skills.py（重生成）/ install.ps1（部署）/ selfcheck.ps1（自检）
 ├── tests/                 # test_manifest.py（DSH 命名 + 正文级上游一致性校验）
@@ -45,9 +52,9 @@ dsh/
 
 - **单一事实源**：框架正文只存仓库根；技能正文规范份在 `../skills/`，本目录只允许 frontmatter 适配（改 `scripts/sync_skills.py` 后重生成）
 - **只改事实源**（`skills/` 生成器、`plugins/`、`preset/`），然后跑 `scripts/install.ps1` 重装
-- 安装产物（`~/.dsh/.agent-presets/re-framework/`）禁止手改
+- 安装产物（`~/.dsh/.agent-presets/re-framework/`、`~/.dsh/skills/ref-*`、`~/.dsh/plugins/re-framework/`、`~/.dsh/cordis.patch.yml` 的 re-framework-tools-global 行）禁止手改
 - 改动后必须 `scripts/selfcheck.ps1` 全绿（含正文级一致性校验）
-- 技能仅 preset 内嵌（不装用户级全局）——ref-* 方法论技能不污染其它 preset 的会话
+- 多框架共存：技能/工具命名空间按框架前缀隔离（ref-*/ref_* 与 anchor-*/anchorlaw_*）；插件文件按框架子目录存放（`~/.dsh/plugins/<framework>/`）；home patch 是唯一用户级工具登记点，可查可控
 
 ## 依赖
 

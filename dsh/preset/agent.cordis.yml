@@ -174,10 +174,19 @@
     searchTimeoutMs: 60000
 
 # ── re-framework toolchain (local plugin, travels with this preset) ─────────
+#
+# The preset row registers ONLY the maintenance tool (ref_manifest_validate):
+# the framework's own self-check has meaning only in the framework workspace.
+# The project-side tools (ref_status/ref_init/ref_merge_index/ref_install) are
+# user-global via ~/.dsh/cordis.patch.yml (installed by scripts/install.ps1),
+# so any project session can use them. The two rows are non-overlapping, so a
+# re-framework preset session ends up with all five tools.
 
 - id: re-framework-tools
   name: ./plugins/re-framework-tools.js
-  config: {}
+  config:
+    tools:
+      - manifest_validate
 
 # ── re-framework skills (embedded in this preset, synced by install.ps1) ────
 

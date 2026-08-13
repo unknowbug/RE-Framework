@@ -4,7 +4,19 @@
 // entry modules through Node's ESM resolver from the preset's own directory,
 // which cannot reach the harness's node_modules.
 //
-// Registers five model tools into the session's tool registry:
+// Registers model tools into the session's tool registry. `config.tools`
+// selects the subset (names below); absent/empty = all five. The split keeps
+// registrations non-overlapping between the two mounts of this plugin:
+//   - preset row (re-framework preset): maintenance tools only
+//     (manifest_validate) — the framework's own self-check has meaning only
+//     in the framework workspace;
+//   - home patch row (~/.dsh/cordis.patch.yml, user-global): project-side
+//     tools (status/init/merge_index/install) — these operate on session
+//     workspace data + read-only framework sources, so they are usable from
+//     any project session without sandbox issues.
+//   A re-framework preset session gets all five via the two rows combined.
+//
+// Tool inventory:
 //   ref_status             — framework health: workspace/repo/python/skills/modules
 //   ref_manifest_validate  — framework self-check (scripts/validate_manifest.py, spec §2.5 R1-R6)
 //   ref_install            — deploy modules into a target project (scripts/install.py, Reasonix-compatible)
@@ -17,13 +29,18 @@
 export const name = 're-framework-tools'
 export const inject = ['tools']
 
-export function apply(ctx, config) {
+export function apply(ctx, config = {}) {
   // Optional capabilities, read with ctx.get and handled when absent.
   const subprocess = ctx.get('subprocess')
   const skills = ctx.get('skills')
   const fsService = ctx.get('fs')
   const sandboxPolicy = ctx.get('sandboxPolicy')
   if (subprocess === undefined) return
+
+  const ALL_TOOLS = ['status', 'manifest_validate', 'install', 'merge_index', 'init']
+  const enabled = new Set(
+    Array.isArray(config.tools) && config.tools.length ? config.tools : ALL_TOOLS,
+  )
 
   const REF_SKILLS = [
     'core-plan', 'core-artifact', 'core-knowledge', 'core-version', 'core-fanout',
@@ -136,7 +153,7 @@ export function apply(ctx, config) {
   }
 
   // ── ref_status ────────────────────────────────────────────────────────────
-  register({
+  if (enabled.has('status')) register({
     name: 'ref_status',
     description: 'Report the RE-Framework toolchain status: session workspace, resolved framework repository, python availability, installed framework modules, and the ref-* skills visible to the current session.',
     parameters: {},
@@ -178,7 +195,7 @@ export function apply(ctx, config) {
   })
 
   // ── ref_manifest_validate ─────────────────────────────────────────────────
-  register({
+  if (enabled.has('manifest_validate')) register({
     name: 'ref_manifest_validate',
     description: 'Run the RE-Framework manifest validator (scripts/validate_manifest.py, spec §2.5 R1-R6) against the framework repository. Exit code 1 means validation errors were found; the findings are still returned as text.',
     parameters: {
@@ -197,7 +214,7 @@ export function apply(ctx, config) {
   })
 
   // ── ref_install ───────────────────────────────────────────────────────────
-  register({
+  if (enabled.has('install')) register({
     name: 'ref_install',
     description: 'Deploy RE-Framework modules (core/re-binary/re-code/swe) into a target project via scripts/install.py — installs to <target>/.reasonix/skills/ with a version stamp (Reasonix-compatible path). Idempotent; re-running upgrades.',
     parameters: {
@@ -222,7 +239,7 @@ export function apply(ctx, config) {
   })
 
   // ── ref_merge_index ───────────────────────────────────────────────────────
-  register({
+  if (enabled.has('merge_index')) register({
     name: 'ref_merge_index',
     description: 'Merge .artifacts/**/index-entry.yaml fragments into the root .artifacts/index.yaml via scripts/merge_index.py (core.artifact §5.1). Conflicts are reported but never silently overwritten.',
     parameters: {
@@ -245,7 +262,7 @@ export function apply(ctx, config) {
   })
 
   // ── ref_init ──────────────────────────────────────────────────────────────
-  register({
+  if (enabled.has('init')) register({
     name: 'ref_init',
     description: 'Create the RE-Framework project skeleton in a directory: .artifacts/index.yaml (empty schema), .investigations/, knowledge/INDEX.md + builtin/ + discovered/errors/. Existing files are never overwritten.',
     parameters: {

@@ -74,18 +74,22 @@ pip install anchorlaw anchorlaw-scanner
 ### 方式D：DSH（DeepSeek Harness）宿主（v2.1 起）
 
 ```powershell
-# 1. 安装 re-framework preset 到 DSH 运行时（技能 preset 内嵌，不污染其它会话）
+# 1. 安装到 DSH 运行时（一次安装，全局生效）
 pwsh dsh/scripts/install.ps1
+#    → 用户级全局技能：17 个 ref-* 装到 ~/.dsh/skills/（任何 preset/工作目录的会话按需加载）
+#    → 用户级全局工具：项目侧 ref_status/ref_init/ref_merge_index/ref_install
+#      经 ~/.dsh/cordis.patch.yml 注入（home patch，热生效、升级不覆盖）
+#    → re-framework preset：完整工作台（人格 + 内嵌技能 + 维护工具 ref_manifest_validate）
 
-# 2. 新建会话选择 re-framework preset，工作目录指向本仓库根
-#    → 17 个 ref-* 技能 + 5 个 ref_* 工具（status/validate/install/merge-index/init）
-#    + Phase 0-3 工作流与执行强制链（scout/fan-out/judge/knowledge）人格
+# 2. 在任意项目（如 E:\PYTHON\CoreSwap）工作区开会话（任何 preset）
+#    → ref-* 技能开箱即用，cwd 在项目、产物落项目、RE-Framework 仓库零污染
+#    → 需要框架工作台人格时再选 re-framework preset
 
 # 3. 自检（工具链 / 技能 manifest 正文零漂移 / 框架自扫 R1-R6 / 安装产物）
 pwsh dsh/scripts/selfcheck.ps1
 ```
 
-详见 `dsh/README.md`（事实源与同步纪律见 `dsh/AGENTS.md`）。
+详见 `dsh/README.md`（事实源与同步纪律见 `dsh/AGENTS.md`）。多框架共存：技能/工具按前缀命名空间隔离（ref-*/ref_* 与 anchor-*/anchorlaw_*），插件按 `~/.dsh/plugins/<framework>/` 子目录存放。
 
 ### 第2步：初始化项目骨架
 

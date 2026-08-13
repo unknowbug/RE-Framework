@@ -160,6 +160,7 @@ AGENTS.md 在任务开始时运行**探测器**，按以下决策树只加载匹
 - 已知同源双写（v0.17 新增）：v0.17 变更触发点含「§12 challenge（Reasonix/Go audit）」——parse-error 分类修正 + 注释类语言降级声明由 RE 生态反馈回流协议；升级核对时关注此类回流
 - v0.16/v0.17 引用条款核对（2026-08-14）：§5/§9/§12/§13/§14/§15/§16 全部保留，无语义冲突；v0.16 = Go/Java 注释类语言注册 + Rust 明确不支持（设计决策）；v0.17 = parse-error 工具级标记（INFO，非 P1-P6）+ 注释类语言（C++/Go/Java）仅注解提取、P1-P6 不映射 + P7-P10 可靠性风险模式（LIFECYCLE/STATE_MACHINE/PATH-COORDINATION/COMPLEXITY，语言无关定义，Level 1 不要求）
 - 检查动作：Anchorlaw 发新版本后，重新 `git grep 'v0\.[0-9]'` 本仓库，核对版本号 + 引用条款是否仍成立
+- 复核记录（2026-08-14，Anchorlaw HEAD `4931a1c`）：协议仍 **v0.17**（无新协议版本，基线不变）；HEAD 新增提交均为 dsh 适配层演进——`project-level install mode`（`-Project` 参数，Reasonix 式项目级技能部署到 `<dir>/.dsh/skills/`，借鉴本框架部署思路）+ `anchor.maintain` 正文修正（移除易变测试计数，不在本框架 swe 路由表内）——均不影响本框架引用条款
 
 **验证协议三态（Anchorlaw §9）** 在各模块的应用：
 - `re-binary`：.cpp Lift 产物常因外部符号不可编译 → degraded 路径（uncompilable_functions.yaml + 诚实声明）

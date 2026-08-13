@@ -47,6 +47,22 @@ $presetSkills = Join-Path $presetDir 'skills'
 $count = @(Get-ChildItem -Path $presetSkills -Directory -ErrorAction SilentlyContinue).Count
 Write-Host "  OK embedded skills: $count directories (expected 17)"
 if ($count -lt 17) { Write-Host "  FAIL: expected 17 ref-* skills"; $fail = 1 }
+$userSkills = Join-Path $dshHome 'skills'
+$userCount = @(Get-ChildItem -Path $userSkills -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^(core|re|recode|swe|ref)-' }).Count
+Write-Host "  OK user-global skills: $userCount ref-family directories (expected 17, visible in any session)"
+if ($userCount -lt 17) { Write-Host "  FAIL: expected 17 user-global ref-family skills"; $fail = 1 }
+$globalPlugin = Join-Path $dshHome 'plugins\re-framework\re-framework-tools.js'
+if (Test-Path $globalPlugin) {
+  Write-Host "  OK global plugin: $globalPlugin"
+} else {
+  Write-Host "  FAIL: global plugin missing"; $fail = 1
+}
+$patchPath = Join-Path $dshHome 'cordis.patch.yml'
+if ((Test-Path $patchPath) -and (Get-Content $patchPath -Raw -ErrorAction SilentlyContinue) -match 're-framework-tools-global') {
+  Write-Host "  OK home patch row: re-framework-tools-global"
+} else {
+  Write-Host "  FAIL: home patch missing re-framework-tools-global row"; $fail = 1
+}
 
 Write-Host ""
 if ($fail -eq 0) { Write-Host "== ALL CHECKS PASSED ==" } else { Write-Host "== CHECKS FAILED ==" }

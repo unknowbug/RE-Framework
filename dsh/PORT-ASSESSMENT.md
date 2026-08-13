@@ -34,8 +34,8 @@
 
 ## 三、关键决策（用户拍板）
 
-1. **技能可见范围：仅 preset 内嵌**——ref-* 方法论技能不装用户级全局，不污染其它 preset 的会话（与 Anchorlaw 先例不同，先例为双路径；本框架纪律性强，收敛暴露面）。
-2. **工具集：5 个全做**（status / manifest_validate / install / merge_index / init）。
+1. **技能可见范围：仅 preset 内嵌（2026-08-14 初版）→ v2.1 修订为 用户级全局 + preset 内嵌**——初版担心污染其它会话，但 DSH 的 preset 与工作目录正交、默认 preset 是 standard，preset 内嵌技能在用户日常会话不可见（CoreSwap 被迫手工复制项目级 `.dsh/skills` 为证）。修订：17 个 ref-* 技能装用户级全局（`~/.dsh/skills/`），任何会话按需加载；技能是纯指令、加载不碰工作区外文件，无沙箱问题。
+2. **工具分层（v2.1 修订）**：项目侧工具（status/init/merge_index/install）经 **home patch**（`~/.dsh/cordis.patch.yml`）用户级全局——它们操作会话工作区数据 + 只读框架源，实测沙箱（跨工作区读放行、写限工作区）不阻塞；维护工具（manifest_validate，校验框架自身）仅 re-framework preset——只在框架工作区有语义。两处注册名不重叠。多框架共存：前缀命名空间 + `~/.dsh/plugins/<framework>/` 子目录。
 3. **新增 ref-maintain 维护技能**（16+1，DSH-only，测试豁免漂移检查）。
 
 ## 四、移植必须做的适配（坑）
