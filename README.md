@@ -78,7 +78,7 @@ pip install anchorlaw anchorlaw-scanner
 pwsh dsh/scripts/install.ps1
 #    → 用户级全局技能：17 个 ref-* 装到 ~/.dsh/skills/（任何 preset/工作目录的会话按需加载）
 #    → 用户级全局工具：项目侧 ref_status/ref_init/ref_merge_index/ref_install
-#      经 ~/.dsh/cordis.patch.yml 注入（home patch，热生效、升级不覆盖）
+#      经 <dshHome>/profiles/<profile>/cordis.patch.yml 注入（唯一用户补丁层，热生效、升级不覆盖；~/.dsh/cordis.patch.yml 宿主不读）
 #    → re-framework preset：完整工作台（人格 + 内嵌技能 + 维护工具 ref_manifest_validate）
 
 # 2. 在任意项目（如 E:\PYTHON\CoreSwap）工作区开会话（任何 preset）

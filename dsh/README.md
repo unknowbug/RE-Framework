@@ -11,7 +11,7 @@
 | 能力 | DSH 形态 |
 |------|----------|
 | 17 个方法论技能（core/re-binary/re-code/swe 四模块 + ref-maintain） | `skills/` → **用户级全局 `~/.dsh/skills/`**（任何 preset/工作目录的会话按需加载）+ preset 内嵌（re-framework 完整工作台） |
-| 项目侧工具（status/init/merge-index/install） | 模型工具 `ref_status` / `ref_init` / `ref_merge_index` / `ref_install`，经 **home patch**（`~/.dsh/cordis.patch.yml`）用户级全局，任何项目会话可用、热生效 |
+| 项目侧工具（status/init/merge-index/install） | 模型工具 `ref_status` / `ref_init` / `ref_merge_index` / `ref_install`，经 **profile patch**（`<dshHome>/profiles/<profile>/cordis.patch.yml`，唯一用户补丁层）用户级全局，任何项目会话可用、热生效 |
 | 维护工具（框架自检） | `ref_manifest_validate` 仅 re-framework preset（只在框架工作区有意义） |
 | Phase 0-3 工作流 + 执行强制链（scout/fan-out/judge/knowledge） | agent preset `re-framework`（人格 + subagent 隔离） |
 | 正文零漂移守护 | `sync_skills.py`（生成）+ `tests/test_manifest.py`（校验）+ `SYNC.md`（溯源） |
@@ -32,7 +32,7 @@ pwsh dsh/scripts/install.ps1
 pwsh dsh/scripts/selfcheck.ps1
 ```
 
-装完后，**任何 preset 会话**（standard 等）都能在技能目录看到 17 个 ref-* 技能按需加载，项目侧 ref_* 工具全局可用（home patch 热生效，无需重启）；选 **re-framework** preset 另有完整工作台人格 + 维护工具。工作目录指向项目本身（如 `E:\PYTHON\CoreSwap`）即可，无需指向本仓库。
+装完后，**任何 preset 会话**（standard 等）都能在技能目录看到 17 个 ref-* 技能按需加载，项目侧 ref_* 工具全局可用（profile patch 热生效，无需重启）；选 **re-framework** preset 另有完整工作台人格 + 维护工具。工作目录指向项目本身（如 `E:\PYTHON\CoreSwap`）即可，无需指向本仓库。
 
 ## 目录结构
 
@@ -52,9 +52,9 @@ dsh/
 
 - **单一事实源**：框架正文只存仓库根；技能正文规范份在 `../skills/`，本目录只允许 frontmatter 适配（改 `scripts/sync_skills.py` 后重生成）
 - **只改事实源**（`skills/` 生成器、`plugins/`、`preset/`），然后跑 `scripts/install.ps1` 重装
-- 安装产物（`~/.dsh/.agent-presets/re-framework/`、`~/.dsh/skills/ref-*`、`~/.dsh/plugins/re-framework/`、`~/.dsh/cordis.patch.yml` 的 re-framework-tools-global 行）禁止手改
-- 改动后必须 `scripts/selfcheck.ps1` 全绿（含正文级一致性校验）
-- 多框架共存：技能/工具命名空间按框架前缀隔离（ref-*/ref_* 与 anchor-*/anchorlaw_*）；插件文件按框架子目录存放（`~/.dsh/plugins/<framework>/`）；home patch 是唯一用户级工具登记点，可查可控
+- 安装产物（`~/.dsh/.agent-presets/re-framework/`、`~/.dsh/skills/ref-*`、`<profile>/plugins/re-framework/`、`<profile>/cordis.patch.yml` 的 re-framework-tools-global insert 行）禁止手改
+- 改动后必须 `scripts/selfcheck.ps1` 全绿（含正文级一致性校验 + 第 5 项插件 schema 校验）
+- 多框架共存：技能/工具命名空间按框架前缀隔离（ref-*/ref_* 与 anchor-*/anchorlaw_*）；插件文件按框架子目录存放（`<profile>/plugins/<framework>/`）；`<profile>/cordis.patch.yml` 是唯一用户级工具登记点（insert 形态），可查可控；**工具 parameters 必须编译后 JSON Schema（挂载前跑 tests/check_plugin_schema.mjs）**
 
 ## 依赖
 

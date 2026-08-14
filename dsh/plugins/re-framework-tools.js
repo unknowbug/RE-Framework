@@ -156,7 +156,10 @@ export function apply(ctx, config = {}) {
   if (enabled.has('status')) register({
     name: 'ref_status',
     description: 'Report the RE-Framework toolchain status: session workspace, resolved framework repository, python availability, installed framework modules, and the ref-* skills visible to the current session.',
-    parameters: {},
+    parameters: {
+      type: 'object',
+      properties: {},
+    },
     output: { schema: { type: 'string' }, render(_args, v) { return renderText(v) } },
     async execute(_args, exec) {
       const lines = []
@@ -199,7 +202,10 @@ export function apply(ctx, config = {}) {
     name: 'ref_manifest_validate',
     description: 'Run the RE-Framework manifest validator (scripts/validate_manifest.py, spec §2.5 R1-R6) against the framework repository. Exit code 1 means validation errors were found; the findings are still returned as text.',
     parameters: {
-      repo: { type: 'string', description: 'Framework repository path (absolute or relative to the session workspace). Defaults to auto-detection: walk up from the session workspace looking for AGENTS.md + scripts/validate_manifest.py.' },
+      type: 'object',
+      properties: {
+        repo: { type: 'string', description: 'Framework repository path (absolute or relative to the session workspace). Defaults to auto-detection: walk up from the session workspace looking for AGENTS.md + scripts/validate_manifest.py.' },
+      },
     },
     output: { schema: { type: 'string' }, render(_args, v) { return renderText(v) } },
     async execute(args, exec) {
@@ -218,10 +224,14 @@ export function apply(ctx, config = {}) {
     name: 'ref_install',
     description: 'Deploy RE-Framework modules (core/re-binary/re-code/swe) into a target project via scripts/install.py — installs to <target>/.reasonix/skills/ with a version stamp (Reasonix-compatible path). Idempotent; re-running upgrades.',
     parameters: {
-      target: { type: 'string', required: true, description: 'Target project directory to install into.' },
-      modules: { type: 'string', default: 'core,re-binary,re-code,swe', description: 'Comma-separated module list (core is mandatory and auto-included).' },
-      docs: { type: 'boolean', default: false, description: 'Also copy spec/ and templates/ into the target.' },
-      repo: { type: 'string', description: 'Framework repository path (defaults to auto-detection).' },
+      type: 'object',
+      properties: {
+        target: { type: 'string', description: 'Target project directory to install into.' },
+        modules: { type: 'string', default: 'core,re-binary,re-code,swe', description: 'Comma-separated module list (core is mandatory and auto-included).' },
+        docs: { type: 'boolean', default: false, description: 'Also copy spec/ and templates/ into the target.' },
+        repo: { type: 'string', description: 'Framework repository path (defaults to auto-detection).' },
+      },
+      required: ['target'],
     },
     output: { schema: { type: 'string' }, render(_args, v) { return renderText(v) } },
     async execute(args, exec) {
@@ -243,8 +253,12 @@ export function apply(ctx, config = {}) {
     name: 'ref_merge_index',
     description: 'Merge .artifacts/**/index-entry.yaml fragments into the root .artifacts/index.yaml via scripts/merge_index.py (core.artifact §5.1). Conflicts are reported but never silently overwritten.',
     parameters: {
-      project: { type: 'string', required: true, description: 'Project directory containing .artifacts/.' },
-      dryRun: { type: 'boolean', default: false, description: 'Report only, do not write.' },
+      type: 'object',
+      properties: {
+        project: { type: 'string', description: 'Project directory containing .artifacts/.' },
+        dryRun: { type: 'boolean', default: false, description: 'Report only, do not write.' },
+      },
+      required: ['project'],
     },
     output: { schema: { type: 'string' }, render(_args, v) { return renderText(v) } },
     async execute(args, exec) {
@@ -266,7 +280,10 @@ export function apply(ctx, config = {}) {
     name: 'ref_init',
     description: 'Create the RE-Framework project skeleton in a directory: .artifacts/index.yaml (empty schema), .investigations/, knowledge/INDEX.md + builtin/ + discovered/errors/. Existing files are never overwritten.',
     parameters: {
-      project: { type: 'string', description: 'Project directory to initialize. Defaults to the session workspace.' },
+      type: 'object',
+      properties: {
+        project: { type: 'string', description: 'Project directory to initialize. Defaults to the session workspace.' },
+      },
     },
     output: { schema: { type: 'string' }, render(_args, v) { return renderText(v) } },
     async execute(args, exec) {
