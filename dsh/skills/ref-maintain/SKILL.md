@@ -8,7 +8,8 @@ whenToUse: 维护 RE-Framework 的 DSH 适配层（dsh/ 子树）时——任何
 
 > 本技能是 **DSH 专属**技能：无 Reasonix 上游对应（../skills/ 中无 ref-maintain），不参与正文漂移校验（test_manifest.py 的 DSH_ONLY 豁免集）。
 > 定位：对齐 Anchorlaw 的 anchor-maintain 思路——框架必须能维护自己。
-> 适用范围：`dsh/` 子树（skills/、plugins/、preset/、scripts/、tests/、SYNC.md、AGENTS.md）。
+> 适用范围：`dsh/` 子树（skills/、plugins/、preset/、scripts/、tests/、SYNC.md、AGENTS.md、SKILL-MAP.md）。
+> 接口速查：DSH 会话按 `dsh/SKILL-MAP.md`（dot→kebab 技能名 + ref_* 工具/脚本对照）调用；本技能正文引用根 `AGENTS.md` 的 dot 名时按 SKILL-MAP 映射。
 
 ## 维护铁律
 

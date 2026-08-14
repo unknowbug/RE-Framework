@@ -6,7 +6,7 @@
 ## 〇、开始工作前（每个 session 必做）
 
 1. 确认仓库状态：仓库根即 Reasonix 事实源，本目录（`dsh/`）即 DSH 适配事实源——**单一仓库，无第二份框架副本**。
-2. 跑自检确认基线全绿：`pwsh dsh/scripts/selfcheck.ps1`（工具链 / 技能 manifest / 框架自扫 / 安装产物四项）。
+2. 跑自检确认基线全绿：`pwsh dsh/scripts/selfcheck.ps1`（五段：工具链 / 技能 manifest / 框架自扫 / 安装产物 / 插件 schema）。
 3. 若改动涉及框架正文：正文只能改 `../skills/`（Reasonix 规范正文），本目录技能由 `sync_skills.py` 派生 + `tests/test_manifest.py` 逐字节守护。
 
 ## 一、本目录定位（一句话）
@@ -23,10 +23,10 @@
 | `preset/preset.yml` | preset 显示元数据 | 事实源 |
 | `scripts/sync_skills.py` | 技能重新生成器（frontmatter 适配映射所在） | 维护工具 |
 | `scripts/install.ps1` | 安装/同步到 DSH 运行时 | 维护工具 |
-| `scripts/selfcheck.ps1` | 四项自检 | 维护工具 |
+| `scripts/selfcheck.ps1` | 五段自检（工具链 / 技能 manifest / 框架自扫 / 安装产物 / 插件 schema） | 维护工具 |
 | `tests/test_manifest.py` | 技能 manifest 校验（DSH 命名 + **正文级**上游一致性） | 维护测试 |
 | `SYNC.md` | 溯源戳（上次同步的上游 commit + 时间 + 差异） | 溯源记录 |
-| `PORT-ASSESSMENT.md` | 移植评估（历史存档） | 历史 |
+| `SKILL-MAP.md` | **DSH 会话调用接口速查**（dot→kebab 技能名映射 + ref_* 工具/脚本对照；根 AGENTS.md 的 DSH 指引行指向这里） | 接口桥接文档 |
 | **安装产物（勿手改）** | | |
 | `~/.dsh/.agent-presets/re-framework/` | 已安装 preset（组合 + plugins/ + skills/） | install.ps1 生成 |
 | `~/.dsh/skills/ref-*` | **用户级全局技能**（任何 preset/工作目录的会话按需加载） | install.ps1 同步 |
@@ -50,7 +50,7 @@
 - **仓库根（`../`）**：框架正文（`spec/engineering-framework-v1.md`）、Reasonix 技能（`skills/`）、模板、预置知识库、Python 脚本、Reasonix 入口 `AGENTS.md`。
 - **本目录（`dsh/`）**：DSH 生态适配层（DSH 技能格式、插件、preset、维护脚本），入口为本文件。
 - **一致性机制**：`tests/test_manifest.py` 对 `../skills/` 做正文级校验（行尾归一化后逐字节比对）；`SYNC.md` 记录同步溯源；框架正文更新先改仓库根，再跑 `sync_skills.py` 同步本目录适配。
-- **边界**：绝不修改 Reasonix 侧任何文件（`../skills/`、`../spec/`、`../templates/`、`../knowledge-builtin/`、`../scripts/`、根 `AGENTS.md`、根 `README.md`）。
+- **边界**：绝不修改 Reasonix 侧文件（`../skills/`、`../spec/`、`../templates/`、`../knowledge-builtin/`、`../scripts/`、根 `README.md`）。**唯一例外**：根 `AGENTS.md` 允许且仅允许**一行 DSH 桥接指引**（指向 `SKILL-MAP.md`，2026-08-15 已加）——不动其触发表/正文，其余修改一律禁止。
 
 ## 五、re-framework preset 的人格承诺
 
@@ -58,4 +58,4 @@
 
 ## 六、会话工作目录说明
 
-推荐新会话将工作目录指向本仓库根（`E:\PYTHON\RE-Framework`），加载根 `AGENTS.md`（Reasonix 索引）+ 本文件（DSH 适配维护入口）；preset 选择 `re-framework`。
+DSH 自动加载的是**工作区根的 `AGENTS.md`**（Reasonix 探测器，dot 名触发表）；`dsh/AGENTS.md`（本文件）只在操作涉及 `dsh/` 目录内文件时按目录加载。**DSH 环境维护本仓库时，必须以本文件为维护准则**（根 AGENTS.md 是 Reasonix 视角：技能名/部署/触发表都指向 Reasonix 生态；DSH 侧按 `SKILL-MAP.md` 映射到 kebab 名）。推荐：工作目录指向本仓库根（`E:\PYTHON\RE-Framework`）跑 re-framework preset 会话，或直接在本目录内工作以触发本文件加载。
