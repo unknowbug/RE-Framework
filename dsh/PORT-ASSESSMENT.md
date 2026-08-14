@@ -35,7 +35,7 @@
 ## 三、关键决策（用户拍板）
 
 1. **技能可见范围：仅 preset 内嵌（2026-08-14 初版）→ v2.1 修订为 用户级全局 + preset 内嵌**——初版担心污染其它会话，但 DSH 的 preset 与工作目录正交、默认 preset 是 standard，preset 内嵌技能在用户日常会话不可见（CoreSwap 被迫手工复制项目级 `.dsh/skills` 为证）。修订：17 个 ref-* 技能装用户级全局（`~/.dsh/skills/`），任何会话按需加载；技能是纯指令、加载不碰工作区外文件，无沙箱问题。
-2. **工具分层（v2.1 修订，2026-08-15 挂载修复）**：项目侧工具（status/init/merge_index/install）经 **profile patch**（`<dshHome>/profiles/<profile>/cordis.patch.yml`——唯一用户补丁层；`~/.dsh/cordis.patch.yml` 宿主不读，2026-08-13 Anchorlaw 事故教训）以 **`insert` 形态**挂载、插件在 `<profile>/plugins/re-framework/`——它们操作会话工作区数据 + 只读框架源，实测沙箱（跨工作区读放行、写限工作区）不阻塞；维护工具（manifest_validate，校验框架自身）仅 re-framework preset——只在框架工作区有语义。两处注册名不重叠。多框架共存：前缀命名空间 + `<profile>/plugins/<framework>/` 子目录。**schema 门禁**：挂载前强制 `tests/check_plugin_schema.mjs`（parameters 必须编译后 JSON Schema，扁平 spec 投影给模型无顶层 type → 所有会话崩，2026-08-13 事故教训）。
+2. **工具可见性（2026-08-15 用户拍板：无 global 工具组）**：5 个 ref_* 工具**仅 re-framework preset**——它们是框架 python 脚本（install.py / validate_manifest.py / merge_index.py）的便利包装，其他会话（如 CoreSwap）用标准工具 + pwsh 直接跑脚本即可，方法论执行靠**技能用户级全局 + 标准工具**。曾尝试 profile patch global 挂载（`<profile>/cordis.patch.yml` insert 行）已**撤销**（2026-08-13 Anchorlaw 事故教训已吸收：该文件是唯一用户补丁层、insert 形态、工具 parameters 必须编译后 JSON Schema——schema 门禁保留在 install/selfcheck）。多框架共存：前缀命名空间（ref-*/ref_* 与 anchor-*/anchorlaw_*）。
 3. **新增 ref-maintain 维护技能**（16+1，DSH-only，测试豁免漂移检查）。
 
 ## 四、移植必须做的适配（坑）

@@ -30,7 +30,7 @@
 | **安装产物（勿手改）** | | |
 | `~/.dsh/.agent-presets/re-framework/` | 已安装 preset（组合 + plugins/ + skills/） | install.ps1 生成 |
 | `~/.dsh/skills/ref-*` | **用户级全局技能**（任何 preset/工作目录的会话按需加载） | install.ps1 同步 |
-| `<dshHome>/profiles/<profile>/plugins/re-framework/` + `<profile>/cordis.patch.yml` | **用户级全局工具**（项目侧 ref_*；profile patch = 唯一用户补丁层，热重载） | install.ps1 生成 |
+| `~/.dsh/.agent-presets/re-framework/plugins/` | preset 内嵌工具插件（5 个 ref_*，仅 re-framework preset 会话） | install.ps1 复制 |
 
 **同步纪律（核心铁律）**：所有修改只改本目录事实源，然后跑 `scripts/install.ps1` 重装——安装产物一律视为可再生，禁止手改。技能**正文**不允许在本目录手改——改 `../skills/` 后跑 `sync_skills.py` 重生成，`tests/test_manifest.py` 守护一致性（只允许行尾归一化差异）。
 
@@ -42,7 +42,7 @@
 4. **命名纪律**：DSH 技能名必须 kebab-case（`core-plan` 而非 `core.plan`）；插件工具名 `ref_*`。
 5. **插件持久化纪律**：动态插件（cordis_define 定义）只在当前进程存活——**持久能力必须落成 `plugins/` 文件 + preset 行**，禁止把维护性能力留在动态插件里。
 6. **preset 纪律**：`~/.dsh/.agent-presets/re-framework/` 是用户级 preset（由 install.ps1 生成，可再装）；shipped preset（harness 安装目录）一律只读，改动只能以复制派生。
-7. **可见性纪律（v2.1 修订，2026-08-15 挂载修复）**：技能装**用户级全局**（`~/.dsh/skills/ref-*`）+ preset 内嵌双路径——任何项目会话可加载，不依赖选择 re-framework preset 或工作目录；项目侧工具（status/init/merge_index/install）经 **profile patch**（`<dshHome>/profiles/<profile>/cordis.patch.yml`——唯一用户补丁层，baseUrl=profile 目录，热重载；`~/.dsh/cordis.patch.yml` 宿主不读，2026-08-13 事故教训）以 **`insert` 形态**挂载，插件文件在 `<profile>/plugins/re-framework/`；维护工具（manifest_validate）仅 preset——两处注册名不重叠；多框架共存靠前缀命名空间（ref-*/ref_* 与 anchor-*/anchorlaw_*）+ 插件子目录（`<profile>/plugins/<framework>/`）；**挂载前必须跑 tests/check_plugin_schema.mjs（parameters 必须编译后 JSON Schema，扁平 spec 投影给模型无顶层 type → 所有会话崩）**。
+7. **可见性纪律（v2.1 修订，2026-08-15 用户拍板：无 global 工具组）**：技能装**用户级全局**（`~/.dsh/skills/ref-*`）+ preset 内嵌双路径——任何项目会话可加载，不依赖选择 re-framework preset 或工作目录；**工具仅 re-framework preset**（全部 5 个 ref_*）——它们是框架 python 脚本的包装，其他会话用 pwsh 直接跑脚本（`python scripts/install.py / validate_manifest.py / merge_index.py`）；曾尝试的 profile patch global 挂载（`<profile>/cordis.patch.yml` insert 行）已**撤销**（2026-08-15），install.ps1 幂等清理；多框架共存靠前缀命名空间（ref-*/ref_* 与 anchor-*/anchorlaw_*）；**插件 schema 门禁**：install/selfcheck 必跑 tests/check_plugin_schema.mjs（parameters 必须编译后 JSON Schema，扁平 spec 投影给模型无顶层 type → 所有会话崩，2026-08-13 事故教训）。
 8. **提交纪律**：提交前自检全绿；**不自动 git 提交**（仓库可能有未提交的人类改动，提交时机由人类决定）。
 
 ## 四、与 Reasonix 侧的分工（同一个仓库内）

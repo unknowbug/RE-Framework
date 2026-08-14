@@ -74,18 +74,17 @@ pip install anchorlaw anchorlaw-scanner
 ### 方式D：DSH（DeepSeek Harness）宿主（v2.1 起）
 
 ```powershell
-# 1. 安装到 DSH 运行时（一次安装，全局生效）
+# 1. 安装到 DSH 运行时（一次安装）
 pwsh dsh/scripts/install.ps1
 #    → 用户级全局技能：17 个 ref-* 装到 ~/.dsh/skills/（任何 preset/工作目录的会话按需加载）
-#    → 用户级全局工具：项目侧 ref_status/ref_init/ref_merge_index/ref_install
-#      经 <dshHome>/profiles/<profile>/cordis.patch.yml 注入（唯一用户补丁层，热生效、升级不覆盖；~/.dsh/cordis.patch.yml 宿主不读）
-#    → re-framework preset：完整工作台（人格 + 内嵌技能 + 维护工具 ref_manifest_validate）
+#    → re-framework preset：完整工作台（人格 + 内嵌技能 + 全部 5 个 ref_* 工具）
 
 # 2. 在任意项目（如 E:\PYTHON\CoreSwap）工作区开会话（任何 preset）
 #    → ref-* 技能开箱即用，cwd 在项目、产物落项目、RE-Framework 仓库零污染
-#    → 需要框架工作台人格时再选 re-framework preset
+#    → 需要框架工具/人格时再选 re-framework preset；其他会话可直接
+#      pwsh 跑框架脚本（python scripts/install.py / validate_manifest.py / merge_index.py）
 
-# 3. 自检（工具链 / 技能 manifest 正文零漂移 / 框架自扫 R1-R6 / 安装产物）
+# 3. 自检（工具链 / 技能 manifest 正文零漂移 / 框架自扫 R1-R6 / 安装产物 / 插件 schema）
 pwsh dsh/scripts/selfcheck.ps1
 ```
 

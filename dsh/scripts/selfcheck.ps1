@@ -54,34 +54,31 @@ $userSkills = Join-Path $dshHome 'skills'
 $userCount = @(Get-ChildItem -Path $userSkills -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^(core|re|recode|swe|ref)-' }).Count
 Write-Host "  OK user-global skills: $userCount ref-family directories (expected 17, visible in any session)"
 if ($userCount -lt 17) { Write-Host "  FAIL: expected 17 user-global ref-family skills"; $fail = 1 }
-$globalPatchOk = $false
+# Global tool group must be WITHDRAWN (user decision 2026-08-15): no
+# re-framework-tools-global row in any profile patch, no profile-local plugin
+# copy, no legacy ~/.dsh/cordis.patch.yml.
 $profilesDir = Join-Path $dshHome 'profiles'
+$globalGone = $true
 if (Test-Path $profilesDir) {
   $profiles = @(Get-ChildItem -Path $profilesDir -Directory | Where-Object {
     $_.Name -ne 'node_modules' -and (Test-Path (Join-Path $_.FullName 'package.json')) })
   foreach ($profile in $profiles) {
-    $pluginFile = Join-Path $profile.FullName 'plugins\re-framework\re-framework-tools.js'
     $patchFile = Join-Path $profile.FullName 'cordis.patch.yml'
-    $patchOk = (Test-Path $pluginFile) -and (Test-Path $patchFile) -and
-      ((Get-Content $patchFile -Raw -ErrorAction SilentlyContinue) -match 're-framework-tools-global')
-    if ($patchOk) {
-      Write-Host "  OK global tools: $($profile.FullName) (re-framework-tools-global)"
-      $globalPatchOk = $true
-    } else {
-      Write-Host "  FAIL: profile $($profile.Name) missing global tool mount (plugin + insert row)"
-      $fail = 1
+    if ((Test-Path $patchFile) -and
+        ((Get-Content $patchFile -Raw -ErrorAction SilentlyContinue) -match 're-framework-tools-global')) {
+      Write-Host "  FAIL: profile $($profile.Name) still has re-framework-tools-global — re-run install.ps1"
+      $globalGone = $false; $fail = 1
+    }
+    if (Test-Path (Join-Path $profile.FullName 'plugins\re-framework')) {
+      Write-Host "  FAIL: profile $($profile.Name) still has plugins\re-framework — re-run install.ps1"
+      $globalGone = $false; $fail = 1
     }
   }
-  if ($profiles.Count -eq 0) {
-    Write-Host "  WARN: no DSH profile found under $profilesDir — global tools not mounted"
-  }
-} else {
-  Write-Host "  FAIL: no profiles dir under $dshHome"; $fail = 1
 }
-# Legacy wrong mount must be gone (host never reads ~/.dsh/cordis.patch.yml)
+if ($globalGone) { Write-Host "  OK global tool group withdrawn (tools live on the re-framework preset only)" }
 $legacyHomePatch = Join-Path $dshHome 'cordis.patch.yml'
 if (Test-Path $legacyHomePatch) {
-  Write-Host "  FAIL: legacy ~/.dsh/cordis.patch.yml still present (host does not read it) — re-run install.ps1"; $fail = 1
+  Write-Host "  FAIL: legacy ~/.dsh/cordis.patch.yml still present — re-run install.ps1"; $fail = 1
 }
 
 # 5. plugin tool-schema shape (compiled JSON-Schema parameters; see check_plugin_schema.mjs)

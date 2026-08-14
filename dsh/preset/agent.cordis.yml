@@ -2,9 +2,9 @@
 # RE-Framework v2 methodology (generic engineering framework for reverse
 # engineering + programming; spec/engineering-framework-v1.md, referencing
 # Anchorlaw Protocol v0.17), its 17 ref-* skills (core/re-binary/re-code/swe),
-# and the re-framework tools plugin (maintenance tool mounted here; the
-# project-side tools are user-global via the profile patch, installed by
-# scripts/install.ps1).
+# and the re-framework tools plugin (all five ref_* tools; the plugin supports
+# a config.tools subset, but this preset mounts the full set — tools are NOT
+# mounted globally per user decision, see scripts/install.ps1).
 #
 # Maintained by the DSH agent (RE-Framework maintainer). Source of truth lives
 # in the project workspace's dsh/ subtree (preset/ + plugins/ + skills/ +
@@ -176,18 +176,13 @@
 
 # ── re-framework toolchain (local plugin, travels with this preset) ─────────
 #
-# The preset row registers ONLY the maintenance tool (ref_manifest_validate):
-# the framework's own self-check has meaning only in the framework workspace.
-# The project-side tools (ref_status/ref_init/ref_merge_index/ref_install) are
-# user-global via ~/.dsh/cordis.patch.yml (installed by scripts/install.ps1),
-# so any project session can use them. The two rows are non-overlapping, so a
-# re-framework preset session ends up with all five tools.
+# All five tools are mounted here (config omitted = full set). Tools are NOT
+# mounted globally (user decision 2026-08-15): other sessions run the
+# framework's python scripts directly via pwsh instead.
 
 - id: re-framework-tools
   name: ./plugins/re-framework-tools.js
-  config:
-    tools:
-      - manifest_validate
+  config: {}
 
 # ── re-framework skills (embedded in this preset, synced by install.ps1) ────
 

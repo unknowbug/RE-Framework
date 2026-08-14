@@ -12,15 +12,17 @@ whenToUse: 维护 RE-Framework 的 DSH 适配层（dsh/ 子树）时——任何
 
 ## 维护铁律
 
-1. **自检全绿**：任何改动前先跑 `pwsh dsh/scripts/selfcheck.ps1` 确认基线，改动后必须再次全绿（含第 3 项框架自扫 validate_manifest.py——第一律反身应用：框架的 manifest 校验器必须能校验框架自己）。
+1. **自检全绿**：任何改动前先跑 `pwsh dsh/scripts/selfcheck.ps1` 确认基线，改动后必须再次全绿（五段：工具链 / 技能 manifest / 框架自扫 validate_manifest.py / 安装产物 / 插件 schema——第 3 项是第一律反身应用：框架的 manifest 校验器必须能校验框架自己；第 5 项防 2026-08-13 事故复发）。
 2. **单一事实源**：
    - 技能**正文**只存在于 `../skills/<dot-name>/SKILL.md`（Reasonix 侧）；`dsh/skills/` 是适配份——**frontmatter 适配改 `dsh/scripts/sync_skills.py` 的 ADAPT 映射表**，重跑 `python dsh/scripts/sync_skills.py` 再生成，禁止手改 `dsh/skills/` 正文。
    - `dsh/skills/ref-maintain/SKILL.md` 是唯一的直接手写例外（DSH-only）。
-   - 安装产物（`~/.dsh/.agent-presets/re-framework/`）禁止手改，一律由 `dsh/scripts/install.ps1` 重装生成。
+   - 安装产物（`~/.dsh/.agent-presets/re-framework/`、`~/.dsh/skills/ref-*` 用户级全局技能）禁止手改，一律由 `dsh/scripts/install.ps1` 重装生成。
 3. **命名纪律**：DSH 技能名必须 kebab-case（`core-plan` 而非 `core.plan`）；插件工具名 `ref_*`。
 4. **插件持久化纪律**：动态插件（cordis_define 定义）只在当前进程存活——持久能力必须落成 `dsh/plugins/re-framework-tools.js` + preset 行，禁止把维护性能力留在动态插件里。
 5. **preset 纪律**：`~/.dsh/.agent-presets/re-framework/` 是用户级 preset（install.ps1 生成，可再装）；shipped preset（harness 安装目录）一律只读，改动只能以复制派生。
-6. **提交纪律**：提交前自检全绿；不自动 git 提交（仓库可能有未提交的人类改动，提交时机由人类决定）。
+6. **schema 门禁（2026-08-13 事故教训）**：`ctx.tools.register()` 不编译 parameters——必须传**编译后 JSON Schema**（`{type:'object', properties, required}`）；扁平 spec 投影给模型无顶层 type → 所有会话崩。install.ps1 复制插件前与 selfcheck 第 5 项都强制跑 `tests/check_plugin_schema.mjs`（fail closed）。
+7. **可见性现状（2026-08-15 用户拍板）**：技能**用户级全局**（`~/.dsh/skills/ref-*`，任何会话按需加载）+ preset 内嵌双路径；工具**仅 re-framework preset**（5 个 ref_*，框架 python 脚本的包装，其他会话用 pwsh 直接跑）；**无 global 工具组**——install.ps1 幂等清理 profile patch 残留（re-framework-tools-global insert 行）。
+8. **提交纪律**：提交前自检全绿；不自动 git 提交（仓库可能有未提交的人类改动，提交时机由人类决定）。
 
 ## 上游变更镜像（升级检查）
 
@@ -46,7 +48,7 @@ python dsh/scripts/sync_skills.py
 # 4. 部署到 DSH 运行时（写 ~/.dsh，需全盘权限）
 pwsh dsh/scripts/install.ps1
 
-# 5. 四段总自检（工具链/manifest/自扫/安装产物）
+# 5. 五段总自检（工具链 / 技能 manifest / 框架自扫 / 安装产物 / 插件 schema）
 pwsh dsh/scripts/selfcheck.ps1
 ```
 

@@ -11,28 +11,27 @@
 | 能力 | DSH 形态 |
 |------|----------|
 | 17 个方法论技能（core/re-binary/re-code/swe 四模块 + ref-maintain） | `skills/` → **用户级全局 `~/.dsh/skills/`**（任何 preset/工作目录的会话按需加载）+ preset 内嵌（re-framework 完整工作台） |
-| 项目侧工具（status/init/merge-index/install） | 模型工具 `ref_status` / `ref_init` / `ref_merge_index` / `ref_install`，经 **profile patch**（`<dshHome>/profiles/<profile>/cordis.patch.yml`，唯一用户补丁层）用户级全局，任何项目会话可用、热生效 |
-| 维护工具（框架自检） | `ref_manifest_validate` 仅 re-framework preset（只在框架工作区有意义） |
+| 5 个工具（status/validate/install/merge-index/init） | 仅 re-framework preset（`ref_*` 工具是框架 python 脚本的包装；其他会话用 pwsh 直接跑脚本） |
 | Phase 0-3 工作流 + 执行强制链（scout/fan-out/judge/knowledge） | agent preset `re-framework`（人格 + subagent 隔离） |
 | 正文零漂移守护 | `sync_skills.py`（生成）+ `tests/test_manifest.py`（校验）+ `SYNC.md`（溯源） |
 
-## 可见性设计（v2.1 修订）
+## 可见性设计（v2.1 修订，2026-08-15 用户拍板：无 global 工具组）
 
-- **技能用户级全局**：17 个 ref-* 装到 `~/.dsh/skills/`，任何会话（任何 preset、任何工作目录）按需加载；与 Anchorlaw 的 anchor-*（同样用户级全局）命名空间独立（ref-*/anchor-*），互不冲突。技能是纯指令，加载不触碰工作区外文件，无沙箱问题。
-- **工具分层**：项目侧工具（操作会话工作区数据 + 只读框架源）用户级全局；维护工具（校验框架自身 manifest）仅 preset。两处注册的工具名不重叠。
-- **权限边界**（实测）：跨工作区**读**放行、**写**仅限会话工作区——项目侧工具读框架源 + 写目标项目（工作区内）均可运行。
+- **技能用户级全局**：17 个 ref-* 装到 `~/.dsh/skills/`，任何会话（任何 preset、任何工作目录）按需加载——方法论在任何项目（如 CoreSwap）用标准工具集即可执行；与 Anchorlaw 的 anchor-*（同样用户级全局）命名空间独立（ref-*/anchor-*），互不冲突。技能是纯指令，加载不触碰工作区外文件，无沙箱问题。
+- **工具仅 preset**：全部 5 个 `ref_*` 工具只在 re-framework preset 会话出现——它们是框架 python 脚本（install.py / validate_manifest.py / merge_index.py）的便利包装，其他会话直接用 pwsh 跑脚本即可，无需全局工具组。
+- **权限边界**（实测）：跨工作区**读**放行、**写**仅限会话工作区——项目侧操作（读框架源 + 写目标项目工作区内）pwsh 直接可跑。
 
 ## 快速开始
 
 ```powershell
-# 1. 安装/同步到 DSH 运行时（用户级 preset，技能仅 preset 内嵌）
+# 1. 安装/同步到 DSH 运行时（preset + 用户级技能）
 pwsh dsh/scripts/install.ps1
 
-# 2. 自检（工具链 / 技能 manifest / 框架自扫 / 安装产物）
+# 2. 自检（工具链 / 技能 manifest / 框架自扫 / 安装产物 / 插件 schema）
 pwsh dsh/scripts/selfcheck.ps1
 ```
 
-装完后，**任何 preset 会话**（standard 等）都能在技能目录看到 17 个 ref-* 技能按需加载，项目侧 ref_* 工具全局可用（profile patch 热生效，无需重启）；选 **re-framework** preset 另有完整工作台人格 + 维护工具。工作目录指向项目本身（如 `E:\PYTHON\CoreSwap`）即可，无需指向本仓库。
+装完后，**任何 preset 会话**（standard 等）都能在技能目录看到 17 个 ref-* 技能按需加载；选 **re-framework** preset 另有完整工作台（人格 + 5 个 `ref_*` 工具）。工作目录指向项目本身（如 `E:\PYTHON\CoreSwap`）即可，无需指向本仓库。
 
 ## 目录结构
 
