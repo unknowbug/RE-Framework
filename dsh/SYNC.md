@@ -20,7 +20,7 @@
 
 1. **技能正文改动**：只允许发生在 `../skills/`（Reasonix 规范正文）。改后重跑 `python dsh/scripts/sync_skills.py`，再确认 `python dsh/tests/test_manifest.py` 通过，然后更新本文件差异记录。
 2. **frontmatter 适配改动**：改 `dsh/scripts/sync_skills.py` 的 ADAPT 映射表（dash-name / whenToUse），重跑生成器，并在此文件登记变更。
-3. **框架语义更新**：先改 `../spec/engineering-framework-v1.md`，再同步技能正文与 DSH 适配；Anchorlaw 引用版本核对用 `git grep 'v0\.[0-9]'`（当前基线 v0.17）。
+3. **框架语义更新**：先改 `../spec/engineering-framework-v1.md`，再同步技能正文与 DSH 适配；Anchorlaw 引用版本核对用 `git grep 'v0\.[0-9]'`（当前基线 v0.18）。
 4. **新增技能**：在 `sync_skills.py` ADAPT 与 `tests/test_manifest.py` EXPECTED 中登记；DSH-only 技能登记进 DSH_ONLY。
 
 ## 变更日志
@@ -32,4 +32,6 @@
 | 2026-08-14 | Anchorlaw HEAD 4931a1c 复核 | 协议仍 v0.17（无新版本，基线不变）；HEAD 新提交 = dsh project-level install mode（`-Project`，Reasonix 式项目级部署）+ anchor.maintain 正文修正（移除易变测试计数，不在本框架路由表）——均不影响引用条款 | 0 |
 | 2026-08-14 | 可见性设计修订（用户需求） | 技能：preset-only → **用户级全局**（~/.dsh/skills/ref-*）+ preset 内嵌双路径（方法论在任何项目用标准工具集执行）；插件支持 config.tools 子集注册 | 0 |
 | 2026-08-15 | 全局挂载修复（2026-08-13 Anchorlaw 事故复盘落地） | **挂载位置/形态修正**：`~/.dsh/cordis.patch.yml`（宿主不读）→ `<dshHome>/profiles/<profile>/cordis.patch.yml`（唯一用户补丁层，insert 形态）；**工具 parameters 扁平 → 编译后 JSON Schema**（5 个工具）；install/selfcheck 增 schema 门禁（tests/check_plugin_schema.mjs）；preset 注释/persona 硬编码路径与 v0.15 残留清理 | 0 |
+| 2026-08-15 | Anchorlaw v0.17 → v0.18 升级核对（协议仓库 spec changelog） | 基线升级：AGENTS.md / spec §3 / README（中英）/ memory / templates / 技能正文（swe.guide / re.lift）v0.17 → v0.18；spec §3 新增 v0.18 条款核对（§5/§9/§12/§13/§14/§15/§16 全部保留——**DSH 宿主适配注册为 §16 首个完整 Host Integration 实现**，四接口点语义未变，同源利好；noise resolve 后缀匹配修复，CLI 行为）；preset 注释/persona v0.18 同步 | 0（生成器同步） |
+| 2026-08-15 | AGENTS.md ↔ skills 调用接口缺口修复（用户发现） | 新增 `dsh/SKILL-MAP.md`（dot→kebab 技能名映射 + anchor-* 映射 + ref_* 工具/脚本对照 + DSH 调用规则）；根 AGENTS.md 加 DSH 宿主指引行（指向 SKILL-MAP，最小侵入 Reasonix 侧）；Anchorlaw v0.18 只解决协议层 §16 宿主契约，未解决此名映射——本修复为 RE 侧独立补齐 | 0 |
 | 2026-08-15 | 工具可见性最终决策（用户拍板：无 global 工具组） | **撤销 profile patch global 挂载**：install.ps1 改为幂等清理 re-framework-tools-global insert 行 + `<profile>/plugins/re-framework/` 副本（anchorlaw 的行保留，归其仓库维护）；工具**仅 re-framework preset**（config.tools 恢复全量 5 个）；其他会话用 pwsh 直接跑框架脚本；技能用户级全局保留；selfcheck 第 4 项改为验证 global 已撤销 | 0 |

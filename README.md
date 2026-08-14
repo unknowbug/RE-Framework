@@ -4,7 +4,7 @@
 
 > 基于《打破传统AI逆向的新思路：多Agent、自主管理上下文》(BitWarden, 看雪学苑 2026.06.18) 的方法论内核，
 > 工程化、Skills化、SubAgents化拆分升级：**领域无关核心 + 按需加载领域模块**，从二进制逆向到代码逆向到常规编程全兼容。
-> 验证协议继承 [Anchorlaw Protocol v0.17](https://github.com/unknowbug/anchorlaw)（MIT，协议引用，不复制实现）。
+> 验证协议继承 [Anchorlaw Protocol v0.18](https://github.com/unknowbug/anchorlaw)（MIT，协议引用，不复制实现）。
 > **双宿主支持（v2.1）**：Reasonix（`.reasonix/skills/` 部署）+ **DeepSeek Harness**（`dsh/` 子树，re-framework preset）。
 
 ---
@@ -15,7 +15,7 @@
 |------|------------------|-----------------|
 | 入口 | CLAUDE.md 全量加载 | AGENTS.md 探测器 → 按任务类型只加载匹配模块 |
 | 领域 | 仅二进制逆向 | `core`（通用）+ `re-binary`（二进制逆向）+ `re-code`（代码逆向/Minecraft）+ `swe`（编程） |
-| 验证协议 | 引用 Practify（已死链） | 协议引用 Anchorlaw v0.17（单一事实源） |
+| 验证协议 | 引用 Practify（已死链） | 协议引用 Anchorlaw v0.18（单一事实源） |
 | 动态 trace | 缺失 | `re.trace` / `recode.behavior`（anchor source 数据来源） |
 | 知识库 | 空壳 TODO | 真实速查条目（calling-conventions/cpp-abi/common-patterns/assembly-reference/anti-re） |
 | 子代理 | 角色概念 | subagent 角色契约（scout/worker/judge，对齐 Anchorlaw §15） |
@@ -117,10 +117,10 @@ pwsh dsh/scripts/selfcheck.ps1
 
 ## 与 Anchorlaw 的关系
 
-- **协议引用**：`@anchor.test` / `@anchor.idk`、source 规则、staleness、噪声卡、降级验证（uncompilable_functions.yaml / retry cap）——全部指向 [Anchorlaw v0.17](https://github.com/unknowbug/anchorlaw)，本框架不复制实现。
+- **协议引用**：`@anchor.test` / `@anchor.idk`、source 规则、staleness、噪声卡、降级验证（uncompilable_functions.yaml / retry cap）——全部指向 [Anchorlaw v0.18](https://github.com/unknowbug/anchorlaw)，本框架不复制实现。
 - **双向可用**：Anchorlaw 是语言无关的验证协议（Python/TS/C++/Go/Java 注释类语言）；re-binary 走 degraded 路径，re-code / swe 走全功能路径。
-- **DSH 侧同步**：`dsh/` 适配层同步引用 v0.17，正文零漂移由 `sync_skills.py` + `tests/test_manifest.py` 守护。
-- 历史渊源：v1 引用的 Practify 即 Anchorlaw 前身（仓库已 rename），本框架与 Anchorlaw 同源；v0.17 变更含「§12 challenge（Reasonix/Go audit）」回流（parse-error 分类修正 + 注释类语言降级），详见 spec §3 同步契约。
+- **DSH 侧同步**：`dsh/` 适配层同步引用 v0.18，正文零漂移由 `sync_skills.py` + `tests/test_manifest.py` 守护。
+- 历史渊源：v1 引用的 Practify 即 Anchorlaw 前身（仓库已 rename），本框架与 Anchorlaw 同源；v0.17 变更含「§12 challenge（Reasonix/Go audit）」回流（parse-error 分类修正 + 注释类语言降级），v0.18 将 DSH 宿主适配注册为 §16 首个完整 Host Integration 实现，详见 spec §3 同步契约。
 
 ## 部署验证
 
@@ -137,4 +137,4 @@ pwsh dsh/scripts/selfcheck.ps1
 ## 方法论来源
 
 - 原文：《打破传统AI逆向的新思路：多Agent、自主管理上下文》（BitWarden，看雪学苑 2026.06.18）
-- 验证协议：[Anchorlaw Protocol v0.17](https://github.com/unknowbug/anchorlaw)（MIT，由 Practify 更名而来）
+- 验证协议：[Anchorlaw Protocol v0.18](https://github.com/unknowbug/anchorlaw)（MIT，由 Practify 更名而来）

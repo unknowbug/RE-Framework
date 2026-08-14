@@ -4,7 +4,7 @@
 
 > Built on the methodology of *A New Approach to AI Reverse Engineering: Multi-Agent, Self-Managed Context* (BitWarden, Kanxue Forum, 2026.06.18),
 > engineered, skill-ified, and sub-agent-ified: **a domain-agnostic core + on-demand domain modules**, covering binary reverse engineering, code reverse engineering, and general programming.
-> Verification protocol: references [Anchorlaw Protocol v0.17](https://github.com/unknowbug/anchorlaw) (MIT, protocol reference — no implementation copied).
+> Verification protocol: references [Anchorlaw Protocol v0.18](https://github.com/unknowbug/anchorlaw) (MIT, protocol reference — no implementation copied).
 > **Dual-host support (v2.1)**: Reasonix (deploy to `.reasonix/skills/`) + **DeepSeek Harness** (`dsh/` subtree, `re-framework` preset).
 
 ---
@@ -15,7 +15,7 @@
 |-----------|----------------------|------------------------|
 | Entry point | CLAUDE.md fully loaded | AGENTS.md detector → load only the matching module by task type |
 | Domains | Binary reverse engineering only | `core` (generic) + `re-binary` (binary RE) + `re-code` (bytecode/Minecraft RE) + `swe` (programming) |
-| Verification | Referenced Practify (dead link) | References Anchorlaw v0.17 (single source of truth) |
+| Verification | Referenced Practify (dead link) | References Anchorlaw v0.18 (single source of truth) |
 | Dynamic tracing | Missing | `re.trace` / `recode.behavior` (anchor source data) |
 | Knowledge base | Empty TODO | Real quick-reference entries (calling-conventions/cpp-abi/common-patterns/assembly-reference/anti-re) |
 | Sub-agents | Role concept | Subagent role contracts (scout/worker/judge, aligned with Anchorlaw §15) |
@@ -112,14 +112,14 @@ See `dsh/README.md` for details; source-of-truth & sync discipline in `dsh/AGENT
 
 ## Verification protocol (referenced, not maintained here)
 
-All verification/execution/integration semantics reference [Anchorlaw v0.17](https://github.com/unknowbug/anchorlaw) — single source of truth:
+All verification/execution/integration semantics reference [Anchorlaw v0.18](https://github.com/unknowbug/anchorlaw) — single source of truth:
 
 - **Claim** (§13 + §5): `@anchor.test` / `@anchor.idk`, source rules (trace/memory/probe; static only for idk), source-artifact requirement, staleness, health states.
 - **Knowledge** (§14): this framework's AGENTS.md + skill manifest follow the modular on-demand-loading model.
-- **Execution** (§15): subagent role isolation (scout/worker/judge); domain narrowing (v0.13, retained in v0.17) — reverse engineering is explicitly **out of protocol domain** (exploratory), construction domain follows the Anchorlaw pipeline; retry cap = evidence saturation (3 rounds without new data-layer evidence force a return to the data layer); C-gate halted escalation (v0.15); execution-mode selection (convergent inline / divergent may subprocess).
+- **Execution** (§15): subagent role isolation (scout/worker/judge); domain narrowing (v0.13, retained in v0.18) — reverse engineering is explicitly **out of protocol domain** (exploratory), construction domain follows the Anchorlaw pipeline; retry cap = evidence saturation (3 rounds without new data-layer evidence force a return to the data layer); C-gate halted escalation (v0.15); execution-mode selection (convergent inline / divergent may subprocess).
 - **Host** (§16): AGENTS.md as the host integration point; confirm hook (`confirmed` only by the human); input-contract confirmation criterion (v0.14, semantic convergence, protocol-neutral).
 
-**Upgrade check** (spec §3): after a new Anchorlaw release, run `git grep 'v0\.[0-9]'` and verify every cited clause. Current baseline: **v0.17** (checked 2026-08-14; §5/§9/§12/§13/§14/§15/§16 all retained; v0.16 = Go/Java comment-form registration + Rust unsupported by design; v0.17 = parse-error marker, comment-form downgrade to annotation-extraction only, P7-P10 optional reliability patterns). Note the co-evolution: v0.17 changes include outcomes of a "§12 challenge (Reasonix/Go audit)" — feedback from this ecosystem has flowed back into the protocol.
+**Upgrade check** (spec §3): after a new Anchorlaw release, run `git grep 'v0\.[0-9]'` and verify every cited clause. Current baseline: **v0.18** (checked 2026-08-15; §5/§9/§12/§13/§14/§15/§16 all retained; v0.16 = Go/Java comment-form registration + Rust unsupported by design; v0.17 = parse-error marker, comment-form downgrade to annotation-extraction only, P7-P10 optional reliability patterns; v0.18 = DSH host adaptation registered as the first full §16 Host Integration implementation — same host family as this framework). Note the co-evolution: v0.17 changes include outcomes of a "§12 challenge (Reasonix/Go audit)" — feedback from this ecosystem has flowed back into the protocol.
 
 ## Update log
 
@@ -132,4 +132,4 @@ All verification/execution/integration semantics reference [Anchorlaw v0.17](htt
 ## Methodology source
 
 - Original article: *A New Approach to AI Reverse Engineering: Multi-Agent, Self-Managed Context* (BitWarden, Kanxue Forum, 2026.06.18)
-- Verification protocol: [Anchorlaw Protocol v0.17](https://github.com/unknowbug/anchorlaw) (MIT; formerly Practify)
+- Verification protocol: [Anchorlaw Protocol v0.18](https://github.com/unknowbug/anchorlaw) (MIT; formerly Practify)
