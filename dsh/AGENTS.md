@@ -26,7 +26,7 @@
 | `scripts/selfcheck.ps1` | 五段自检（工具链 / 技能 manifest / 框架自扫 / 安装产物 / 插件 schema） | 维护工具 |
 | `tests/test_manifest.py` | 技能 manifest 校验（DSH 命名 + **正文级**上游一致性） | 维护测试 |
 | `SYNC.md` | 溯源戳（上次同步的上游 commit + 时间 + 差异） | 溯源记录 |
-| `SKILL-MAP.md` | **DSH 会话调用接口速查**（dot→kebab 技能名映射 + ref_* 工具/脚本对照；根 AGENTS.md 的 DSH 指引行指向这里） | 接口桥接文档 |
+| `SKILL-MAP.md` | **DSH 探测器 + 调用接口速查**（kebab 名路由表 + 强初始化/Phase 0-3 流程驱动 + dot→kebab 映射 + ref_* 工具/脚本对照；根 AGENTS.md 的 DSH 指引行指向这里，DSH 会话先读） | 接口桥接 + 流程驱动文档 |
 | **安装产物（勿手改）** | | |
 | `~/.dsh/.agent-presets/re-framework/` | 已安装 preset（组合 + plugins/ + skills/） | install.ps1 生成 |
 | `~/.dsh/skills/ref-*` | **用户级全局技能**（任何 preset/工作目录的会话按需加载） | install.ps1 同步 |

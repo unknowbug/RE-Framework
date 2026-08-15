@@ -3,7 +3,7 @@
 > **定位**: 通用工程方法论框架（逆向 + 编程）。本文件是**探测器 + 索引**——协议铁律正文在对应 skill 里按需加载，不在本文件常驻（对齐 Anchorlaw §14 Agent Skill Manifest + §16 Host Integration）。
 > **协议**: `spec/engineering-framework-v1.md`（模块化接口契约）+ [Anchorlaw Protocol v0.18](https://github.com/unknowbug/anchorlaw)（验证协议，协议引用）。
 > **旧版**: 原 42KB CLAUDE.md 已归档至 `spec/legacy-claude-v1.md`（v1 历史参考）。
-> **DSH 宿主会话**: 本探测器用 dot 名引用技能（Reasonix 规范形）；DSH 会话按 **kebab 名**加载技能（`core-plan` 而非 `core.plan`）、工具仅 re-framework preset——调用接口映射见 `dsh/SKILL-MAP.md`。
+> **DSH 宿主会话（MUST）**: 你是 DeepSeek Harness 环境。本探测器用 dot 名引用技能（Reasonix 规范形），**DSH 会话第一步先读 `dsh/SKILL-MAP.md`**（DSH 探测器：kebab 名路由表 + 强初始化 + Phase 0-3 流程驱动），按它执行标准流程；技能一律按 **kebab 名**加载（`core-plan` 而非 `core.plan`），工具仅 re-framework preset。
 
 ---
 
