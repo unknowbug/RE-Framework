@@ -5,21 +5,15 @@
 // which cannot reach the harness's node_modules.
 //
 // Registers model tools into the session's tool registry. `config.tools`
-// selects the subset (names below); absent/empty = all five. The split keeps
-// registrations non-overlapping between the two mounts of this plugin:
-//   - preset row (re-framework preset): maintenance tools only
-//     (manifest_validate) — the framework's own self-check has meaning only
-//     in the framework workspace;
-//   - home patch row (~/.dsh/cordis.patch.yml, user-global): project-side
-//     tools (status/init/merge_index/install) — these operate on session
-//     workspace data + read-only framework sources, so they are usable from
-//     any project session without sandbox issues.
-//   A re-framework preset session gets all five via the two rows combined.
+// selects the subset (names below); absent/empty = all three. Since the
+// Reasonix host format was archived (2026-08-21), the maintenance tools that
+// wrapped Reasonix scripts (ref_manifest_validate → validate_manifest.py,
+// ref_install → install.py) were retired with it; the remaining tools operate
+// on session-workspace data + the retained scripts/merge_index.py, so they
+// are usable from any project session without sandbox issues.
 //
 // Tool inventory:
 //   ref_status             — framework health: workspace/repo/python/skills/modules
-//   ref_manifest_validate  — framework self-check (scripts/validate_manifest.py, spec §2.5 R1-R6)
-//   ref_install            — deploy modules into a target project (scripts/install.py, Reasonix-compatible)
 //   ref_merge_index        — merge parallel-worker index fragments (scripts/merge_index.py, core.artifact §5.1)
 //   ref_init               — create the project skeleton (.artifacts/.investigations/knowledge)
 //
@@ -37,7 +31,7 @@ export function apply(ctx, config = {}) {
   const sandboxPolicy = ctx.get('sandboxPolicy')
   if (subprocess === undefined) return
 
-  const ALL_TOOLS = ['status', 'manifest_validate', 'install', 'merge_index', 'init']
+  const ALL_TOOLS = ['status', 'merge_index', 'init']
   const enabled = new Set(
     Array.isArray(config.tools) && config.tools.length ? config.tools : ALL_TOOLS,
   )
@@ -194,57 +188,6 @@ export function apply(ctx, config = {}) {
         }
       }
       return lines.join('\n')
-    },
-  })
-
-  // ── ref_manifest_validate ─────────────────────────────────────────────────
-  if (enabled.has('manifest_validate')) register({
-    name: 'ref_manifest_validate',
-    description: 'Run the RE-Framework manifest validator (scripts/validate_manifest.py, spec §2.5 R1-R6) against the framework repository. Exit code 1 means validation errors were found; the findings are still returned as text.',
-    parameters: {
-      type: 'object',
-      properties: {
-        repo: { type: 'string', description: 'Framework repository path (absolute or relative to the session workspace). Defaults to auto-detection: walk up from the session workspace looking for AGENTS.md + scripts/validate_manifest.py.' },
-      },
-    },
-    output: { schema: { type: 'string' }, render(_args, v) { return renderText(v) } },
-    async execute(args, exec) {
-      const cwd = sessionCwd(exec)
-      const repo = args.repo ? await absPath(args.repo, cwd) : await resolveRepo(cwd)
-      const r = await runPython([await absPath('scripts/validate_manifest.py', repo)], repo)
-      let out = `[framework repo: ${repo}]\n` + r.stdout
-      if (r.stderr && r.stderr.trim()) out += '\n[stderr]\n' + r.stderr
-      out += `\n[exit code: ${r.exitCode}]`
-      return out
-    },
-  })
-
-  // ── ref_install ───────────────────────────────────────────────────────────
-  if (enabled.has('install')) register({
-    name: 'ref_install',
-    description: 'Deploy RE-Framework modules (core/re-binary/re-code/swe) into a target project via scripts/install.py — installs to <target>/.reasonix/skills/ with a version stamp (Reasonix-compatible path). Idempotent; re-running upgrades.',
-    parameters: {
-      type: 'object',
-      properties: {
-        target: { type: 'string', description: 'Target project directory to install into.' },
-        modules: { type: 'string', default: 'core,re-binary,re-code,swe', description: 'Comma-separated module list (core is mandatory and auto-included).' },
-        docs: { type: 'boolean', default: false, description: 'Also copy spec/ and templates/ into the target.' },
-        repo: { type: 'string', description: 'Framework repository path (defaults to auto-detection).' },
-      },
-      required: ['target'],
-    },
-    output: { schema: { type: 'string' }, render(_args, v) { return renderText(v) } },
-    async execute(args, exec) {
-      const cwd = sessionCwd(exec)
-      const repo = args.repo ? await absPath(args.repo, cwd) : await resolveRepo(cwd)
-      const target = await absPath(args.target, cwd)
-      const argv = [await absPath('scripts/install.py', repo), target, '--modules', String(args.modules)]
-      if (args.docs) argv.push('--docs')
-      const r = await runPython(argv, repo)
-      let out = r.stdout
-      if (r.stderr && r.stderr.trim()) out += '\n[stderr]\n' + r.stderr
-      out += `\n[exit code: ${r.exitCode}]`
-      return out
     },
   })
 

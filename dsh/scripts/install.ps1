@@ -10,9 +10,9 @@
 #   - Skills are user-global (~/.dsh/skills/ref-*): any session on any preset
 #     and in any working directory can load them on demand (methodology works
 #     in any project, e.g. CoreSwap, with the standard tool set).
-#   - Tools live ONLY on the re-framework preset (all five, config.tools full):
-#     they are thin wrappers over the framework's python scripts, which any
-#     session can also call directly via pwsh (python scripts/install.py ...).
+#   - Tools live ONLY on the re-framework preset (three: status/merge_index/
+#     init — manifest_validate/install were retired with the Reasonix archive,
+#     2026-08-21; merge_index.py stays at the repo root for ref_merge_index).
 #     The earlier profile-patch global mount (re-framework-tools-global in
 #     <profile>/cordis.patch.yml) is removed by this script, so no other
 #     session carries the extra tool group.
@@ -138,4 +138,4 @@ Write-Host "  user-global skills: $userCount ref-family directories (expected 17
 Write-Host ""
 Write-Host "Next: run scripts/selfcheck.ps1 to verify. ref-* skills are user-global (any session);"
 Write-Host "      the ref_* tools exist ONLY on the re-framework preset (python scripts remain callable"
-Write-Host "      directly via pwsh in any session: python scripts/install.py, validate_manifest.py, ...)."
+Write-Host "      directly via pwsh in any session: python scripts/merge_index.py <project>, ...)."

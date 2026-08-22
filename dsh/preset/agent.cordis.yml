@@ -2,9 +2,10 @@
 # RE-Framework v2 methodology (generic engineering framework for reverse
 # engineering + programming; spec/engineering-framework-v1.md, referencing
 # Anchorlaw Protocol v0.18), its 17 ref-* skills (core/re-binary/re-code/swe),
-# and the re-framework tools plugin (all five ref_* tools; the plugin supports
-# a config.tools subset, but this preset mounts the full set — tools are NOT
-# mounted globally per user decision, see scripts/install.ps1).
+# and the re-framework tools plugin (three ref_* tools: status/merge_index/
+# init — manifest_validate/install retired with the Reasonix archive,
+# 2026-08-21; tools are NOT mounted globally per user decision, see
+# scripts/install.ps1).
 #
 # Maintained by the DSH agent (RE-Framework maintainer). Source of truth lives
 # in the project workspace's dsh/ subtree (preset/ + plugins/ + skills/ +

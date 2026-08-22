@@ -1,140 +1,79 @@
-# RE-Framework v2 — 通用工程方法论框架（逆向 + 编程，模块化）
-
-> **[English](README_EN.md) | 中文**
+# RE-Framework v2 — 通用工程方法论框架（逆向 + 编程，DSH 宿主）
 
 > 基于《打破传统AI逆向的新思路：多Agent、自主管理上下文》(BitWarden, 看雪学苑 2026.06.18) 的方法论内核，
 > 工程化、Skills化、SubAgents化拆分升级：**领域无关核心 + 按需加载领域模块**，从二进制逆向到代码逆向到常规编程全兼容。
+> **DeepSeek Harness（DSH）是唯一维护宿主**（2026-08-21 起；Reasonix 宿主格式已归档至 `archive/reasonix/`，Fork 可恢复自行迭代）。
 > 验证协议继承 [Anchorlaw Protocol v0.18](https://github.com/unknowbug/anchorlaw)（MIT，协议引用，不复制实现）。
-> **双宿主支持（v2.1）**：Reasonix（`.reasonix/skills/` 部署）+ **DeepSeek Harness**（`dsh/` 子树，re-framework preset）。
 
 ---
 
-## v2 核心变化（相对 v1）
-
-| 维度 | v1（42KB 单文件） | v2（模块化框架） |
-|------|------------------|-----------------|
-| 入口 | CLAUDE.md 全量加载 | AGENTS.md 探测器 → 按任务类型只加载匹配模块 |
-| 领域 | 仅二进制逆向 | `core`（通用）+ `re-binary`（二进制逆向）+ `re-code`（代码逆向/Minecraft）+ `swe`（编程） |
-| 验证协议 | 引用 Practify（已死链） | 协议引用 Anchorlaw v0.18（单一事实源） |
-| 动态 trace | 缺失 | `re.trace` / `recode.behavior`（anchor source 数据来源） |
-| 知识库 | 空壳 TODO | 真实速查条目（calling-conventions/cpp-abi/common-patterns/assembly-reference/anti-re） |
-| 子代理 | 角色概念 | subagent 角色契约（scout/worker/judge，对齐 Anchorlaw §15） |
-
-## 包结构
-
-```
-RE-Framework/
-├── AGENTS.md                  # 索引式入口：任务类型探测器 + skill 触发表（替代 v1 CLAUDE.md）
-├── README.md                  # 本文件
-├── spec/
-│   ├── engineering-framework-v1.md   # 核心协议（铁律 + 模块化接口契约 + Anchorlaw 引用）
-│   └── legacy-claude-v1.md           # v1 原 42KB CLAUDE.md 归档（历史参考）
-├── scripts/                   # 工程外壳
-│   ├── validate_manifest.py   # manifest 校验器（spec §2.5 R1-R6 实现守护）
-│   └── install.py             # 安装/升级/卸载器（版本戳追踪）
-├── skills/                    # Skill 参考实现（分发到项目 .reasonix/skills/）
-│   ├── core.plan|artifact|knowledge|version|fanout|judge   # 通用层（必装）
-│   ├── re.lift|classify|trace|scout                        # re-binary 模块
-│   ├── recode.deobfuscate|classmap|behavior|scout          # re-code 模块
-│   ├── swe.guide                                           # swe 模块（→ Anchorlaw）
-│   └── modules/{core,re-binary,re-code,swe}.yaml           # 模块声明（触发表/依赖/卸载保证）
-├── templates/                 # 产物 schema（语言无关：地址/字节码偏移/类全名定位）
-├── knowledge-builtin/         # 预置知识库（calling-conventions/cpp-abi/...）
-├── memory/                    # Memory 文件（可选）
-└── dsh/                       # DSH 宿主适配层（DeepSeek Harness：17 技能 + 5 工具 + re-framework preset + 维护脚本）
-```
-
-## 快速开始（3 步）
-
-### 第1步：部署（按需选择模块）
-
-推荐用安装器（自动复制 + 版本戳追踪 + 可卸载）：
-
-```bash
-# 方式A 最小（仅 core 通用层）——所有工程任务的基础
-python RE-Framework/scripts/install.py <你的项目目录> --modules core
-
-# 方式B 标准（core + 目标领域模块）
-python RE-Framework/scripts/install.py <你的项目目录> --modules core,re-binary   # 逆向二进制
-python RE-Framework/scripts/install.py <你的项目目录> --modules core,re-code     # 逆向代码/Minecraft
-python RE-Framework/scripts/install.py <你的项目目录> --modules core,swe         # 编程
-
-# 方式C 完整（+ Anchorlaw 验证协议）
-python RE-Framework/scripts/install.py <你的项目目录> --modules core,re-binary,re-code,swe --docs
-pip install anchorlaw anchorlaw-scanner
-#   并从 Anchorlaw 仓库安装 anchor.* skills（.reasonix/skills/）
-
-# 升级: 重新运行 install.py（检测版本戳提示覆盖）
-# 卸载: python RE-Framework/scripts/install.py <你的项目目录> --uninstall
-# 校验: python RE-Framework/scripts/validate_manifest.py
-```
-
-也可手动复制 `skills/` 下需要的模块到项目 `.reasonix/skills/`（无版本追踪，不推荐）。
-
-### 方式D：DSH（DeepSeek Harness）宿主（v2.1 起）
+## 快速开始（DSH）
 
 ```powershell
 # 1. 安装到 DSH 运行时（一次安装）
 pwsh dsh/scripts/install.ps1
 #    → 用户级全局技能：17 个 ref-* 装到 ~/.dsh/skills/（任何 preset/工作目录的会话按需加载）
-#    → re-framework preset：完整工作台（人格 + 内嵌技能 + 全部 5 个 ref_* 工具）
+#    → re-framework preset：完整工作台（人格 + 3 个 ref_* 工具：status/merge_index/init）
 
 # 2. 在任意项目（如 E:\PYTHON\CoreSwap）工作区开会话（任何 preset）
-#    → ref-* 技能开箱即用，cwd 在项目、产物落项目、RE-Framework 仓库零污染
-#    → 需要框架工具/人格时再选 re-framework preset；其他会话可直接
-#      pwsh 跑框架脚本（python scripts/install.py / validate_manifest.py / merge_index.py）
+#    → ref-* 技能开箱即用，cwd 在项目、产物落项目、本仓库零污染
+#    → 需要框架工作台人格时再选 re-framework preset
 
-# 3. 自检（工具链 / 技能 manifest 正文零漂移 / 框架自扫 R1-R6 / 安装产物 / 插件 schema）
+# 3. 自检（工具链 / 技能 manifest / 安装产物 / 插件 schema）
 pwsh dsh/scripts/selfcheck.ps1
 ```
 
-详见 `dsh/README.md`（事实源与同步纪律见 `dsh/AGENTS.md`）。多框架共存：技能/工具按前缀命名空间隔离（ref-*/ref_* 与 anchor-*/anchorlaw_*），插件按 `~/.dsh/plugins/<framework>/` 子目录存放。
+**DSH 会话标准流程**：根 `AGENTS.md`（DSH-first 索引）→ 先读 `dsh/SKILL-MAP.md`（DSH 探测器：强初始化 / 任务路由 / Phase 0-3 / 执行强制链）→ 按 **kebab 名**加载技能执行。
 
-### 第2步：初始化项目骨架
+## 架构
 
-在项目目录下启动，说「帮我初始化这个工程项目的基础目录结构」——自动创建 `.artifacts/`、`.investigations/`、`knowledge/` 和初始 `index.yaml`。
-
-### 第3步：开始工作
-
-给出任务，AGENTS.md 探测器自动路由到匹配模块（dll → re-binary；jar → re-code；写代码 → swe），走 Phase 0 架构设计后推进。
-
-## 模块化用法（核心特性）
-
-**只使用需要的模块**：框架是接口不是内容仓库——不装 `re-binary`，二进制逆向流程完全不加载；不装 `swe`，Anchorlaw 也不被强依赖。
-
-```bash
-# 例1: 只做代码逆向（如 Minecraft mod）
-#   core + re-code → recode.deobfuscate / classmap / behavior / scout
-
-# 例2: 只做编程
-#   core + swe → swe.guide → anchor.*（Anchorlaw）
-
-# 例3: 全都要
-#   core + re-binary + re-code + swe
+```
+RE-Framework/
+├── AGENTS.md                  # DSH-first 索引（自动加载入口）
+├── spec/                      # 框架协议（铁律/工作流/产物/知识库/版本）+ Anchorlaw v0.18 引用
+├── dsh/                       # DSH 宿主适配层（唯一维护区）
+│   ├── skills/                # 17 个 ref-* 技能（单一事实源，直接维护）
+│   ├── SKILL-MAP.md           # DSH 探测器（强初始化/路由/Phase 0-3/执行强制链 + dot→kebab 映射）
+│   ├── plugins/re-framework-tools.js   # 3 个 ref_* 模型工具
+│   ├── preset/                # re-framework agent preset
+│   ├── scripts/install.ps1 + selfcheck.ps1   # 安装 + 四段自检
+│   ├── tests/                 # test_manifest.py + check_plugin_schema.mjs
+│   └── AGENTS.md              # DSH 维护入口
+├── templates/                 # 产物 schema（语言无关）
+├── knowledge-builtin/         # 预置知识库
+├── scripts/merge_index.py     # 并行索引合并（ref_merge_index 依赖）
+└── archive/reasonix/          # Reasonix 宿主格式归档（只读，RESTORE.md 可恢复）
 ```
 
-每个模块自带：skill 集 + 触发表 + 依赖声明 + 卸载保证（详见 `skills/modules/*.yaml` 与 spec §2）。
+## 技能清单（17 个，kebab 名，DSH 加载用右列）
 
-## 与 Anchorlaw 的关系
+| 模块 | 技能（kebab） | 职责 |
+|------|--------------|------|
+| core | `core-plan` / `core-artifact` / `core-knowledge` / `core-version` / `core-fanout` / `core-worker` / `core-judge` | 架构设计 / 产物落盘 / 知识库 / 版本管理 / fan-out / 分析角色 / 审查角色 |
+| re-binary | `re-lift` / `re-classify` / `re-trace` / `re-scout` | 高精度还原 / 类结构 / 动态 trace / 只读勘探 |
+| re-code | `recode-deobfuscate` / `recode-classmap` / `recode-behavior` / `recode-scout` | 反混淆映射 / 类层次 / 行为验证 / 只读勘探 |
+| swe | `swe-guide` | 编程入口（→ Anchorlaw，纯引用） |
+| DSH-only | `ref-maintain` | DSH 适配层维护 |
 
-- **协议引用**：`@anchor.test` / `@anchor.idk`、source 规则、staleness、噪声卡、降级验证（uncompilable_functions.yaml / retry cap）——全部指向 [Anchorlaw v0.18](https://github.com/unknowbug/anchorlaw)，本框架不复制实现。
-- **双向可用**：Anchorlaw 是语言无关的验证协议（Python/TS/C++/Go/Java 注释类语言）；re-binary 走 degraded 路径，re-code / swe 走全功能路径。
-- **DSH 侧同步**：`dsh/` 适配层同步引用 v0.18，正文零漂移由 `sync_skills.py` + `tests/test_manifest.py` 守护。
-- 历史渊源：v1 引用的 Practify 即 Anchorlaw 前身（仓库已 rename），本框架与 Anchorlaw 同源；v0.17 变更含「§12 challenge（Reasonix/Go audit）」回流（parse-error 分类修正 + 注释类语言降级），v0.18 将 DSH 宿主适配注册为 §16 首个完整 Host Integration 实现，详见 spec §3 同步契约。
+## 与 Anchorlaw 的关系（纯引用式安装，零复制）
 
-## 部署验证
+| 依赖层 | 方式 |
+|--------|------|
+| 协议 | spec §3 引用条款（单一事实源，升级核对见同步契约） |
+| 技能 | `swe-guide` 路由引用 `anchor-*`（由 Anchorlaw 宿主 install.ps1 装到用户级全局，RE 零复制） |
+| 工具 | `anchorlaw_*`（Anchorlaw 插件提供，RE 引用） |
+| CLI | `anchorlaw` / `anchorlaw-scanner`（pip 包，Anchorlaw 侧装） |
 
-启动后说「我有个 dll 想逆一下」→ 应路由到 re-binary（re.scout）；说「帮我逆一下这个 jar 的混淆映射」→ 应路由到 re-code（recode.deobfuscate）；说「帮我写个函数」→ 应路由到 swe（swe.guide）。
+## 归档说明
+
+- **Reasonix 宿主格式**（dot 名技能、`.reasonix/skills/` 部署、`install.py`/`validate_manifest.py`）自 2026-08-21 停止维护，归档至 `archive/reasonix/`（含 RESTORE.md + restore-reasonix.ps1，Fork 用户可一键恢复自行迭代）。
+- 框架核心（`spec/`、`templates/`、`knowledge-builtin/`、`scripts/merge_index.py`）保留，DSH 技能正文引用它们。
 
 ## 更新记录
 
 | 版本 | 日期 | 内容 |
 |------|------|------|
-| v2.1 | 2026-08-14 | **DSH 宿主适配层（新增 `dsh/` 子树）**：17 个 ref-* 技能（16 个正文零漂移适配 + ref-maintain 维护技能）+ 5 个 ref_* 工具 + `re-framework` agent preset（Phase 0-3 工作流 + 执行强制链人格），Reasonix 侧零改动双宿主共存；**Anchorlaw 引用升级 v0.15 → v0.17**（§5/§9/§12/§13/§14/§15/§16 条款核对全部保留；Go/Java 注释类语言注册、Rust 明确不支持、parse-error 标记、注释类语言降级仅注解提取、P7-P10 可选模式，详见 spec §3）；错误账本知识机制（错误 > 正确 优先级，`discovered/errors/` 独立存放） |
-| v2.0 | 2026-08 | 模块化重构：core + re-binary + re-code + swe 四模块、AGENTS.md 探测器、Anchorlaw 协议引用（见上表 v2 核心变化） |
-| v1.0 | 2026-06 | 单文件 42KB CLAUDE.md（BitWarden 方法论）→ 归档 `spec/legacy-claude-v1.md` |
-
-## 方法论来源
-
-- 原文：《打破传统AI逆向的新思路：多Agent、自主管理上下文》（BitWarden，看雪学苑 2026.06.18）
-- 验证协议：[Anchorlaw Protocol v0.18](https://github.com/unknowbug/anchorlaw)（MIT，由 Practify 更名而来）
+| v2.2 | 2026-08-21 | **DSH 唯一宿主迁移**：Reasonix 归档（`archive/reasonix/`）、`dsh/skills/` 变单一事实源、工具 5→3（ref_manifest_validate/ref_install 随 Reasonix 退役）、根 AGENTS.md 重写 DSH-first、spec 标注归档、安装简化（单一 install.ps1）、对 Anchorlaw 纯引用式安装（零复制） |
+| v2.1 | 2026-08-14~15 | DSH 适配层（`dsh/` 子树）、技能用户级全局、工具 preset-only、Anchorlaw 引用 v0.15→v0.17→v0.18、SKILL-MAP DSH 探测器、错误账本强化 |
+| v2.0 | 2026-08 | 模块化重构（Reasonix 时代，已归档） |
+| v1.0 | 2026-06 | 单文件 42KB CLAUDE.md（BitWarden 方法论，已归档） |

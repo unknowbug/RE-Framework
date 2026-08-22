@@ -4,6 +4,7 @@
 > **来源**: 由 RE-Framework v1（42KB 单文件 CLAUDE.md，BitWarden 方法论）工程化、Skills化、SubAgents化拆分而来；验证协议继承自 [Anchorlaw Protocol v0.18](https://github.com/unknowbug/anchorlaw)（其前身 Practify 即 v1 引用的验证协议）。
 > **状态**: candidate（本协议自身遵守置信度状态机——待实际项目验证后由用户拍板 confirmed）
 > **当前版本**: v1.0
+> **宿主与归档（2026-08-21）**: 本协议为**框架方法论核心**（§1 铁律 / §3 Anchorlaw 引用 / §4 工作流 / §5 产物 / §6 知识库 / §7 版本 / §8 诚实声明）——DSH（DeepSeek Harness）是唯一维护宿主，按 `dsh/SKILL-MAP.md` 探测器执行；**Reasonix 宿主格式已归档**（`archive/reasonix/`）：§2 模块化部署（`.reasonix/skills/` 触发表 / 模块声明 / install.py / validate_manifest.py R1-R6）为 Reasonix 形态，保留作协议历史参考，不再维护；§2.3 探测路由的 DSH 形态见 `dsh/SKILL-MAP.md` §〇。
 
 ---
 
@@ -425,6 +426,7 @@ notes: |
 - **自动贡献**: 任何阶段发现可复用知识 → 立即写入 `discovered/`，更新 INDEX.md；**错误链条先于正确结论写入**。
 - 触发条件（模块无关）：错误/验证失败/行为不符/崩溃（→ `errors/`）、编译器/语言惯用法、还原工具误译模式、算法/协议指纹、反逆向/混淆手法、跨模块通用模式。
 - 每条发现标注: 时间、来源定位、发现阶段、置信度、如何利用；错误条目另标**优先级（P0-P3）**与**状态（active/resolved/false-alarm）**。
+- **项目级可选强化（2026-08-15 CoreSwap 提议）**：框架保持通用层；项目可自定义更高详实度——五段式（现象/根因/定位/修复/教训）、判错经验独立沉淀、错误台账**载体灵活**（默认 `discovered/errors/`，可指定 `.investigations/<课题>/<课题>-errors.md` + 速查表）、`SUBAGENT-KNOWLEDGE-GUIDE.md` 类项目强化文件（prompt 一行引用）。详见 `skills/core.knowledge`「项目级可选强化」节。
 - 知识条目分模块归属（`module:` 字段），与产物解耦——跨模块知识标注 `module: core`。
 - 错误账本条目格式详见 `skills/core.knowledge`（错误账本条目格式节）。
 

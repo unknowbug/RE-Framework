@@ -1,6 +1,6 @@
 # SKILL-MAP — RE-Framework DSH 探测器 + 调用接口速查
 
-> **定位（v2.1 升级）**：本文件是 DSH 会话的**探测器 + 调用接口桥接**。根 `AGENTS.md`（Reasonix 探测器）用 **dot 名**引用技能（`core.plan`、`re.scout`…），DSH 会话的技能注册名是 **kebab 名**（`core-plan`、`re-scout`…）——DSH 会话按根 AGENTS.md 的 dot 名加载技能会**找不到技能**（Anchorlaw v0.18 只解决协议层宿主契约 §16，未解决此名映射）。**DSH 会话（任何 preset、工作区根 = 本仓库）应先读本文件，再按 §〇 走标准流程。**
+> **定位（2026-08-21 迁移后）**：本文件是 DSH 会话的**探测器 + 调用接口桥接**。技能正文沿用 **dot 名**作方法论规范引用（`core.plan`、`re.scout`…，历史沿自已归档的 Reasonix 格式），而 DSH 会话的技能注册名是 **kebab 名**（`core-plan`、`re-scout`…）——加载技能必须用 kebab 名，正文里的 dot 名引用按 §一 映射解析。**DSH 会话（任何 preset）应先读本文件，再按 §〇 走标准流程。**
 
 ## 〇、DSH 探测器（标准流程驱动，MUST 按序执行）
 
@@ -45,25 +45,24 @@
 3. **角色技能**（scout/worker/judge）：DSH 中经 subagent 工具隔离执行——按技能正文的角色契约派发子代理（core-worker / core-judge / re-scout / recode-scout / 以及 anchor-* 角色）。
 4. **正文等价**：DSH 技能正文 = Reasonix 技能正文（sync_skills.py 逐字节守护），语义等价，只有名字不同——按 kebab 名加载即是加载同一份方法论。
 
-## 三、工具与脚本（ref_* 仅在 re-framework preset；其他会话 pwsh 直跑）
+## 三、工具与脚本（ref_* 仅在 re-framework preset；2026-08-21 后 3 个——manifest_validate/install 随 Reasonix 归档退役）
 
 | 能力 | re-framework preset 工具 | 任何会话直接调用（pwsh） |
 |------|--------------------------|--------------------------|
-| 框架自检（R1-R6，spec §2.5） | `ref_manifest_validate` | `python scripts/validate_manifest.py` |
-| 部署模块到项目（.reasonix/skills） | `ref_install` | `python scripts/install.py <target> --modules core,re-binary,...` |
 | 并行 worker 索引合并（§5.1） | `ref_merge_index` | `python scripts/merge_index.py <project>` |
 | 项目骨架初始化（.artifacts/.investigations/knowledge） | `ref_init` | （脚本内联于插件，等价目录创建） |
 | 环境/技能状态 | `ref_status` | — |
 
-**约定**：re-framework preset 会话内做框架动作**优先用 ref_* 工具**（封装了脚本路径解析与会话 cwd 语义）；其他会话直接用 pwsh 跑脚本——工具与脚本等价，不重复封装。
+**约定**：re-framework preset 会话内做框架动作**优先用 ref_* 工具**（封装了脚本路径解析与会话 cwd 语义）；其他会话直接用 pwsh 跑脚本（`merge_index.py` 保留在仓库根）。
 
 ## 四、DSH 会话加载点（工作区 AGENTS.md）
 
-- 工作区根 = RE-Framework：加载根 `AGENTS.md`（Reasonix 探测器，dot 名）+ 本文件（DSH 桥接，kebab 名）。
-- 工作区 = 其他项目（如 CoreSwap）：项目自己的 AGENTS.md 是运行时宿主；需要 RE 方法论时按本表 kebab 名加载技能（技能用户级全局可见，无需指向本仓库）。
+- 工作区根 = RE-Framework：加载根 `AGENTS.md`（DSH-first 索引，MUST 先读本文件再走流程）+ 本文件（DSH 探测器）。
+- 工作区 = 其他项目（如 CoreSwap）：项目自己的 AGENTS.md 是运行时宿主；需要 RE 方法论时按 §〇 路由 + §一 kebab 名加载技能（技能用户级全局可见，无需指向本仓库）。
 
-## 五、维护
+## 五、维护（2026-08-21 迁移后）
 
-- 技能改名/新增：改 `scripts/sync_skills.py` ADAPT 映射 + 本表 + `tests/test_manifest.py` EXPECTED。
-- 工具变更：同步本表第三节；插件 schema 门禁见 `tests/check_plugin_schema.mjs`。
-- Anchorlaw 版本升级核对：spec §3 同步契约 + `dsh/SYNC.md` 变更日志。
+- **`dsh/skills/` 是技能单一事实源**：直接改（不再有 `../skills/` 上游、不再跑 sync_skills.py——已随 Reasonix 归档至 `archive/reasonix/`）。改名/新增：更新本表 + `tests/test_manifest.py` 的 ADAPT/EXPECTED。
+- 工具变更：同步本文件第三节；插件 schema 门禁见 `tests/check_plugin_schema.mjs`。
+- Anchorlaw 升级核对：spec §3 同步契约 + `dsh/SYNC.md` 变更日志。
+- Reasonix 归档：`archive/reasonix/` 只读（Fork 恢复见其 RESTORE.md），不参与同步。

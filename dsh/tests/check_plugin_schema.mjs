@@ -7,7 +7,7 @@
 // e.g. `{ repo: { type:'string', required:true } }`) reaches the LLM without
 // a top-level `type: 'object'` and EVERY session fails with
 // "Invalid schema for function '...': ... got 'type: null'". This check runs
-// from scripts/selfcheck.ps1 (item 5) and before the global tool mount in
+// from scripts/selfcheck.ps1 (item 4) and before the plugin is copied by
 // scripts/install.ps1, so a bad schema can never be installed.
 //
 // Exit code 0 = pass; 1 = any tool fails the shape check.
@@ -17,8 +17,6 @@ import { pathToFileURL } from 'node:url'
 const pluginPath = new URL('../plugins/re-framework-tools.js', import.meta.url)
 const expected = new Set([
   'ref_status',
-  'ref_manifest_validate',
-  'ref_install',
   'ref_merge_index',
   'ref_init',
 ])
