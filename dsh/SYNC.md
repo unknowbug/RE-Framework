@@ -20,7 +20,7 @@
 
 1. **技能正文改动**：只允许发生在 `../skills/`（Reasonix 规范正文）。改后重跑 `python dsh/scripts/sync_skills.py`，再确认 `python dsh/tests/test_manifest.py` 通过，然后更新本文件差异记录。
 2. **frontmatter 适配改动**：改 `dsh/scripts/sync_skills.py` 的 ADAPT 映射表（dash-name / whenToUse），重跑生成器，并在此文件登记变更。
-3. **框架语义更新**：先改 `../spec/engineering-framework-v1.md`，再同步技能正文与 DSH 适配；Anchorlaw 引用版本核对用 `git grep 'v0\.[0-9]'`（当前基线 v0.18）。
+3. **框架语义更新**：先改 `../spec/engineering-framework-v1.md`，再同步技能正文与 DSH 适配；Anchorlaw 引用版本核对用 `git grep 'v0\.[0-9]'`（当前基线 v0.19）。
 4. **新增技能**：在 `sync_skills.py` ADAPT 与 `tests/test_manifest.py` EXPECTED 中登记；DSH-only 技能登记进 DSH_ONLY。
 
 ## 变更日志
@@ -38,3 +38,4 @@
 | 2026-08-15 | 项目级错误记录强化（CoreSwap 提议） | core.knowledge 新增「项目级可选强化」节（五段式 现象/根因/定位/修复/教训、判错经验优先沉淀、错误台账**载体灵活**、SUBAGENT-KNOWLEDGE-GUIDE 项目强化文件机制）；spec §6 同步补一句；框架保持通用层（错误优先 + 条目格式基线） | 0（生成器同步） |
 | 2026-08-21 | **DSH 唯一宿主迁移**（Reasonix 取消维护，用户决策；对照 Anchorlaw 6cd62ed 先例） | **Reasonix 归档**：skills/（16 dot 技能 + modules）、根 AGENTS.md、README/README_EN（旧版）、scripts/install.py + validate_manifest.py、memory/、dsh/scripts/sync_skills.py → `archive/reasonix/`（+ RESTORE.md + restore-reasonix.ps1）；**dsh/skills/ 变单一事实源**（test_manifest.py 去上游漂移检查，改纯 DSH manifest 校验）；**工具 5→3**（ref_manifest_validate/ref_install 随 Reasonix 退役，check_plugin_schema expected 同步）；根 AGENTS.md 重写 DSH-first；spec 加归档标注；SKILL-MAP/dsh AGENTS/ref-maintain/install.ps1/README（中英）全部同步；selfcheck 五段→四段；对 Anchorlaw 纯引用式安装（零复制） | 0（结构迁移） |
 | 2026-08-21 | 知识记录价值门（吸收 CoreSwap 评估 P1/P2/P3；用户确认只改 RE 框架侧） | spec §6 + core-knowledge 加**记录价值门**（高价值必记/中价值简记/低价值不记 + 复用判据 + 结论性 docs 非核心资产）；spec §4.5 + core-knowledge 执行者规范**收窄**"结论性 docs MUST subagent 产出"到高价值（无复用价值结论不写 docs）；**载体优先级**明确（项目级指定载体 > 框架默认 discovered/errors/，两条规则不并行） | 0 |
+| 2026-08-21 | Anchorlaw v0.18 → v0.19 升级核对（协议仓库 spec changelog） | 基线升级：AGENTS.md / spec §3 / README（中英）/ dsh README / preset 注释+persona / 技能正文（swe-guide / re-lift）/ templates / ref-maintain v0.18 → v0.19；spec §3 新增 v0.19 条款核对（§5/§9/§12/§13/§14/§15/§16 全部保留——**验证协议定位澄清**：§3 噪声卡 discovery/curriculum 改回"验证回溯"、§15.2 artifact 定位"验证可复核载体"、§14 明示非知识沉淀池，触发点 = CoreSwap 记录有效性评估，与本框架 §6 记录价值门方向一致） | 0 |

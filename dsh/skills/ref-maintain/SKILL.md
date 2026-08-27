@@ -24,7 +24,7 @@ whenToUse: 维护 RE-Framework 的 DSH 适配层（dsh/ 子树）时——任何
 
 ## Anchorlaw 协议升级核对
 
-- Anchorlaw 协议引用版本（当前基线 v0.18，`git grep 'v0\.[0-9]'` 核对）或 `spec/engineering-framework-v1.md` 变更后：
+- Anchorlaw 协议引用版本（当前基线 v0.19，`git grep 'v0\.[0-9]'` 核对）或 `spec/engineering-framework-v1.md` 变更后：
   1. 对照 Anchorlaw changelog 核对 spec §3 同步契约（条款保留/版本基线/同源双写）；
   2. 更新 `dsh/SYNC.md`（来源 commit/时间/差异）；
   3. 若涉及技能正文语义：直接改 `dsh/skills/` 对应技能，并在 `tests/test_manifest.py` 的 ADAPT/EXPECTED 中同步（改名/新增时）；

@@ -5,7 +5,7 @@
 > Built on the methodology of *A New Approach to AI Reverse Engineering: Multi-Agent, Self-Managed Context* (BitWarden, Kanxue Forum, 2026.06.18),
 > engineered, skill-ified, and sub-agent-ified: **a domain-agnostic core + on-demand domain modules**, covering binary reverse engineering, code reverse engineering, and general programming.
 > **DeepSeek Harness (DSH) is the only maintained host** (since 2026-08-21; the Reasonix host format is archived under `archive/reasonix/`, fork-restorable).
-> Verification protocol: references [Anchorlaw Protocol v0.18](https://github.com/unknowbug/anchorlaw) (MIT, protocol reference — no implementation copied).
+> Verification protocol: references [Anchorlaw Protocol v0.19](https://github.com/unknowbug/anchorlaw) (MIT, protocol reference — no implementation copied).
 
 ---
 
@@ -33,7 +33,7 @@ pwsh dsh/scripts/selfcheck.ps1
 ```
 RE-Framework/
 ├── AGENTS.md                  # DSH-first index (auto-loaded entry)
-├── spec/                      # Framework protocol (iron rules/workflow/artifacts/knowledge/versioning) + Anchorlaw v0.18 reference
+├── spec/                      # Framework protocol (iron rules/workflow/artifacts/knowledge/versioning) + Anchorlaw v0.19 reference
 ├── dsh/                       # DSH host adaptation (the only maintained area)
 │   ├── skills/                # 17 ref-* skills (single source of truth, edited directly)
 │   ├── SKILL-MAP.md           # DSH detector (init/routing/Phase 0-3/enforcement chain + dot→kebab map)
@@ -76,7 +76,7 @@ RE-Framework/
 
 | Version | Date | Content |
 |---------|------|---------|
-| v2.2 | 2026-08-21 | **DSH-only host migration**: Reasonix archived (`archive/reasonix/`), `dsh/skills/` becomes the single source of truth, tools 5→3 (ref_manifest_validate/ref_install retired with Reasonix), root AGENTS.md rewritten DSH-first, spec annotated, simplified install (single install.ps1), pure-reference Anchorlaw install (zero copy) |
+| v2.2 | 2026-08-21 | **DSH-only host migration**: Reasonix archived (`archive/reasonix/`), `dsh/skills/` single source of truth, tools 5→3, root AGENTS.md DSH-first, simplified install, pure-reference Anchorlaw; knowledge value gate (P1/P2/P3); Anchorlaw v0.18→v0.19 (verification-scope clarification) |
 | v2.1 | 2026-08-14~15 | DSH adaptation (`dsh/` subtree), user-global skills, preset-only tools, Anchorlaw v0.15→v0.17→v0.18, SKILL-MAP DSH detector, error-ledger hardening |
 | v2.0 | 2026-08 | Modular rewrite (Reasonix era, archived) |
 | v1.0 | 2026-06 | Single 42KB CLAUDE.md (BitWarden methodology, archived) |

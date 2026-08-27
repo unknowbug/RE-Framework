@@ -3,7 +3,7 @@
 > 基于《打破传统AI逆向的新思路：多Agent、自主管理上下文》(BitWarden, 看雪学苑 2026.06.18) 的方法论内核，
 > 工程化、Skills化、SubAgents化拆分升级：**领域无关核心 + 按需加载领域模块**，从二进制逆向到代码逆向到常规编程全兼容。
 > **DeepSeek Harness（DSH）是唯一维护宿主**（2026-08-21 起；Reasonix 宿主格式已归档至 `archive/reasonix/`，Fork 可恢复自行迭代）。
-> 验证协议继承 [Anchorlaw Protocol v0.18](https://github.com/unknowbug/anchorlaw)（MIT，协议引用，不复制实现）。
+> 验证协议继承 [Anchorlaw Protocol v0.19](https://github.com/unknowbug/anchorlaw)（MIT，协议引用，不复制实现）。
 
 ---
 
@@ -30,7 +30,7 @@ pwsh dsh/scripts/selfcheck.ps1
 ```
 RE-Framework/
 ├── AGENTS.md                  # DSH-first 索引（自动加载入口）
-├── spec/                      # 框架协议（铁律/工作流/产物/知识库/版本）+ Anchorlaw v0.18 引用
+├── spec/                      # 框架协议（铁律/工作流/产物/知识库/版本）+ Anchorlaw v0.19 引用
 ├── dsh/                       # DSH 宿主适配层（唯一维护区）
 │   ├── skills/                # 17 个 ref-* 技能（单一事实源，直接维护）
 │   ├── SKILL-MAP.md           # DSH 探测器（强初始化/路由/Phase 0-3/执行强制链 + dot→kebab 映射）
@@ -73,7 +73,7 @@ RE-Framework/
 
 | 版本 | 日期 | 内容 |
 |------|------|------|
-| v2.2 | 2026-08-21 | **DSH 唯一宿主迁移**：Reasonix 归档（`archive/reasonix/`）、`dsh/skills/` 变单一事实源、工具 5→3（ref_manifest_validate/ref_install 随 Reasonix 退役）、根 AGENTS.md 重写 DSH-first、spec 标注归档、安装简化（单一 install.ps1）、对 Anchorlaw 纯引用式安装（零复制） |
+| v2.2 | 2026-08-21 | **DSH 唯一宿主迁移**：Reasonix 归档（`archive/reasonix/`）、`dsh/skills/` 变单一事实源、工具 5→3（ref_manifest_validate/ref_install 随 Reasonix 退役）、根 AGENTS.md 重写 DSH-first、spec 标注归档、安装简化（单一 install.ps1）、对 Anchorlaw 纯引用式安装（零复制）；知识记录价值门（P1/P2/P3）；Anchorlaw 引用 v0.18→v0.19（验证协议定位澄清） |
 | v2.1 | 2026-08-14~15 | DSH 适配层（`dsh/` 子树）、技能用户级全局、工具 preset-only、Anchorlaw 引用 v0.15→v0.17→v0.18、SKILL-MAP DSH 探测器、错误账本强化 |
 | v2.0 | 2026-08 | 模块化重构（Reasonix 时代，已归档） |
 | v1.0 | 2026-06 | 单文件 42KB CLAUDE.md（BitWarden 方法论，已归档） |
