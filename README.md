@@ -36,7 +36,7 @@ RE-Framework/
 │   ├── SKILL-MAP.md           # DSH 探测器（强初始化/路由/Phase 0-3/执行强制链 + dot→kebab 映射）
 │   ├── plugins/re-framework-tools.js   # 3 个 ref_* 模型工具
 │   ├── preset/                # re-framework agent preset
-│   ├── scripts/install.ps1 + selfcheck.ps1   # 安装 + 四段自检
+│   ├── scripts/install.ps1 + selfcheck.ps1 + gen_cheatsheet.py   # 安装 + 四段自检 + 压实派生视图生成模板
 │   ├── tests/                 # test_manifest.py + check_plugin_schema.mjs
 │   └── AGENTS.md              # DSH 维护入口
 ├── templates/                 # 产物 schema（语言无关）
@@ -73,6 +73,7 @@ RE-Framework/
 
 | 版本 | 日期 | 内容 |
 |------|------|------|
+| v2.3 | 2026-08-21 | **知识库压实机制**（吸收 CoreSwap knowledge-compaction 提案，借鉴 DSH compaction）：条目结构化 front-matter（id/status/supersedes/superseded_by/signature/verdict/lesson，对齐 Anchorlaw v0.20 §15.4 supersession 链）、派生视图禁止手维护（`gen_cheatsheet.py` 机械生成）、压实 pass（每 10 条或课题结案，簇合并为原则 + consolidated 原文保留）；**§4.5 第五条强制触发点**（交接结论验证 ≤1 轮 + 闭合点三态切换建议 MUST + 污染信号触发分离落盘，对齐 v0.20 §16.3）；Anchorlaw 引用 v0.19→v0.20 |
 | v2.2 | 2026-08-21 | **DSH 唯一宿主迁移**：Reasonix 归档（`archive/reasonix/`）、`dsh/skills/` 变单一事实源、工具 5→3（ref_manifest_validate/ref_install 随 Reasonix 退役）、根 AGENTS.md 重写 DSH-first、spec 标注归档、安装简化（单一 install.ps1）、对 Anchorlaw 纯引用式安装（零复制）；知识记录价值门（P1/P2/P3）；Anchorlaw 引用 v0.18→v0.19（验证协议定位澄清） |
 | v2.1 | 2026-08-14~15 | DSH 适配层（`dsh/` 子树）、技能用户级全局、工具 preset-only、Anchorlaw 引用 v0.15→v0.17→v0.18、SKILL-MAP DSH 探测器、错误账本强化 |
 | v2.0 | 2026-08 | 模块化重构（Reasonix 时代，已归档） |
