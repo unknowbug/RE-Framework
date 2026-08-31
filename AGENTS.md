@@ -2,7 +2,7 @@
 
 > **定位**: 通用工程方法论框架（逆向 + 编程）。**DeepSeek Harness（DSH）是唯一维护宿主**。
 > **宿主说明**: 维护入口见 `dsh/AGENTS.md`；DSH 会话探测器见 `dsh/SKILL-MAP.md`；Reasonix 宿主格式已停止维护并归档（`archive/reasonix/`，Fork 可恢复自行迭代）。
-> **协议**: `spec/engineering-framework-v1.md`（框架协议）+ [Anchorlaw Protocol v0.19](https://github.com/unknowbug/anchorlaw)（验证协议，协议引用）。
+> **协议**: `spec/engineering-framework-v1.md`（框架协议）+ [Anchorlaw Protocol v0.20](https://github.com/unknowbug/anchorlaw)（验证协议，协议引用）。
 
 ---
 
@@ -29,5 +29,5 @@
 ## 三、协议引用
 
 - **框架协议**：`spec/engineering-framework-v1.md`（§1 铁律 / §3 Anchorlaw 引用与升级核对 / §4 工作流 / §5 产物 schema / §6 知识库 / §7 版本管理 / §8 诚实声明）。
-- **验证协议**：[Anchorlaw v0.19](https://github.com/unknowbug/anchorlaw)（协议引用，不复制实现）；升级核对见 spec §3 同步契约。
+- **验证协议**：[Anchorlaw v0.20](https://github.com/unknowbug/anchorlaw)（协议引用，不复制实现）；升级核对见 spec §3 同步契约。
 - **Reasonix 归档**：宿主格式（dot 名技能、`.reasonix/skills/` 部署、`install.py`/`validate_manifest.py`）已归档至 `archive/reasonix/`，不再维护；Fork 用户可按 `archive/reasonix/RESTORE.md` 恢复自行迭代。

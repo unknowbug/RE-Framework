@@ -9,7 +9,7 @@ whenToUse: 任务是编程类（编写/修改/审查代码、协议设计、常�
 > Module: swe
 > Layer: L0 (Concepts) — 入口指引
 > Execution: inline
-> 协议正文不在此处——引用 [Anchorlaw v0.19](https://github.com/unknowbug/anchorlaw)，单一事实源。
+> 协议正文不在此处——引用 [Anchorlaw v0.20](https://github.com/unknowbug/anchorlaw)，单一事实源。
 
 ## 触发场景
 
@@ -44,7 +44,7 @@ whenToUse: 任务是编程类（编写/修改/审查代码、协议设计、常�
 | 模块实施（流水线 stage 3，Worker） | `anchor.worker` | 角色, subprocess |
 | 审查角色（五触发点 + 隔离验收） | `anchor.judge` | 角色, subprocess |
 
-> **流水线（Anchorlaw v0.10-0.15）**：编程是**构造型**——Judge 驱动四段流水线：`input contract（已确认需求 + 技术约束规范 v0.14，架构设计在 stage 1 产出）→ implementation spec（Scout 起草）→ implementation plan → parallel implementation（Worker 并行）→ delivery`；每段以 Judge 点头终止。**域收窄（v0.13，保留于 v0.19）**：该构造性声明仅限 input-contract 域（§11 audit 注册）；**逆向工程明确域外**（探索型）；混合探索-构造任务按 §16.1 input-contract 确认标准（v0.14 泛化为语义收敛，协议中立）——探索部分未收敛不得进入流水线，只为行为模型已稳定的确定子部分调用。**C-gate halted escalation（v0.15）**：同一验收判据 3 次未满足 → 流水线完全 halt，Judge 提交报告给人类裁决（无 Judge 预分类）。
+> **流水线（Anchorlaw v0.10-0.15）**：编程是**构造型**——Judge 驱动四段流水线：`input contract（已确认需求 + 技术约束规范 v0.14，架构设计在 stage 1 产出）→ implementation spec（Scout 起草）→ implementation plan → parallel implementation（Worker 并行）→ delivery`；每段以 Judge 点头终止。**域收窄（v0.13，保留于 v0.20）**：该构造性声明仅限 input-contract 域（§11 audit 注册）；**逆向工程明确域外**（探索型）；混合探索-构造任务按 §16.1 input-contract 确认标准（v0.14 泛化为语义收敛，协议中立）——探索部分未收敛不得进入流水线，只为行为模型已稳定的确定子部分调用。**C-gate halted escalation（v0.15）**：同一验收判据 3 次未满足 → 流水线完全 halt，Judge 提交报告给人类裁决（无 Judge 预分类）。
 > **执行模式（Anchorlaw v0.8/v0.15 对齐）**：`anchor.write`/`anchor.test` 为 **inline**（收敛任务主会话直接做，与「编程=主会话为主」一致）；`anchor.scan`/`anchor.degrade` 为 subprocess；Scout/Worker/Judge 为流水线角色（subprocess）。本框架在构造域内仍保留主会话为主执行（§15.3 SHOULD 允许 host 自选；spec §4.1 两域对齐）。
 > **角色（v0.10 恢复）**：`anchor.scout`/`anchor.worker` 在 v0.10 恢复为编程流水线角色（v0.8 曾移除）；`anchor.judge` 为审查角色。RE-Framework 侧用 `core.worker`/`core.judge` 承担宿主执行者职责。
 

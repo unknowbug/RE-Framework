@@ -5,7 +5,7 @@
 > Built on the methodology of *A New Approach to AI Reverse Engineering: Multi-Agent, Self-Managed Context* (BitWarden, Kanxue Forum, 2026.06.18),
 > engineered, skill-ified, and sub-agent-ified: **a domain-agnostic core + on-demand domain modules**, covering binary reverse engineering, code reverse engineering, and general programming.
 > **DeepSeek Harness (DSH) is the only maintained host** (since 2026-08-21; the Reasonix host format is archived under `archive/reasonix/`, fork-restorable).
-> Verification protocol: references [Anchorlaw Protocol v0.19](https://github.com/unknowbug/anchorlaw) (MIT, protocol reference — no implementation copied).
+> Verification protocol: references [Anchorlaw Protocol v0.20](https://github.com/unknowbug/anchorlaw) (MIT, protocol reference — no implementation copied).
 
 ---
 
@@ -33,7 +33,7 @@ pwsh dsh/scripts/selfcheck.ps1
 ```
 RE-Framework/
 ├── AGENTS.md                  # DSH-first index (auto-loaded entry)
-├── spec/                      # Framework protocol (iron rules/workflow/artifacts/knowledge/versioning) + Anchorlaw v0.19 reference
+├── spec/                      # Framework protocol (iron rules/workflow/artifacts/knowledge/versioning) + Anchorlaw v0.20 reference
 ├── dsh/                       # DSH host adaptation (the only maintained area)
 │   ├── skills/                # 17 ref-* skills (single source of truth, edited directly)
 │   ├── SKILL-MAP.md           # DSH detector (init/routing/Phase 0-3/enforcement chain + dot→kebab map)
