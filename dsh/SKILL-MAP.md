@@ -8,7 +8,7 @@
 
 **强初始化三步**（每个 session 第一件事，未经完成不得开始实际分析）：
 
-1. **STEP 1 — 读知识库**（先于一切）：查 `knowledge/INDEX.md` + 相关 builtin/discovered 条目；无相关条目 → 标注"需外部资料"，让用户决定，不自行编造。（对应 `core-knowledge`）
+1. **STEP 1 — 读知识库**（先于一切）：查 `knowledge/INDEX.md` + 相关 builtin/discovered 条目；**文件不存在 → 项目未初始化：先跑 `ref_init` 建骨架（`.artifacts/` + `.investigations/` + `knowledge/`）再读，不得因缺文件报错中断**；无相关条目 → 标注"需外部资料"，让用户决定，不自行编造。（对应 `core-knowledge`）
 2. **STEP 2 — 规划工作**：跑架构设计（`core-plan`：轻量 ≤3 要点 / 重量完整文档），展示给用户确认——**未经用户确认架构，不得开始实际分析**；架构文档落盘 `.investigations/000-架构设计/`。
 3. **STEP 3 — 预置子角色介入点**：在计划中预置全部子角色（scout/worker/fan-out/judge/knowledge）的介入时机（`core-plan` 模板），执行只核对不补排。
 
