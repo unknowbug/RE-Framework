@@ -1,0 +1,4 @@
+# Shell scripts must stay LF: they are executed on Linux/macOS (Kylin included).
+# Without this, a Windows checkout with core.autocrlf=true rewrites them to CRLF
+# and any copy of the working tree breaks on Linux ("bad interpreter: ^M").
+*.sh text eol=lf
