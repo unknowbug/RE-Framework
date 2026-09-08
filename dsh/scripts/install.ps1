@@ -29,7 +29,7 @@ $ErrorActionPreference = 'Stop'
 
 $srcRoot  = Split-Path -Parent $PSScriptRoot
 $dshHome  = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $HOME '.dsh' }
-$presetDir = Join-Path $dshHome '.agent-presets\re-framework'
+$presetDir = Join-Path $dshHome (Join-Path '.agent-presets' 're-framework')
 $userSkills = Join-Path $dshHome 'skills'
 
 Write-Host "== RE-Framework DSH install =="
@@ -39,8 +39,19 @@ Write-Host "user skills : $userSkills (user-global, any session)"
 
 # 0. Schema gate: never copy a plugin whose tool schemas are not compiled JSON
 #    Schema (a flat spec would break every session once mounted anywhere).
-node (Join-Path $srcRoot 'tests\check_plugin_schema.mjs') 2>&1
-if ($LASTEXITCODE -ne 0) {
+#    Native stderr must not be fatal here: `$ErrorActionPreference = 'Stop'`
+#    turns merged stderr into a terminating error, and Node >= 22 writes a
+#    MODULE_TYPELESS_PACKAGE_JSON warning for the ESM plugin — that aborted the
+#    install before any copy (observed on Node 24). Capture with EAP relaxed
+#    and judge by exit code only.
+$schemaCheck = Join-Path $srcRoot (Join-Path 'tests' 'check_plugin_schema.mjs')
+$prevEAP = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+$schemaOut = (& node --no-warnings $schemaCheck 2>&1 | Out-String)
+$schemaCode = $LASTEXITCODE
+$ErrorActionPreference = $prevEAP
+if ($schemaOut.Trim()) { Write-Host $schemaOut.Trim() }
+if ($schemaCode -ne 0) {
   throw "plugin tool-schema check failed - refusing to install"
 }
 
@@ -58,7 +69,7 @@ if (Test-Path $legacyHomePatch) {
     Write-Host "  - removed legacy ~/.dsh/cordis.patch.yml (host does not read it)"
   }
 }
-$legacyPlugins = Join-Path $dshHome 'plugins\re-framework'
+$legacyPlugins = Join-Path $dshHome (Join-Path 'plugins' 're-framework')
 if (Test-Path $legacyPlugins) {
   Remove-Item $legacyPlugins -Recurse -Force
   Write-Host "  - removed legacy ~/.dsh/plugins/re-framework/ (wrong location)"
@@ -106,7 +117,7 @@ else:
       Write-Host "  - withdrew re-framework-tools-global from $patchPath"
     }
   }
-  $profilePluginDir = Join-Path $profile.FullName 'plugins\re-framework'
+  $profilePluginDir = Join-Path $profile.FullName (Join-Path 'plugins' 're-framework')
   if (Test-Path $profilePluginDir) {
     Remove-Item $profilePluginDir -Recurse -Force
     Write-Host "  - removed $profilePluginDir (profile-local plugin copy)"
@@ -115,19 +126,24 @@ else:
 
 # 2. Preset composition + metadata
 New-Item -ItemType Directory -Path $presetDir -Force | Out-Null
-Copy-Item -Path (Join-Path $srcRoot 'preset\agent.cordis.yml') -Destination $presetDir -Force
-Copy-Item -Path (Join-Path $srcRoot 'preset\preset.yml')       -Destination $presetDir -Force
+Copy-Item -Path (Join-Path $srcRoot (Join-Path 'preset' 'agent.cordis.yml')) -Destination $presetDir -Force
+Copy-Item -Path (Join-Path $srcRoot (Join-Path 'preset' 'preset.yml'))       -Destination $presetDir -Force
 
 # 3. Plugin file (preset-embedded)
 New-Item -ItemType Directory -Path (Join-Path $presetDir 'plugins') -Force | Out-Null
-Copy-Item -Path (Join-Path $srcRoot 'plugins\re-framework-tools.js') -Destination (Join-Path $presetDir 'plugins') -Force
+Copy-Item -Path (Join-Path $srcRoot (Join-Path 'plugins' 're-framework-tools.js')) -Destination (Join-Path $presetDir 'plugins') -Force
 
 # 4. Skills: preset-embedded refresh + user-global refresh
 if (Test-Path (Join-Path $srcRoot 'skills')) {
   $presetSkills = Join-Path $presetDir 'skills'
   Remove-Item -Path $presetSkills -Recurse -Force -ErrorAction SilentlyContinue
   Copy-Item -Path (Join-Path $srcRoot 'skills') -Destination $presetSkills -Recurse -Force
-  Copy-Item -Path (Join-Path $srcRoot 'skills\*') -Destination $userSkills -Recurse -Force
+  # Create the destination BEFORE the wildcard copy: on a fresh machine
+  # ~/.dsh/skills does not exist yet, and PowerShell then copies the first
+  # source container onto the destination path instead of into it (observed:
+  # a stray ~/.dsh/skills/SKILL.md instead of 17 skill directories).
+  New-Item -ItemType Directory -Path $userSkills -Force | Out-Null
+  Copy-Item -Path (Join-Path (Join-Path $srcRoot 'skills') '*') -Destination $userSkills -Recurse -Force
 }
 
 Write-Host ""

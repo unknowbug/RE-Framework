@@ -44,9 +44,26 @@ export function apply(ctx, config = {}) {
     'swe-guide', 'ref-maintain',
   ]
 
+  // Resolve the Python interpreter once, trying `python` first (Windows and
+  // most distros) and falling back to `python3` — several Linux distributions
+  // (Kylin included) ship no bare `python`, where a hard-coded 'python' would
+  // break every ref_* tool.
   let pythonPathPromise
   function pythonPath() {
-    if (!pythonPathPromise) pythonPathPromise = subprocess.resolveExecutable('python')
+    if (!pythonPathPromise) {
+      pythonPathPromise = (async () => {
+        const failures = []
+        for (const candidate of ['python', 'python3']) {
+          try {
+            const resolved = await subprocess.resolveExecutable(candidate)
+            if (resolved) return resolved
+          } catch (error) {
+            failures.push(`${candidate}: ${error.message}`)
+          }
+        }
+        throw new Error(`python interpreter not found (tried python, python3): ${failures.join('; ')}`)
+      })()
+    }
     return pythonPathPromise
   }
 
