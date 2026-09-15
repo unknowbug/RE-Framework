@@ -32,14 +32,14 @@ if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: python not available"; $fail = 1 
 #    the single source of truth since the Reasonix format was archived)
 Write-Host ""
 Write-Host "[2] skill manifests"
-python (Join-Path $srcRoot 'tests\test_manifest.py') 2>&1
+python (Join-Path $srcRoot (Join-Path 'tests' 'test_manifest.py')) 2>&1
 if ($LASTEXITCODE -ne 0) { $fail = 1 }
 
 # 3. installed artifacts
 Write-Host ""
 Write-Host "[3] installed artifacts"
 $dshHome = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $HOME '.dsh' }
-$presetDir = Join-Path $dshHome '.agent-presets\re-framework'
+$presetDir = Join-Path $dshHome (Join-Path '.agent-presets' 're-framework')
 if (Test-Path (Join-Path $presetDir 'agent.cordis.yml')) {
   Write-Host "  OK preset: $presetDir"
 } else {
@@ -68,8 +68,8 @@ if (Test-Path $profilesDir) {
       Write-Host "  FAIL: profile $($profile.Name) still has re-framework-tools-global — re-run install.ps1"
       $globalGone = $false; $fail = 1
     }
-    if (Test-Path (Join-Path $profile.FullName 'plugins\re-framework')) {
-      Write-Host "  FAIL: profile $($profile.Name) still has plugins\re-framework — re-run install.ps1"
+    if (Test-Path (Join-Path $profile.FullName (Join-Path 'plugins' 're-framework'))) {
+      Write-Host "  FAIL: profile $($profile.Name) still has plugins/re-framework — re-run install.ps1"
       $globalGone = $false; $fail = 1
     }
   }
@@ -83,7 +83,7 @@ if (Test-Path $legacyHomePatch) {
 # 4. plugin tool-schema shape (compiled JSON-Schema parameters; see check_plugin_schema.mjs)
 Write-Host ""
 Write-Host "[4] plugin tool schemas"
-node (Join-Path $srcRoot 'tests\check_plugin_schema.mjs') 2>&1
+node --no-warnings (Join-Path $srcRoot (Join-Path 'tests' 'check_plugin_schema.mjs')) 2>&1
 if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: plugin tool schemas not compiled JSON Schema"; $fail = 1 }
 
 # 5. preset row resolvability (fail-closed; see audit_preset_rows.mjs)
