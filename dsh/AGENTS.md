@@ -6,7 +6,7 @@
 ## 〇、开始工作前（每个 session 必做）
 
 1. 确认仓库状态：仓库根即框架协议/方法论文档事实源，本目录（`dsh/`）即 DSH 适配事实源——**单一仓库，无第二份框架副本**；`archive/reasonix/` 为只读归档（不再同步）。
-2. 跑自检确认基线全绿：`pwsh dsh/scripts/selfcheck.ps1`（四段：工具链 / 技能 manifest / 安装产物 / 插件 schema）。
+2. 跑自检确认基线全绿：`pwsh dsh/scripts/selfcheck.ps1`（五段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁）。
 3. 若改动涉及技能正文：**直接改本目录 `skills/`**（单一事实源，无上游派生），`tests/test_manifest.py` 守护 manifest 形态。
 
 ## 一、本目录定位（一句话）
@@ -22,8 +22,10 @@
 | `preset/agent.cordis.yml` | re-framework agent preset 组合 | **事实源**（改这里） |
 | `preset/preset.yml` | preset 显示元数据 | 事实源 |
 | `scripts/install.ps1` | 安装/同步到 DSH 运行时 | 维护工具 |
-| `scripts/selfcheck.ps1` | 四段自检（工具链 / 技能 manifest / 安装产物 / 插件 schema） | 维护工具 |
+| `scripts/selfcheck.ps1` | 五段自检（工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁） | 维护工具 |
 | `tests/test_manifest.py` | 技能 manifest 校验（DSH 命名 + frontmatter + 技能集 + 交叉引用） | 维护测试 |
+| `tests/check_plugin_schema.mjs` | 插件工具 schema 门禁（parameters 必须编译后 JSON Schema；2026-08-13 事故） | 维护测试 |
+| `tests/audit_preset_rows.mjs` | preset 行解析性门禁（fail-closed）——composition 每个 `name:` 必须在 harness 包集合中可解析，上游改名/移除即非零退出（2026-09-09 `dsh-workflow-worker-thread` → `dsh-workflow-ptc` 漂移事故） | 维护测试 |
 | `SYNC.md` | 溯源戳（上次同步的上游 commit + 时间 + 差异） | 溯源记录 |
 | `SKILL-MAP.md` | **DSH 探测器 + 调用接口速查**（kebab 名路由表 + 强初始化/Phase 0-3 流程驱动 + dot→kebab 映射 + ref_* 工具/脚本对照；根 AGENTS.md 的 DSH 指引行指向这里，DSH 会话先读） | 接口桥接 + 流程驱动文档 |
 | **安装产物（勿手改）** | | |
@@ -35,7 +37,7 @@
 
 ## 三、维护铁律（对应 ref-maintain，DSH 版）
 
-1. **自检全绿**：任何改动必须 `dsh/scripts/selfcheck.ps1` 全绿（四段：工具链 / 技能 manifest / 安装产物 / 插件 schema）。
+1. **自检全绿**：任何改动必须 `dsh/scripts/selfcheck.ps1` 全绿（五段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁）。
 2. **单一事实源**：`dsh/skills/` 是技能唯一事实源（直接维护；Reasonix 归档 `archive/reasonix/` 不参与同步）。
 3. **新能力必须配验证**：新增技能/工具要能通过自检或实测证明，否则标注 Unverified。
 4. **命名纪律**：DSH 技能名必须 kebab-case（`core-plan` 而非 `core.plan`）；插件工具名 `ref_*`。

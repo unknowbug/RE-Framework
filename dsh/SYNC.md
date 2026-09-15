@@ -1,7 +1,9 @@
-# SYNC.md — DSH 适配层与 Reasonix 侧的同步溯源戳
+# SYNC.md — DSH 适配层同步溯源戳
 
-> 本文件记录 `dsh/` 子树与框架规范正文（`../skills/`、`../spec/`）的同步状态。
+> 本文件记录 `dsh/` 子树与**上游 DSH harness** 及框架规范正文（`../spec/`）的同步状态。
 > 采用框架自身的可追溯纪律（spec §1.3）：每一次同步都记录来源、时间与差异，可审计。
+> 注：Reasonix 宿主格式已于 2026-08-21 归档；`dsh/skills/` 是技能**单一事实源**，
+> 不再有上游技能镜像，"正文漂移"列自该日起恒为 0（结构/适配变更）。
 
 ## 初始同步（2026-08-14）
 
@@ -18,10 +20,11 @@
 
 ## 同步规则（维护者必读）
 
-1. **技能正文改动**：只允许发生在 `../skills/`（Reasonix 规范正文）。改后重跑 `python dsh/scripts/sync_skills.py`，再确认 `python dsh/tests/test_manifest.py` 通过，然后更新本文件差异记录。
-2. **frontmatter 适配改动**：改 `dsh/scripts/sync_skills.py` 的 ADAPT 映射表（dash-name / whenToUse），重跑生成器，并在此文件登记变更。
+1. **技能正文改动**：直接发生在 `dsh/skills/`（DSH 技能**单一事实源**；Reasonix 镜像已于 2026-08-21 归档至 `archive/reasonix/`）。改后确认 `python dsh/tests/test_manifest.py` 通过，并更新本文件差异记录。
+2. **frontmatter 适配改动**：直接改 `dsh/skills/<name>/SKILL.md` 的 frontmatter（kebab 名 + `whenToUse`），并在此文件登记变更。
 3. **框架语义更新**：先改 `../spec/engineering-framework-v1.md`，再同步技能正文与 DSH 适配；Anchorlaw 引用版本核对用 `git grep 'v0\.[0-9]'`（当前基线 v0.20）。
-4. **新增技能**：在 `sync_skills.py` ADAPT 与 `tests/test_manifest.py` EXPECTED 中登记；DSH-only 技能登记进 DSH_ONLY。
+4. **上游 DSH 漂移**：harness 改名/移除插件包时，`pwsh dsh/scripts/selfcheck.ps1` 第 [5] 项（`tests/audit_preset_rows.mjs`）会 fail-closed 拦下；修复 = 改 `preset/agent.cordis.yml` 跟上游 + 重跑 `install.ps1` + 登记本文件。
+5. **新增技能**：在 `tests/test_manifest.py` EXPECTED 中登记（DSH-only 技能登记进 DSH_ONLY）；`install.ps1` 按目录自动同步。
 
 ## 变更日志
 
@@ -41,3 +44,5 @@
 | 2026-08-21 | Anchorlaw v0.18 → v0.19 升级核对（协议仓库 spec changelog） | 基线升级：AGENTS.md / spec §3 / README（中英）/ dsh README / preset 注释+persona / 技能正文（swe-guide / re-lift）/ templates / ref-maintain v0.18 → v0.19；spec §3 新增 v0.19 条款核对（§5/§9/§12/§13/§14/§15/§16 全部保留——**验证协议定位澄清**：§3 噪声卡 discovery/curriculum 改回"验证回溯"、§15.2 artifact 定位"验证可复核载体"、§14 明示非知识沉淀池，触发点 = CoreSwap 记录有效性评估，与本框架 §6 记录价值门方向一致） | 0 |
 | 2026-08-21 | Anchorlaw v0.19 → v0.20 升级核对（协议仓库 spec changelog） | 基线升级：AGENTS.md / spec §3 / preset 注释+persona / 技能正文（swe-guide / re-lift）/ templates / ref-maintain v0.19 → v0.20；spec §3 新增 v0.20 条款核对（§5/§9/§12/§13/§14/§15/§16 全部保留，**增量新增无删减**——**证据/结论连续性三件套**：§15.4 结论 supersession 链（双向 superseded_by/supersedes + 一行理由，原文不删）、§9.7 验证可比性声明（量化指标须声明比较基准）、§16.3 宿主交接验证（交接文档区分已验证结论 vs 方向假设 + 继承者廉价验证 ≤1 轮）；触发点 = CoreSwap M11/M14/M16；对应本框架 §7 版本管理/.vN 与 §6 被排除假说不删） | 0 |
 | 2026-08-21 | 知识库压实机制（吸收 CoreSwap knowledge-compaction 提案 3.1-3.4；借鉴 DSH compaction；落地 Anchorlaw v0.20 §15.4/§16.3 宿主载体） | core-knowledge 新增「压实机制」三节（**条目 front-matter** id/status/supersedes/signature/verdict/lesson + **派生视图禁止手维护** + **压实 pass** N=10 或课题结案/簇合并 consolidated 原文保留）；spec §6 压实机制总纲 + §4.5 **第五条**（交接结论验证 ≤1 轮 + 闭合点三态切换建议 MUST + 污染信号触发分离落盘）；core-plan Phase 0 前置交接验证；新增 `dsh/scripts/gen_cheatsheet.py` 派生视图生成模板（自测通过：速查表 + supersession 链） | 0 |
+| 2026-09-09 | harness `0d1f50007f`（dsh-0.1.6-alpha.1）；漂移报告基线 `5dda764ed3`（dsh-0.1.5-alpha.1） | **上游插件包改名**：`@deepseek-ai/dsh-workflow-worker-thread` → `@deepseek-ai/dsh-workflow-ptc`（旧目录已无 package.json，不再是包）。源码 preset 引用未跟 → preset 挂载失败 → 会话无法创建/恢复（`failed to mount`）。修复：`preset/agent.cordis.yml` 的 `id` + `name` 同步改名，`config`（`provider: spawn`）与官方装配一致；新增 fail-closed 门禁 `tests/audit_preset_rows.mjs` 并接入 `selfcheck.ps1` 第 [5] 项，防同类漂移复发。来源：`.investigations/dsh-upstream-drift-20260909/报告.md`（提供方临时修补了已安装副本，源头由本次修复） | 0 |
+| 2026-09-09 | harness `0d1f50007f`（`packages/preset/agent-presets/presets/standard/agent.cordis.yml`，官方 31 行） | **能力面对齐上游 standard preset**：补 5 行——`command-goal`（`@deepseek-ai/dsh-command-goal`，启用）、`present`（`@deepseek-ai/dsh-tool-present`，启用）、`tool-ralph`（disabled，`subagentProvider: spawn` / `maxRounds: 64`）、`tool-subagent-codex`（disabled）、`tool-subagent-claude-code`（disabled）。三行可选能力按上游默认保持 `disabled: true`（启用需在 Profile 装对应 Bundle 并重启 Host，host 可用性本身不授予工具）。逐 id 对齐后 **ours 32 = official 31 + 本地 `re-framework-tools`，缺口 0**；报告 §7.1 只列了 3 行，本次以官方 31 行为准补全 5 行（含两个外部 provider 行）。框架版本 v2.3 → v2.4 | 0 |

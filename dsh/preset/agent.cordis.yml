@@ -76,6 +76,9 @@
 - id: tool-jobs
   name: '@deepseek-ai/dsh-tool-jobs'
 
+- id: command-goal
+  name: '@deepseek-ai/dsh-command-goal'
+
 - id: tool-goal
   name: '@deepseek-ai/dsh-tool-goal'
 
@@ -153,13 +156,43 @@
         toolName: subagent_fork
         backgroundMode: continuable
 
-    - id: workflow-worker-thread
-      name: '@deepseek-ai/dsh-workflow-worker-thread'
+    # Optional external-agent providers. Production dsh does NOT install these
+    # bundles: install the matching Bundle in this Profile and restart the Host,
+    # then remove `disabled` from the row you want. Host availability alone
+    # grants no tool. (Kept in parity with the official standard preset.)
+    - id: tool-subagent-codex
+      name: '@deepseek-ai/dsh-tool-subagent'
+      disabled: true
+      config:
+        provider: codex
+        toolName: subagent_codex
+        backgroundMode: one-shot
+        maxDepth: provider-managed
+
+    - id: tool-subagent-claude-code
+      name: '@deepseek-ai/dsh-tool-subagent'
+      disabled: true
+      config:
+        provider: claude-code
+        toolName: subagent_claude_code
+        backgroundMode: one-shot
+        maxDepth: provider-managed
+
+    - id: workflow-ptc
+      name: '@deepseek-ai/dsh-workflow-ptc'
       config:
         provider: spawn
 
     - id: tool-workflow
       name: '@deepseek-ai/dsh-tool-workflow'
+
+    # Ralph loop (optional; disabled by upstream default — enable per the note above)
+    - id: tool-ralph
+      name: '@deepseek-ai/dsh-tool-ralph'
+      disabled: true
+      config:
+        subagentProvider: spawn
+        maxRounds: 64
 
 # ── remaining model-facing rows ─────────────────────────────────────────────
 
@@ -176,6 +209,9 @@
   config:
     fetch: false
     searchTimeoutMs: 60000
+
+- id: present
+  name: '@deepseek-ai/dsh-tool-present'
 
 # ── re-framework toolchain (local plugin, travels with this preset) ─────────
 #

@@ -9,6 +9,11 @@
 #   4. plugin tool-schema shape (compiled JSON-Schema parameters) via
 #      tests/check_plugin_schema.mjs — a flat spec would reach the LLM without
 #      a top-level type and break every session ("Invalid schema ... type: null").
+#   5. preset row resolvability via tests/audit_preset_rows.mjs — every `name:` in
+#      the composition must resolve against the harness package set; an upstream
+#      rename/removal otherwise surfaces only when a session resume fails to mount
+#      (2026-09-09 drift: dsh-workflow-worker-thread → dsh-workflow-ptc, see
+#      .investigations/dsh-upstream-drift-20260909/报告.md).
 
 $ErrorActionPreference = 'Continue'
 
@@ -80,6 +85,30 @@ Write-Host ""
 Write-Host "[4] plugin tool schemas"
 node (Join-Path $srcRoot 'tests\check_plugin_schema.mjs') 2>&1
 if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: plugin tool schemas not compiled JSON Schema"; $fail = 1 }
+
+# 5. preset row resolvability (fail-closed; see audit_preset_rows.mjs)
+#
+# Exit 2 means the audit could not RUN (harness checkout / js-yaml unavailable).
+# That is NOT a pass: a gate that silently goes green when it cannot execute is
+# the same failure class as the incident it guards against (unresolvable row
+# surfacing only on session resume). So exit 2 counts as FAIL unless the operator
+# explicitly opts out with DSH_SKIP_PRESET_AUDIT=1 (e.g. a machine with no
+# harness checkout that does not install presets at all).
+Write-Host ""
+Write-Host "[5] preset row resolvability"
+node (Join-Path $srcRoot 'tests\audit_preset_rows.mjs') 2>&1
+$presetAudit = $LASTEXITCODE
+if ($presetAudit -eq 2) {
+  if ($env:DSH_SKIP_PRESET_AUDIT -eq '1') {
+    Write-Host "  WARN: preset audit skipped by explicit opt-out (DSH_SKIP_PRESET_AUDIT=1)"
+  } else {
+    Write-Host "  FAIL: preset audit could not run (harness checkout/js-yaml unavailable)"
+    Write-Host "        set DSH_CHECKOUT to the harness checkout, or DSH_SKIP_PRESET_AUDIT=1 to accept the gap"
+    $fail = 1
+  }
+} elseif ($presetAudit -ne 0) {
+  Write-Host "  FAIL: unresolvable preset row(s) — upstream renamed/removed a plugin"; $fail = 1
+}
 
 Write-Host ""
 if ($fail -eq 0) { Write-Host "== ALL CHECKS PASSED ==" } else { Write-Host "== CHECKS FAILED ==" }

@@ -13,7 +13,7 @@ whenToUse: 维护 RE-Framework 的 DSH 适配层（dsh/ 子树）时——任何
 
 ## 维护铁律
 
-1. **自检全绿**：任何改动前先跑 `pwsh dsh/scripts/selfcheck.ps1` 确认基线，改动后必须再次全绿（四段：工具链 / 技能 manifest / 安装产物 / 插件 schema——第 4 项防 2026-08-13 事故复发）。
+1. **自检全绿**：任何改动前先跑 `pwsh dsh/scripts/selfcheck.ps1` 确认基线，改动后必须再次全绿（五段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁——第 4 项防 2026-08-13 事故复发（插件 schema 扁平化致全部会话崩），第 5 项防 2026-09-09 事故复发（上游改名插件包致 preset 挂载失败）；第 5 项**不可执行时按 FAIL 处理**，仅 `DSH_SKIP_PRESET_AUDIT=1` 可显式接受缺口）。
 2. **单一事实源**：技能正文**直接改 `dsh/skills/<name>/SKILL.md`**（无上游派生；Reasonix 归档 `archive/reasonix/` 不参与同步，恢复走其 RESTORE.md）；`tests/test_manifest.py` 守护 manifest 形态（命名/frontmatter/技能集/交叉引用）。
 3. **命名纪律**：DSH 技能名必须 kebab-case（`core-plan` 而非 `core.plan`）；插件工具名 `ref_*`。
 4. **插件持久化纪律**：动态插件（cordis_define 定义）只在当前进程存活——持久能力必须落成 `dsh/plugins/re-framework-tools.js` + preset 行，禁止把维护性能力留在动态插件里。
@@ -39,7 +39,7 @@ python dsh/tests/test_manifest.py
 # 2. 部署到 DSH 运行时（写 ~/.dsh，需全盘权限）
 pwsh dsh/scripts/install.ps1
 
-# 3. 四段总自检（工具链 / 技能 manifest / 安装产物 / 插件 schema）
+# 3. 五段总自检（工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁）
 pwsh dsh/scripts/selfcheck.ps1
 ```
 

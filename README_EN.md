@@ -40,7 +40,7 @@ RE-Framework/
 │   ├── plugins/re-framework-tools.js   # 3 ref_* model tools
 │   ├── preset/                # re-framework agent preset
 │   ├── scripts/install.ps1 + selfcheck.ps1 + gen_cheatsheet.py   # install + 4-item self-check + compaction derived-view template
-│   ├── tests/                 # test_manifest.py + check_plugin_schema.mjs
+│   ├── tests/                 # test_manifest.py + check_plugin_schema.mjs + audit_preset_rows.mjs
 │   └── AGENTS.md              # DSH maintenance entry
 ├── templates/                 # Artifact schemas (language-agnostic)
 ├── knowledge-builtin/         # Built-in knowledge base
@@ -76,6 +76,7 @@ RE-Framework/
 
 | Version | Date | Content |
 |---------|------|---------|
+| v2.4 | 2026-09-09 | **Upstream DSH drift fix + capability-surface alignment**: (1) upstream renamed `@deepseek-ai/dsh-workflow-worker-thread` → `@deepseek-ai/dsh-workflow-ptc` (old directory no longer a package) — the preset still referenced the old name, so preset mount failed and sessions could not be created/resumed (`failed to mount`); `id`+`name` renamed to follow upstream, `config` unchanged. (2) Capability surface aligned to the official standard preset (31 rows): added 5 rows — `command-goal`, `present` (enabled), `tool-ralph`, `tool-subagent-codex`, `tool-subagent-claude-code` (disabled per upstream default; enabling needs the matching Bundle in the Profile) → **ours 32 = official 31 + local `re-framework-tools`, gap 0**. (3) New fail-closed gate `tests/audit_preset_rows.mjs` wired into `selfcheck.ps1` as section [5] — any unresolvable preset row now fails the self-check instead of surfacing only on session resume (2026-09-09 drift incident, `.investigations/dsh-upstream-drift-20260909/报告.md`) |
 | v2.3 | 2026-08-21 | **Knowledge-base compaction** (absorbing the CoreSwap knowledge-compaction proposal, borrowing DSH compaction): structured entry front-matter (id/status/supersedes/superseded_by/signature/verdict/lesson, aligned with Anchorlaw v0.20 §15.4 supersession chain), derived views must not be hand-maintained (`gen_cheatsheet.py`), compaction pass (every 10 entries or topic closure, cluster-merge into principles + consolidated originals kept); **§4.5 fifth mandatory trigger** (handover conclusion verification ≤1 round + three-state session-switch advice MUST + contamination-signal separation, aligned with v0.20 §16.3); Anchorlaw v0.19→v0.20 |
 | v2.2 | 2026-08-21 | **DSH-only host migration**: Reasonix archived (`archive/reasonix/`), `dsh/skills/` single source of truth, tools 5→3 (ref_manifest_validate/ref_install retired with Reasonix), root AGENTS.md rewritten DSH-first, spec annotated, simplified install (single install.ps1), pure-reference Anchorlaw install (zero copy); knowledge value gate (P1/P2/P3); Anchorlaw v0.18→v0.19 (verification-scope clarification) |
 | v2.1 | 2026-08-14~15 | DSH adaptation (`dsh/` subtree), user-global skills, preset-only tools, Anchorlaw v0.15→v0.17→v0.18, SKILL-MAP DSH detector, error-ledger hardening |
