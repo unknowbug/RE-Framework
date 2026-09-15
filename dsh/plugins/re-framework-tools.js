@@ -21,7 +21,13 @@
 // this repository's dsh/ subtree (preset/ + plugins/ + skills/), per dsh/AGENTS.md.
 
 export const name = 're-framework-tools'
-export const inject = ['tools']
+// `subprocess` MUST be declared here, not merely read with ctx.get(): apply()
+// resolves it once and returns early when absent, and cordis does not guarantee
+// service readiness by tree order (mounts are async — DSH 0.1.5 mounts many
+// more plugins than 0.1.1 did). Declaring it makes the loader wait, so the
+// ref_* tools always register. The optional `skills`/`fs`/`sandboxPolicy` reads
+// below are different — they are consumed at call time.
+export const inject = ['tools', 'subprocess']
 
 export function apply(ctx, config = {}) {
   // Optional capabilities, read with ctx.get and handled when absent.
