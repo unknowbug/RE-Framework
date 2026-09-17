@@ -31,6 +31,10 @@ $srcRoot  = Split-Path -Parent $PSScriptRoot
 $dshHome  = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $HOME '.dsh' }
 $presetDir = Join-Path $dshHome '.agent-presets\re-framework'
 $userSkills = Join-Path $dshHome 'skills'
+# This framework's skill namespace in the SHARED ~/.dsh/skills tree. Only names
+# matching this prefix are ever refreshed or cleaned; other frameworks'
+# (e.g. Anchorlaw's anchor-*) skills are left untouched.
+$skillNamespace = '^(core|re|recode|swe|ref)-'
 
 Write-Host "== RE-Framework DSH install =="
 Write-Host "source      : $srcRoot"
@@ -97,11 +101,19 @@ else:
     $tmpPy = Join-Path $env:TEMP 'ref-patch-withdraw.py'
     Set-Content -Path $tmpPy -Value $py -Encoding UTF8
     $env:REF_PATCH_PATH = $patchPath
+    # Transactional edit (paper §5.2.2 Algorithm 10: backup -> try -> catch -> restore).
+    # The patch file is host-shared state: other frameworks' rows live in it too, so a
+    # bad rewrite is not recoverable by re-running this script. Back up first.
+    $patchBackup = "$patchPath.bak-ref-install"
+    Copy-Item -Path $patchPath -Destination $patchBackup -Force
     $result = python $tmpPy 2>&1
     $mergeCode = $LASTEXITCODE
     Remove-Item $tmpPy -Force -ErrorAction SilentlyContinue
     Remove-Item Env:REF_PATCH_PATH -ErrorAction SilentlyContinue
-    if ($mergeCode -ne 0) { throw "failed to withdraw patch row from $patchPath" }
+    if ($mergeCode -ne 0) {
+      Copy-Item -Path $patchBackup -Destination $patchPath -Force
+      throw "failed to withdraw patch row from $patchPath (restored from $patchBackup)"
+    }
     if ($result -match 'removed') {
       Write-Host "  - withdrew re-framework-tools-global from $patchPath"
     }
@@ -127,8 +139,83 @@ if (Test-Path (Join-Path $srcRoot 'skills')) {
   $presetSkills = Join-Path $presetDir 'skills'
   Remove-Item -Path $presetSkills -Recurse -Force -ErrorAction SilentlyContinue
   Copy-Item -Path (Join-Path $srcRoot 'skills') -Destination $presetSkills -Recurse -Force
+
+  # 4a. Orphan cleanup in the user-global tree, RESTRICTED to this framework's
+  #     namespace ($skillNamespace). ~/.dsh/skills is SHARED with other
+  #     frameworks (Anchorlaw's anchor-* skills live there), so a blanket clean
+  #     would delete another project's skills. Remove is therefore limited to
+  #     directories matching the ref-family prefix that no longer exist upstream;
+  #     anything outside the prefix is never touched.
+  #
+  #     Residual (accepted) risk: a user's OWN directory that happens to be named
+  #     core-*/re-*/recode-*/swe-*/ref-* and is not one of our skills would also be
+  #     removed. That is bounded to this framework's declared namespace — the same
+  #     namespace we own and refresh on every install — and is the documented cost
+  #     of automating orphan cleanup. To opt a directory out, rename it outside the
+  #     namespace or keep a marker file (see below).
+  if (Test-Path $userSkills) {
+    foreach ($dir in @(Get-ChildItem -Path $userSkills -Directory -ErrorAction SilentlyContinue)) {
+      if ($dir.Name -notmatch $skillNamespace) { continue }
+      if (Test-Path (Join-Path $dir.FullName '.keep-local')) {
+        Write-Host "  - kept local override (marker .keep-local): $($dir.Name)"
+        continue
+      }
+      if (-not (Test-Path (Join-Path $srcRoot "skills\$($dir.Name)"))) {
+        Remove-Item -Path $dir.FullName -Recurse -Force
+        Write-Host "  - removed orphan user-global skill: $($dir.Name) (dropped upstream)"
+      }
+    }
+  }
+
+  New-Item -ItemType Directory -Path $userSkills -Force | Out-Null
   Copy-Item -Path (Join-Path $srcRoot 'skills\*') -Destination $userSkills -Recurse -Force
 }
+
+# 5. Install manifest: give the installed artifacts an identity so "installed"
+#    becomes a mechanically checkable fact rather than a re-run-and-hope
+#    (CoreSwap paper study b2 rec.1; the same fail-closed philosophy as the
+#    preset-row gate). selfcheck section [3] reconciles against this file.
+$sourceCommit = '<unknown>'
+try {
+  $commit = git -C $srcRoot rev-parse HEAD 2>$null
+  if ($LASTEXITCODE -eq 0 -and $commit) { $sourceCommit = $commit.Trim() }
+} catch { $sourceCommit = '<unknown>' }   # non-git source: declare, never fail-open silently
+$installedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+
+$manifestTargets = @()
+foreach ($f in @(Get-ChildItem -Path $presetDir -Recurse -File -ErrorAction SilentlyContinue |
+                 Where-Object { $_.Name -notlike 'install-manifest.yaml' -and $_.Name -notlike '*.bak-ref-install' })) {
+  $rel = $f.FullName.Substring($presetDir.Length).TrimStart('\').Replace('\', '/')
+  $manifestTargets += [pscustomobject]@{ id = "preset/$rel"; target = $f.FullName; sha256 = (Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLower() }
+}
+foreach ($f in @(Get-ChildItem -Path $userSkills -Recurse -File -ErrorAction SilentlyContinue |
+                 Where-Object { $_.Name -notlike '.re-framework-manifest.yaml' })) {
+  $dirName = Split-Path (Split-Path $f.FullName -Parent) -Leaf
+  if ($dirName -notmatch $skillNamespace) { continue }
+  $rel = $f.FullName.Substring($userSkills.Length).TrimStart('\').Replace('\', '/')
+  $manifestTargets += [pscustomobject]@{ id = "skills/$rel"; target = $f.FullName; sha256 = (Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLower() }
+}
+
+function Write-InstallManifest($path, $roots, $targets) {
+  $sb = New-Object System.Text.StringBuilder
+  [void]$sb.AppendLine('schema_version: 1')
+  [void]$sb.AppendLine("# Auto-generated by install.ps1 - do not hand-edit (regenerated on install).")
+  [void]$sb.AppendLine("source_root: $($roots -replace '\\', '/')")
+  [void]$sb.AppendLine("source_commit: $sourceCommit")
+  [void]$sb.AppendLine("installed_at: $installedAt")
+  [void]$sb.AppendLine('artifacts:')
+  foreach ($t in ($targets | Sort-Object id)) {
+    [void]$sb.AppendLine("  - id: $($t.id)")
+    [void]$sb.AppendLine("    target: $($t.target -replace '\\', '/')")
+    [void]$sb.AppendLine("    sha256: $($t.sha256)")
+  }
+  Set-Content -Path $path -Value $sb.ToString() -Encoding UTF8
+}
+
+Write-InstallManifest (Join-Path $presetDir 'install-manifest.yaml') $srcRoot $manifestTargets
+$userManifest = Join-Path $userSkills '.re-framework-manifest.yaml'
+Write-InstallManifest $userManifest $srcRoot ($manifestTargets | Where-Object { $_.id -like 'skills/*' })
+Write-Host "  wrote install manifest: $($manifestTargets.Count) artifacts @ $sourceCommit"
 
 Write-Host ""
 Write-Host "Installed:"

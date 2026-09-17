@@ -22,16 +22,18 @@
 | `preset/agent.cordis.yml` | re-framework agent preset 组合 | **事实源**（改这里） |
 | `preset/preset.yml` | preset 显示元数据 | 事实源 |
 | `scripts/install.ps1` | 安装/同步到 DSH 运行时 | 维护工具 |
-| `scripts/selfcheck.ps1` | 五段自检（工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁） | 维护工具 |
+| `scripts/selfcheck.ps1` | 五段自检（工具链 / 技能 manifest / **安装产物对账** / 插件 schema / preset 行解析门禁） | 维护工具 |
 | `tests/test_manifest.py` | 技能 manifest 校验（DSH 命名 + frontmatter + 技能集 + 交叉引用） | 维护测试 |
 | `tests/check_plugin_schema.mjs` | 插件工具 schema 门禁（parameters 必须编译后 JSON Schema；2026-08-13 事故） | 维护测试 |
 | `tests/audit_preset_rows.mjs` | preset 行解析性门禁（fail-closed）——镜像上游 `classifyRowSpecifier()` 四分类：`cordis:` 内置 / `.` 开头=preset 自带文件 / `file:`与绝对路径=文件 URL / 其余=包名，包名自 **harness base**（已安装 harness，checkout 下为 `apps/cli`）向上走 `node_modules`。上游改名/移除即非零退出；基准选错时 exit 2 声明无法执行（不是静默通过）（2026-09-09 `dsh-workflow-worker-thread` → `dsh-workflow-ptc` 漂移事故 + 同日 specifier 语义对齐） | 维护测试 |
 | `SYNC.md` | 溯源戳（上次同步的上游 commit + 时间 + 差异） | 溯源记录 |
 | `SKILL-MAP.md` | **DSH 探测器 + 调用接口速查**（kebab 名路由表 + 强初始化/Phase 0-3 流程驱动 + dot→kebab 映射 + ref_* 工具/脚本对照；根 AGENTS.md 的 DSH 指引行指向这里，DSH 会话先读） | 接口桥接 + 流程驱动文档 |
 | **安装产物（勿手改）** | | |
-| `~/.dsh/.agent-presets/re-framework/` | 已安装 preset（组合 + plugins/ + skills/） | install.ps1 生成 |
-| `~/.dsh/skills/ref-*` | **用户级全局技能**（任何 preset/工作目录的会话按需加载） | install.ps1 同步 |
+| `~/.dsh/.agent-presets/re-framework/` | 已安装 preset（组合 + plugins/ + skills/ + `install-manifest.yaml`） | install.ps1 生成 |
+| `~/.dsh/skills/ref-*` | **用户级全局技能**（任何 preset/工作目录的会话按需加载；含 `.re-framework-manifest.yaml`） | install.ps1 同步 |
 | `~/.dsh/.agent-presets/re-framework/plugins/` | preset 内嵌工具插件（3 个 ref_*，仅 re-framework preset 会话） | install.ps1 复制 |
+
+**安装产物具备身份（2026-09-17 起）**：`install.ps1` 生成 `install-manifest.yaml` / `.re-framework-manifest.yaml`（`source_commit` + 每件 `sha256`），`selfcheck.ps1` 第 3 段据此**内容对账**（MISSING / DRIFT / ORPHAN 三态，非零退出）。**计数检查降为二级断言**——只数目录证明不了内容一致，那是与 preset 行门禁同类的"静默变绿"失败模式。同时 `install.ps1` 清理**本框架命名空间内**的上游已删技能（**绝不触碰 `anchor-*` 等其他框架技能**，`~/.dsh/skills` 是多框架共享树）；profile patch 改写前先备份（失败即 restore）。
 
 **同步纪律（核心铁律）**：所有修改只改本目录事实源，然后跑 `scripts/install.ps1` 重装——安装产物一律视为可再生，禁止手改。技能正文直接在本目录 `skills/` 改（单一事实源），`tests/test_manifest.py` 守护 manifest 形态与交叉引用。
 

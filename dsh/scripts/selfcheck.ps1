@@ -4,8 +4,12 @@
 # must be able to verify itself. Checks:
 #   1. python toolchain availability
 #   2. DSH skill manifest validity (naming/frontmatter/set/cross-refs) via tests/test_manifest.py
-#   3. installed preset + user-global skills under ~/.dsh (Reasonix archived:
-#      no validate_manifest.py self-scan anymore)
+#   3. installed preset + user-global skills under ~/.dsh: existence/count checks
+#      PLUS content reconciliation against install-manifest.yaml (sha256 → 0
+#      missing / 0 drift / 0 orphan). Counting directories only proves "17
+#      directories exist"; it cannot see a stale, edited or orphaned copy — the
+#      same silently-green failure class the preset-row gate eliminates.
+#      (Reasonix archived: no validate_manifest.py self-scan anymore)
 #   4. plugin tool-schema shape (compiled JSON-Schema parameters) via
 #      tests/check_plugin_schema.mjs — a flat spec would reach the LLM without
 #      a top-level type and break every session ("Invalid schema ... type: null").
@@ -19,6 +23,9 @@ $ErrorActionPreference = 'Continue'
 
 $srcRoot = Split-Path -Parent $PSScriptRoot
 $fail = 0
+# This framework's namespace in the SHARED ~/.dsh/skills tree (Anchorlaw's
+# anchor-* skills live there too, so every check is scoped to this prefix).
+$skillNamespace = '^(core|re|recode|swe|ref)-'
 
 Write-Host "== RE-Framework DSH self-check =="
 
@@ -50,9 +57,65 @@ $count = @(Get-ChildItem -Path $presetSkills -Directory -ErrorAction SilentlyCon
 Write-Host "  OK embedded skills: $count directories (expected 17)"
 if ($count -lt 17) { Write-Host "  FAIL: expected 17 ref-* skills"; $fail = 1 }
 $userSkills = Join-Path $dshHome 'skills'
-$userCount = @(Get-ChildItem -Path $userSkills -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^(core|re|recode|swe|ref)-' }).Count
+$userCount = @(Get-ChildItem -Path $userSkills -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match $skillNamespace }).Count
 Write-Host "  OK user-global skills: $userCount ref-family directories (expected 17, visible in any session)"
 if ($userCount -lt 17) { Write-Host "  FAIL: expected 17 user-global ref-family skills"; $fail = 1 }
+
+# 3b. Content reconciliation against the install manifest (CoreSwap paper study
+#     b2 rec.1). The count checks above only prove "17 directories exist" — they
+#     cannot see an edited, stale or orphaned copy, so they are the same
+#     silently-green failure class the preset-row gate was built to eliminate.
+#     These checks prove the CONTENT is what install.ps1 actually wrote.
+#     Reconcile a manifest against disk; returns "MISSING/DRIFT/ORPHAN" counters.
+function Test-InstallManifest($manifestPath, $label, $namespace) {
+  if (-not (Test-Path $manifestPath)) {
+    Write-Host "  FAIL: $label install manifest missing — re-run install.ps1"
+    $script:fail = 1
+    return
+  }
+  $lines = Get-Content $manifestPath
+  $entries = @()
+  $cur = $null
+  foreach ($line in $lines) {
+    if ($line -match '^\s*-\s+id:\s*(.+)$') {
+      if ($cur) { $entries += $cur }
+      $cur = [ordered]@{ id = $Matches[1].Trim() }
+    } elseif ($cur -and $line -match '^\s+target:\s*(.+)$') { $cur.target = $Matches[1].Trim() }
+    elseif ($cur -and $line -match '^\s+sha256:\s*(.+)$') { $cur.sha256 = $Matches[1].Trim() }
+  }
+  if ($cur) { $entries += $cur }
+
+  $missing = 0; $drift = 0
+  foreach ($e in $entries) {
+    $t = $e.target -replace '/', '\'
+    if (-not (Test-Path $t)) { $missing++; Write-Host "    MISSING: $($e.id)"; continue }
+    $actual = (Get-FileHash $t -Algorithm SHA256).Hash.ToLower()
+    if ($actual -ne $e.sha256) { $drift++; Write-Host "    DRIFT: $($e.id) (content differs from what install.ps1 wrote)" }
+  }
+
+  # ORPHAN: a ref-family artifact on disk that the manifest does not know about
+  # (= dropped upstream but still installed). Scoped to this framework's
+  # namespace so other frameworks' skills in the shared tree are never flagged.
+  $orphan = 0
+  if ($namespace) {
+    $manifestIds = @($entries | ForEach-Object { $_.id })
+    foreach ($dir in @(Get-ChildItem -Path $userSkills -Directory -ErrorAction SilentlyContinue)) {
+      if ($dir.Name -notmatch $namespace) { continue }
+      if (Test-Path (Join-Path $dir.FullName '.keep-local')) { continue }   # local override opt-out
+      $known = @($manifestIds | Where-Object { $_ -like "skills/$($dir.Name)/*" })
+      if ($known.Count -eq 0) { $orphan++; Write-Host "    ORPHAN: $($dir.Name) (installed but not in manifest)" }
+    }
+  }
+
+  if ($missing -eq 0 -and $drift -eq 0 -and $orphan -eq 0) {
+    Write-Host "  OK $label content reconciled: $($entries.Count) artifacts (0 missing, 0 drift, 0 orphan)"
+  } else {
+    Write-Host "  FAIL: $label unreconciled — $missing missing, $drift drifted, $orphan orphaned (re-run install.ps1)"
+    $script:fail = 1
+  }
+}
+Test-InstallManifest (Join-Path $presetDir 'install-manifest.yaml') 'preset' $null
+Test-InstallManifest (Join-Path $userSkills '.re-framework-manifest.yaml') 'user-global' $skillNamespace
 # Global tool group must be WITHDRAWN (user decision 2026-08-15): no
 # re-framework-tools-global row in any profile patch, no profile-local plugin
 # copy, no legacy ~/.dsh/cordis.patch.yml.

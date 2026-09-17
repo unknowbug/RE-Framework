@@ -14,7 +14,7 @@ whenToUse: 任何工程任务（re-binary / re-code / swe 所有模块）开始�
 
 任何工程任务（re-binary / re-code / swe 所有模块）开始实际分析**之前**，必须先过本 skill。
 
-## 交接结论验证（Phase 0 前置，MUST；2026-08-21 吸收 CoreSwap 提案 3.4.1，对齐 Anchorlaw v0.21 §16.3）
+## 交接结论验证（Phase 0 前置，MUST；2026-08-21 吸收 CoreSwap 提案 3.4.1，对齐 Anchorlaw v0.22 §16.3）
 
 接手交接文档（NEXT_SESSION/前次架构/台账）开工前：
 

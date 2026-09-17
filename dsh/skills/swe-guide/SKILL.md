@@ -9,7 +9,7 @@ whenToUse: 任务是编程类（编写/修改/审查代码、协议设计、常�
 > Module: swe
 > Layer: L0 (Concepts) — 入口指引
 > Execution: inline
-> 协议正文不在此处——引用 [Anchorlaw v0.21](https://github.com/unknowbug/anchorlaw)，单一事实源。
+> 协议正文不在此处——引用 [Anchorlaw v0.22](https://github.com/unknowbug/anchorlaw)，单一事实源。
 
 ## 触发场景
 

@@ -29,12 +29,16 @@ whenToUse: 二进制逆向需高精度还原函数/方法时（汇编→C++ 六�
 
 **步骤5 — 语义折叠**: 识别算法模式（CRC/哈希/加密/压缩等）/ 改有意义变量名 / 修正签名 / 标注置信度低的区域。
 
-**步骤6 — anchor 载体**: 按 [Anchorlaw v0.21](https://github.com/unknowbug/anchorlaw) 协议产出 `@anchor.test` / `@anchor.idk`：
+**步骤6 — anchor 载体**: 按 [Anchorlaw v0.22](https://github.com/unknowbug/anchorlaw) 协议产出 `@anchor.test` / `@anchor.idk`：
 - 每个明确可验证的输入→输出对 → `@anchor.test`（source 必填，trace/memory）
 - 每个无法确定的行为边界 → `@anchor.idk`（具体到可验证条件，source 可 static）
 - 缺 source 的 @anchor.test → 视为凭空编造，judge 直接驳回
 - **验证记录落盘**（spec §1.3）：source 引用的验证记录同步落盘 `.investigations/<任务>/regression-record.md`（条目 + 命令 + 输出摘要）——让 judge 能核对「验证真的跑过」，而不是事后补证
 - **order-dependence 标注**（spec §1.3）：还原点涉及排序/缓存/平局/tie-break/遍历序时，@anchor 描述 **MUST 标注 order-dependence**，并验证「确定性 + 与参照实现查询序列对齐」（实战项目实证：C++ 线性 find 平局取首个 vs Java 树序遍历取另一值，且平局结果依赖查询序列）
+- **跨载体可比性声明**（Anchorlaw v0.22 §9.7.1 等价档位）：若结论建立在对**两个不同执行体/不同形态**的观测上（不同二进制、不同构建、不同门控形态——**逆向中极常见**），MUST 在 `source=` 之外声明：
+  - **等价档位**：`E1` 同载体单变量（一次执行体、零重编译、运行期开关覆盖）/ `E2` 跨载体或跨形态（**正常档**——跨版本、跨实现长期在此；读作*限制到共同观测 key 集 `S`*）/ `E3` 交错未知（并发、并行臂、探针干扰——**不可判定**，只能声称"在已记录交错下未观测到差异"）
+  - **共同观测 key 集 `S`** + `S` 之外为何无分支的说明
+  - **无效声明清单**（§9.7.1）：计数恒等 ≠ 集合恒等；同口径 ≠ 无伪差；合理解释 ≠ 已验证；前提存在 ≠ 前提满足
 
 ## 产物
 

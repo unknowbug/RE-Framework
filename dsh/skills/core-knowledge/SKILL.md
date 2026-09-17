@@ -160,7 +160,7 @@ lesson: "一行教训（速查表生成源）"
 ```
 
 - 正文五段式**不变**（错误优先原则不动）；front-matter 是**生成视图的数据源**，不是给人读的。
-- `supersedes`/`superseded_by` 双向链接对齐 **Anchorlaw v0.21 §15.4 结论 supersession 链**（载体归宿主，本技能即宿主落地）——任一条目可机械回答"当前有效结论是什么、被谁取代"。
+- `supersedes`/`superseded_by` 双向链接对齐 **Anchorlaw v0.22 §15.4 结论 supersession 链**（载体归宿主，本技能即宿主落地）——任一条目可机械回答"当前有效结论是什么、被谁取代"。
 
 ### 2. 派生视图禁止手维护（机械层，MUST）
 
