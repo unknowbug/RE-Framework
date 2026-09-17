@@ -3,7 +3,7 @@
 > 基于《打破传统AI逆向的新思路：多Agent、自主管理上下文》(BitWarden, 看雪学苑 2026.06.18) 的方法论内核，
 > 工程化、Skills化、SubAgents化拆分升级：**领域无关核心 + 按需加载领域模块**，从二进制逆向到代码逆向到常规编程全兼容。
 > **DeepSeek Harness（DSH）是唯一维护宿主**（2026-08-21 起；Reasonix 宿主格式已归档至 `archive/reasonix/`，Fork 可恢复自行迭代）。
-> 验证协议继承 [Anchorlaw Protocol v0.20](https://github.com/unknowbug/anchorlaw)（MIT，协议引用，不复制实现）。
+> 验证协议继承 [Anchorlaw Protocol v0.21](https://github.com/unknowbug/anchorlaw)（MIT，协议引用，不复制实现）。
 
 ---
 
@@ -30,7 +30,7 @@ pwsh dsh/scripts/selfcheck.ps1
 ```
 RE-Framework/
 ├── AGENTS.md                  # DSH-first 索引（自动加载入口）
-├── spec/                      # 框架协议（铁律/工作流/产物/知识库/版本）+ Anchorlaw v0.20 引用
+├── spec/                      # 框架协议（铁律/工作流/产物/知识库/版本）+ Anchorlaw v0.21 引用
 ├── dsh/                       # DSH 宿主适配层（唯一维护区）
 │   ├── skills/                # 17 个 ref-* 技能（单一事实源，直接维护）
 │   ├── SKILL-MAP.md           # DSH 探测器（强初始化/路由/Phase 0-3/执行强制链 + dot→kebab 映射）
@@ -73,7 +73,8 @@ RE-Framework/
 
 | 版本 | 日期 | 内容 |
 |------|------|------|
-| v2.4 | 2026-09-09 | **上游 DSH 漂移修复 + 能力面对齐**：(1) 上游把 `@deepseek-ai/dsh-workflow-worker-thread` 改名为 `@deepseek-ai/dsh-workflow-ptc`（旧目录已不再是包）——preset 仍引用旧名，导致 **preset 挂载失败、会话无法创建/恢复**（`failed to mount`）；`id`+`name` 随上游改名，`config` 不变。(2) 能力面对齐官方 standard preset（31 行）：补 5 行——`command-goal`、`present`（启用）、`tool-ralph`、`tool-subagent-codex`、`tool-subagent-claude-code`（按上游默认 disabled，启用需在 Profile 装对应 Bundle）→ **ours 32 = official 31 + 本地 `re-framework-tools`，缺口 0**。(3) 新增 fail-closed 门禁 `tests/audit_preset_rows.mjs` 并接入 `selfcheck.ps1` 第 [5] 项——preset 任一行不可解析即自检变红，不再等用户 resume 报错（2026-09-09 漂移事故，`.investigations/dsh-upstream-drift-20260909/报告.md`） |
+| v2.5 | 2026-09-17 | **Anchorlaw 引用 v0.20 → v0.21 升级核对**：v0.21 为**宿主适配层进展登记**（preset 能力面对齐 + fail-closed preset 行解析门禁），**协议核心逐字节未变**——比对方法：`protocol-v0.20.md` 与 `protocol-v0.21.md` 正文（changelog 之前）归一化版本号后逐行 diff，唯一差异为版本头部发布说明 16 行；§5/§9/§12/§13/§14/§15/§16 逐节零差异，§11/§16 零差异，**§8 Maturity 表行数不变**（仅 Host Integration 行文本补 v0.21 说明）。§5/§9/§12/§13/§14/§15/§16 条款全部保留，**纯引用版本号升级，无语义迁移**。详见 spec §3 新增核对行 + `dsh/SYNC.md` |
+| v2.4 | 2026-09-09 | **上游 DSH 漂移修复 + 能力面对齐**：(1) 上游把 `@deepseek-ai/dsh-workflow-worker-thread` 改名为 `@deepseek-ai/dsh-workflow-ptc`（旧目录已不再是包）——preset 仍引用旧名，导致 **preset 挂载失败、会话无法创建/恢复**（`failed to mount`）；`id`+`name` 随上游改名，`config` 不变。(2) 能力面对齐官方 standard preset（31 行）：补 5 行——`command-goal`、`present`（启用）、`tool-ralph`、`tool-subagent-codex`、`tool-subagent-claude-code`（按上游默认 disabled，启用需在 Profile 装对应 Bundle）→ **ours 32 = official 31 + 本地 `re-framework-tools`，缺口 0**。(3) 新增 fail-closed 门禁 `tests/audit_preset_rows.mjs` 并接入 `selfcheck.ps1` 第 [5] 项——preset 任一行不可解析即自检变红，不再等用户 resume 报错（2026-09-09 漂移事故，`.investigations/dsh-upstream-drift-20260909/报告.md`）。(4) 同日第二轮：**preset 行 specifier 解析语义对齐上游**（`classifyRowSpecifier()` 四分类 + 包名自 harness base 向上走查；错基准 fail-closed） |
 | v2.3 | 2026-08-21 | **知识库压实机制**（吸收 CoreSwap knowledge-compaction 提案，借鉴 DSH compaction）：条目结构化 front-matter（id/status/supersedes/superseded_by/signature/verdict/lesson，对齐 Anchorlaw v0.20 §15.4 supersession 链）、派生视图禁止手维护（`gen_cheatsheet.py` 机械生成）、压实 pass（每 10 条或课题结案，簇合并为原则 + consolidated 原文保留）；**§4.5 第五条强制触发点**（交接结论验证 ≤1 轮 + 闭合点三态切换建议 MUST + 污染信号触发分离落盘，对齐 v0.20 §16.3）；Anchorlaw 引用 v0.19→v0.20 |
 | v2.2 | 2026-08-21 | **DSH 唯一宿主迁移**：Reasonix 归档（`archive/reasonix/`）、`dsh/skills/` 变单一事实源、工具 5→3（ref_manifest_validate/ref_install 随 Reasonix 退役）、根 AGENTS.md 重写 DSH-first、spec 标注归档、安装简化（单一 install.ps1）、对 Anchorlaw 纯引用式安装（零复制）；知识记录价值门（P1/P2/P3）；Anchorlaw 引用 v0.18→v0.19（验证协议定位澄清） |
 | v2.1 | 2026-08-14~15 | DSH 适配层（`dsh/` 子树）、技能用户级全局、工具 preset-only、Anchorlaw 引用 v0.15→v0.17→v0.18、SKILL-MAP DSH 探测器、错误账本强化 |
