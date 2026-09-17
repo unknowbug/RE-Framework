@@ -25,7 +25,7 @@
 | `scripts/selfcheck.ps1` | 五段自检（工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁） | 维护工具 |
 | `tests/test_manifest.py` | 技能 manifest 校验（DSH 命名 + frontmatter + 技能集 + 交叉引用） | 维护测试 |
 | `tests/check_plugin_schema.mjs` | 插件工具 schema 门禁（parameters 必须编译后 JSON Schema；2026-08-13 事故） | 维护测试 |
-| `tests/audit_preset_rows.mjs` | preset 行解析性门禁（fail-closed）——composition 每个 `name:` 必须在 harness 包集合中可解析，上游改名/移除即非零退出（2026-09-09 `dsh-workflow-worker-thread` → `dsh-workflow-ptc` 漂移事故） | 维护测试 |
+| `tests/audit_preset_rows.mjs` | preset 行解析性门禁（fail-closed）——镜像上游 `classifyRowSpecifier()` 四分类：`cordis:` 内置 / `.` 开头=preset 自带文件 / `file:`与绝对路径=文件 URL / 其余=包名，包名自 **harness base**（已安装 harness，checkout 下为 `apps/cli`）向上走 `node_modules`。上游改名/移除即非零退出；基准选错时 exit 2 声明无法执行（不是静默通过）（2026-09-09 `dsh-workflow-worker-thread` → `dsh-workflow-ptc` 漂移事故 + 同日 specifier 语义对齐） | 维护测试 |
 | `SYNC.md` | 溯源戳（上次同步的上游 commit + 时间 + 差异） | 溯源记录 |
 | `SKILL-MAP.md` | **DSH 探测器 + 调用接口速查**（kebab 名路由表 + 强初始化/Phase 0-3 流程驱动 + dot→kebab 映射 + ref_* 工具/脚本对照；根 AGENTS.md 的 DSH 指引行指向这里，DSH 会话先读） | 接口桥接 + 流程驱动文档 |
 | **安装产物（勿手改）** | | |
