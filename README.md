@@ -36,7 +36,7 @@ RE-Framework/
 │   ├── SKILL-MAP.md           # DSH 探测器（强初始化/路由/Phase 0-3/执行强制链 + dot→kebab 映射）
 │   ├── plugins/re-framework-tools.js   # 3 个 ref_* 模型工具
 │   ├── preset/                # re-framework agent preset
-│   ├── scripts/install.ps1 + selfcheck.ps1 + gen_cheatsheet.py   # 安装 + 五段自检 + 压实派生视图生成模板
+│   ├── scripts/install.ps1 + selfcheck.ps1 + patch_layer.py + gen_cheatsheet.py   # 安装 + 六段自检 + patch 层原语 + 压实派生视图生成模板
 │   ├── tests/                 # test_manifest.py + check_plugin_schema.mjs + audit_preset_rows.mjs
 │   └── AGENTS.md              # DSH 维护入口
 ├── templates/                 # 产物 schema（语言无关）
@@ -73,6 +73,7 @@ RE-Framework/
 
 | 版本 | 日期 | 内容 |
 |------|------|------|
+| v2.7 | 2026-09-18 | **patch 层判据修正（判 row 不判文件）+ 消除破坏性写**：`selfcheck.ps1` 曾把 `$DSH_HOME/cordis.patch.yml` **存在**即判 FAIL，`install.ps1` 在内容含本框架 row 时**整文件删除**——该文件是合法的 home 级 patch 层（后于 profile 层应用、优先级更高；`@deepseek-ai/dsh-app-boot` README 与 0.1.5-rc.2 / 0.1.6-alpha.2 的 `homePatchPath()` 均可证），实际承载其他框架的 row 与本机偏好。修正：①新增共享原语 `dsh/scripts/patch_layer.py`（`--has-row` / `--remove-row`；文本级、保 BOM/行尾/注释、只在真删到 row 时写盘并留 `.bak-ref-install`、原子替换、诊断走 stdout 以避开 PS 5.1 的 stderr 升格）②`selfcheck.ps1` 与 `install.ps1` 对 home 层与每个 profile 层**共用该原语**（原先 profile 层按内容判断、home 层按文件存在判断，两套逻辑不一致正是 bug 成因）③新增自检第 6 段 `dsh/tests/test_home_patch.py`（13 例，锁「存在≠违规」「按 entry 粒度只删本框架 entry、同行的他框架 entry 存活」「无 row 零写入」「删空后补 `[]` 保持可启动」）。自检五段→六段 | 0 |
 | v2.6 | 2026-09-17 | **Anchorlaw v0.22 实质条款升级 + CoreSwap 论文研究吸收**：(1) 引用 v0.21 → **v0.22**——v0.22 新增**五条款**（§9 +37 行 / §14 +34 行 / §15 +75 行），**本次是实质升级非纯版本号**；五条款全部落地（§9.8 副作用边界与逆登记 → spec §5.6 + core-artifact；§15.4 判据前置集 → spec §4.5 + core-judge；§9.7.1 等价档位 → re-lift；§15.4 PI-1 halt 终态性 → spec §4.5 + core-fanout 汇聚完整性；§14.7 引用完整性 → spec §3 检查动作）。(2) **安装产物具备身份**——`install.ps1` 写 sha256 manifest，`selfcheck.ps1` 第 3 段从「数目录」升级为**内容对账**（MISSING/DRIFT/ORPHAN），并补两个既有真空洞：用户级 orphan 残留清理（限本框架命名空间，**绝不误删 `anchor-*`**）+ profile patch 改写前备份。(3) 新增触发点产物门 `audit_trigger_coverage.mjs`（**只判"触发后有无产物"，不判"该不该触发"**；实测误报率 **1.1%**）。(4) 交接声明证据等级（numeric 可继承 / qualitative 须回原始日志 / anchor 须属主自核），**限定语义性交接**避免过度工程 |
 | v2.5 | 2026-09-17 | **Anchorlaw 引用 v0.20 → v0.21 升级核对**：v0.21 为**宿主适配层进展登记**（preset 能力面对齐 + fail-closed preset 行解析门禁），**协议核心逐字节未变**——比对方法：`protocol-v0.20.md` 与 `protocol-v0.21.md` 正文（changelog 之前）归一化版本号后逐行 diff，唯一差异为版本头部发布说明 16 行；§5/§9/§12/§13/§14/§15/§16 逐节零差异，§11/§16 零差异，**§8 Maturity 表行数不变**（仅 Host Integration 行文本补 v0.21 说明）。**纯引用版本号升级，无语义迁移**。详见 spec §3 新增核对行 + `dsh/SYNC.md` |
 | v2.4 | 2026-09-09 | **上游 DSH 漂移修复 + 能力面对齐**：(1) 上游把 `@deepseek-ai/dsh-workflow-worker-thread` 改名为 `@deepseek-ai/dsh-workflow-ptc`（旧目录已不再是包）——preset 仍引用旧名，导致 **preset 挂载失败、会话无法创建/恢复**（`failed to mount`）；`id`+`name` 随上游改名，`config` 不变。(2) 能力面对齐官方 standard preset（31 行）：补 5 行——`command-goal`、`present`（启用）、`tool-ralph`、`tool-subagent-codex`、`tool-subagent-claude-code`（按上游默认 disabled，启用需在 Profile 装对应 Bundle）→ **ours 32 = official 31 + 本地 `re-framework-tools`，缺口 0**。(3) 新增 fail-closed 门禁 `tests/audit_preset_rows.mjs` 并接入 `selfcheck.ps1` 第 [5] 项——preset 任一行不可解析即自检变红，不再等用户 resume 报错（2026-09-09 漂移事故，`.investigations/dsh-upstream-drift-20260909/报告.md`）。(4) 同日第二轮：**preset 行 specifier 解析语义对齐上游**（`classifyRowSpecifier()` 四分类 + 包名自 harness base 向上走查；错基准 fail-closed） |

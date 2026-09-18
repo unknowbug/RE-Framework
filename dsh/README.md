@@ -51,9 +51,9 @@ dsh/
 
 - **单一事实源**：框架正文只存仓库根；技能正文规范份在 `../skills/`，本目录只允许 frontmatter 适配（改 `scripts/sync_skills.py` 后重生成）
 - **只改事实源**（`skills/` 生成器、`plugins/`、`preset/`），然后跑 `scripts/install.ps1` 重装
-- 安装产物（`~/.dsh/.agent-presets/re-framework/`、`~/.dsh/skills/ref-*`、`<profile>/plugins/re-framework/`、`<profile>/cordis.patch.yml` 的 re-framework-tools-global insert 行）禁止手改
-- 改动后必须 `scripts/selfcheck.ps1` 全绿（含正文级一致性校验 + 第 5 项插件 schema 校验）
-- 多框架共存：技能/工具命名空间按框架前缀隔离（ref-*/ref_* 与 anchor-*/anchorlaw_*）；插件文件按框架子目录存放（`<profile>/plugins/<framework>/`）；`<profile>/cordis.patch.yml` 是唯一用户级工具登记点（insert 形态），可查可控；**工具 parameters 必须编译后 JSON Schema（挂载前跑 tests/check_plugin_schema.mjs）**
+- 安装产物（`~/.dsh/.agent-presets/re-framework/`、`~/.dsh/skills/ref-*`、`<profile>/plugins/re-framework/`）禁止手改
+- 改动后必须 `scripts/selfcheck.ps1` 全绿（含正文级一致性校验 + 第 4 项插件 schema 校验 + 第 5 项 preset 行解析门禁 + 第 6 项 patch 层原语回归）
+- 多框架共存：技能/工具命名空间按框架前缀隔离（ref-*/ref_* 与 anchor-*/anchorlaw_*）；插件文件按框架子目录存放（`<profile>/plugins/<framework>/`）；**patch 层判据是 row 不是文件**——`<profile>/cordis.patch.yml` 与 home 级 `$DSH_HOME/cordis.patch.yml` 都是合法 DSH patch 层（home 级后应用、优先级更高），只检查、只摘除本框架的 `re-framework-tools-global` 行，**绝不整文件删除**（2026-09-18 修正，原逻辑把 home 层「存在」当违规）；**工具 parameters 必须编译后 JSON Schema（挂载前跑 tests/check_plugin_schema.mjs）**
 
 ## 依赖
 

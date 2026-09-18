@@ -49,17 +49,33 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # 1. Cleanup legacy wrong mounts (2026-08-13 incident + 2026-08-15 reversal):
-#    a) ~/.dsh/cordis.patch.yml — the host never reads it (only
-#       profiles/<profile>/cordis.patch.yml).
+#    a) ~/.dsh/cordis.patch.yml — this IS legal DSH state: it is the home-level
+#       user patch layer, applied after every profile's own layer
+#       (@deepseek-ai/dsh-app-boot README: "applied after every bundle layer
+#       (per-profile first, then the home-level file, which therefore outranks
+#       it)"). It also carries other frameworks' rows and machine-local
+#       settings, so this script NEVER deletes the file: if it still holds the
+#       withdrawn re-framework-tools-global row, only THAT ROW is removed and
+#       every other byte is kept (2026-09-18 fix; before that the whole file was
+#       deleted, which could destroy a machine's shared configuration).
 #    b) ~/.dsh/plugins/re-framework/ — wrong location.
 #    c) re-framework-tools-global insert rows in every profile patch — the
 #       global tool group is withdrawn per user decision; skills stay global.
-$legacyHomePatch = Join-Path $dshHome 'cordis.patch.yml'
-if (Test-Path $legacyHomePatch) {
-  $legacyContent = Get-Content $legacyHomePatch -Raw -ErrorAction SilentlyContinue
-  if ($legacyContent -match 're-framework-tools-global') {
-    Remove-Item $legacyHomePatch -Force
-    Write-Host "  - removed legacy ~/.dsh/cordis.patch.yml (host does not read it)"
+#
+#    Row-level logic lives in ONE place (scripts/patch_layer.py, row id passed
+#    in) and is shared with selfcheck.ps1, so the gate and the cleanup cannot
+#    disagree again. patch_layer.py writes atomically, only when the row is
+#    actually present, and it takes the .bak-ref-install backup itself.
+$rowId = 're-framework-tools-global'
+$patchLayerPy = Join-Path $srcRoot 'scripts\patch_layer.py'
+$homePatch = Join-Path $dshHome 'cordis.patch.yml'
+if (Test-Path $homePatch) {
+  $result = python $patchLayerPy --remove-row $homePatch --row-id $rowId --backup 2>&1
+  if ($LASTEXITCODE -ne 0) {
+    throw "failed to withdraw $rowId from $homePatch (nothing was written; see the message above)"
+  }
+  if ($result -match 'removed') {
+    Write-Host "  - withdrew $rowId from $homePatch (row only; other rows, comments, BOM and line endings kept)"
   }
 }
 $legacyPlugins = Join-Path $dshHome 'plugins\re-framework'
@@ -70,7 +86,8 @@ if (Test-Path $legacyPlugins) {
 
 # 1c. Withdraw the global tool row from every profile patch (idempotent):
 #     drop any re-framework-tools-global insert row, keep everything else
-#     (e.g. anchorlaw-tools-global), and delete the profile-local plugin copy.
+#     (e.g. anchorlaw-tools-global, plus comments, BOM and line endings), and
+#     delete the profile-local plugin copy. Same primitive as the home layer.
 $profilesDir = Join-Path $dshHome 'profiles'
 $profiles = @()
 if (Test-Path $profilesDir) {
@@ -81,41 +98,12 @@ if (Test-Path $profilesDir) {
 foreach ($profile in $profiles) {
   $patchPath = Join-Path $profile.FullName 'cordis.patch.yml'
   if (Test-Path $patchPath) {
-    $py = @'
-import io, os, yaml
-path = os.environ['REF_PATCH_PATH']
-with io.open(path, encoding='utf-8') as f:
-    data = yaml.safe_load(f)
-rows = list(data) if isinstance(data, list) else []
-kept = [r for r in rows if not (
-    isinstance(r, dict) and any(
-        (e or {}).get('id') == 're-framework-tools-global' for e in (r.get('insert') or [])))]
-if len(kept) != len(rows):
-    out = yaml.safe_dump(kept, allow_unicode=True, sort_keys=False)
-    with io.open(path, 'w', encoding='utf-8', newline='\n') as f:
-        f.write(out)
-    print('removed')
-else:
-    print('absent')
-'@
-    $tmpPy = Join-Path $env:TEMP 'ref-patch-withdraw.py'
-    Set-Content -Path $tmpPy -Value $py -Encoding UTF8
-    $env:REF_PATCH_PATH = $patchPath
-    # Transactional edit (paper §5.2.2 Algorithm 10: backup -> try -> catch -> restore).
-    # The patch file is host-shared state: other frameworks' rows live in it too, so a
-    # bad rewrite is not recoverable by re-running this script. Back up first.
-    $patchBackup = "$patchPath.bak-ref-install"
-    Copy-Item -Path $patchPath -Destination $patchBackup -Force
-    $result = python $tmpPy 2>&1
-    $mergeCode = $LASTEXITCODE
-    Remove-Item $tmpPy -Force -ErrorAction SilentlyContinue
-    Remove-Item Env:REF_PATCH_PATH -ErrorAction SilentlyContinue
-    if ($mergeCode -ne 0) {
-      Copy-Item -Path $patchBackup -Destination $patchPath -Force
-      throw "failed to withdraw patch row from $patchPath (restored from $patchBackup)"
+    $result = python $patchLayerPy --remove-row $patchPath --row-id $rowId --backup 2>&1
+    if ($LASTEXITCODE -ne 0) {
+      throw "failed to withdraw $rowId from $patchPath (nothing was written; see the message above)"
     }
     if ($result -match 'removed') {
-      Write-Host "  - withdrew re-framework-tools-global from $patchPath"
+      Write-Host "  - withdrew $rowId from $patchPath"
     }
   }
   $profilePluginDir = Join-Path $profile.FullName 'plugins\re-framework'

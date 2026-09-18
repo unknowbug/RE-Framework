@@ -466,7 +466,8 @@ notes: |
 | 写 `.investigations/` / `.artifacts/` | **界内** | 逆 = 删除该产物文件（owner = 该 subtask） |
 | 追加 `knowledge/` / `docs/` | **界内**（append-only） | 逆 = supersession 双指针（**已有**，见 §6） |
 | 安装 `~/.dsh/skills/*`、preset 内嵌产物 | **界外**（宿主共享） | 补偿 = `install-manifest.yaml` 对账 + orphan 清理（**已有**，见 dsh/AGENTS.md） |
-| 改 profile `cordis.patch.yml` | **界外**（含其他框架的行） | 补偿 = **改写前备份，失败即 restore**（**已有**） |
+| 改 profile `cordis.patch.yml` | **界外**（含其他框架的行） | 补偿 = **改写前备份，失败即 restore**（**已有**）+ **按 row id 精确摘除、绝不整文件删除**（2026-09-18 修正：原实现用 YAML round-trip 会丢注释/统一行尾） |
+| 改 home 级 `$DSH_HOME/cordis.patch.yml` | **界外**（机器级共享：其他框架的 row + 本机偏好同处一文件） | 补偿 = 与 profile 层**同一原语**（`dsh/scripts/patch_layer.py`）+ 只在真删到 row 时才写盘与备份；**该文件本身合法，存在不等于违规**（2026-09-18 修正） |
 | 重装 preset 内嵌技能（`Remove-Item -Recurse` 后重拷） | **界外** | 粗粒度 workaround；补偿 = manifest 对账可检出丢失 |
 | 生成的运行环境 / 临时产物（`.tmp` 等） | **界外** | 补偿 = **声明本次运行是否可复用** + 身份自证行 |
 

@@ -18,6 +18,10 @@
 #      rename/removal otherwise surfaces only when a session resume fails to mount
 #      (2026-09-09 drift: dsh-workflow-worker-thread → dsh-workflow-ptc, see
 #      .investigations/dsh-upstream-drift-20260909/报告.md).
+#   6. patch-layer row primitive regression via tests/test_home_patch.py — the
+#      ROW is the judged fact, never the file: a shared patch file that exists
+#      without our row is legal state (2026-09-18 incident: the home-level layer
+#      was judged by existence and then deleted wholesale by install.ps1).
 
 $ErrorActionPreference = 'Continue'
 
@@ -118,7 +122,27 @@ Test-InstallManifest (Join-Path $presetDir 'install-manifest.yaml') 'preset' $nu
 Test-InstallManifest (Join-Path $userSkills '.re-framework-manifest.yaml') 'user-global' $skillNamespace
 # Global tool group must be WITHDRAWN (user decision 2026-08-15): no
 # re-framework-tools-global row in any profile patch, no profile-local plugin
-# copy, no legacy ~/.dsh/cordis.patch.yml.
+# copy, and no such row in the home-level layer either.
+#
+# The judged fact is the ROW, never the FILE (2026-09-18 fix). A patch file is
+# legal DSH state: '$dshHome/cordis.patch.yml' is the home-level user patch layer,
+# applied after every profile's own layer (@deepseek-ai/dsh-app-boot README:
+# "applied after every bundle layer (per-profile first, then the home-level file,
+# which therefore outranks it)"), and in practice it carries other frameworks'
+# rows and machine-local settings. Judging "the file exists" kept this check
+# permanently red, and install.ps1 used to delete the whole shared file.
+#
+# Row-level logic lives in ONE place (scripts/patch_layer.py), shared with
+# install.ps1, so the gate and the cleanup can never disagree again.
+$rowId = 're-framework-tools-global'
+$patchLayerPy = Join-Path $srcRoot 'scripts\patch_layer.py'
+function Test-PatchRow([string]$file) {
+  if (-not (Test-Path $file)) { return $false }
+  $null = python $patchLayerPy --has-row $file --row-id $rowId 2>&1
+  $code = $LASTEXITCODE
+  if ($code -ge 2) { throw "patch_layer.py could not read $file (exit $code)" }
+  return ($code -eq 0)
+}
 $profilesDir = Join-Path $dshHome 'profiles'
 $globalGone = $true
 if (Test-Path $profilesDir) {
@@ -126,9 +150,8 @@ if (Test-Path $profilesDir) {
     $_.Name -ne 'node_modules' -and (Test-Path (Join-Path $_.FullName 'package.json')) })
   foreach ($profile in $profiles) {
     $patchFile = Join-Path $profile.FullName 'cordis.patch.yml'
-    if ((Test-Path $patchFile) -and
-        ((Get-Content $patchFile -Raw -ErrorAction SilentlyContinue) -match 're-framework-tools-global')) {
-      Write-Host "  FAIL: profile $($profile.Name) still has re-framework-tools-global — re-run install.ps1"
+    if (Test-PatchRow $patchFile) {
+      Write-Host "  FAIL: profile $($profile.Name) still has $rowId — re-run install.ps1"
       $globalGone = $false; $fail = 1
     }
     if (Test-Path (Join-Path $profile.FullName 'plugins\re-framework')) {
@@ -137,11 +160,18 @@ if (Test-Path $profilesDir) {
     }
   }
 }
-if ($globalGone) { Write-Host "  OK global tool group withdrawn (tools live on the re-framework preset only)" }
-$legacyHomePatch = Join-Path $dshHome 'cordis.patch.yml'
-if (Test-Path $legacyHomePatch) {
-  Write-Host "  FAIL: legacy ~/.dsh/cordis.patch.yml still present — re-run install.ps1"; $fail = 1
+$homePatch = Join-Path $dshHome 'cordis.patch.yml'
+if (Test-Path $homePatch) {
+  if (Test-PatchRow $homePatch) {
+    Write-Host "  FAIL: home patch layer still has $rowId — re-run install.ps1"
+    $globalGone = $false; $fail = 1
+  } else {
+    Write-Host "  OK home patch layer present without a $rowId row (legal DSH layer; left untouched)"
+  }
+} else {
+  Write-Host "  OK home patch layer absent"
 }
+if ($globalGone) { Write-Host "  OK global tool group withdrawn (tools live on the re-framework preset only)" }
 
 # 4. plugin tool-schema shape (compiled JSON-Schema parameters; see check_plugin_schema.mjs)
 Write-Host ""
@@ -171,6 +201,18 @@ if ($presetAudit -eq 2) {
   }
 } elseif ($presetAudit -ne 0) {
   Write-Host "  FAIL: unresolvable preset row(s) — upstream renamed/removed a plugin"; $fail = 1
+}
+
+# 6. patch-layer row primitive regression (see tests/test_home_patch.py)
+Write-Host ""
+Write-Host "[6] patch-layer row primitive"
+$patchTest = python (Join-Path $srcRoot 'tests\test_home_patch.py') 2>&1
+if ($LASTEXITCODE -eq 0) {
+  Write-Host "  OK $patchTest"
+} else {
+  Write-Host "  FAIL: patch-layer row primitive regression failed"
+  $patchTest | ForEach-Object { Write-Host "    $_" }
+  $fail = 1
 }
 
 Write-Host ""

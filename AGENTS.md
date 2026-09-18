@@ -8,7 +8,7 @@
 
 ## 〇、开始工作前（每个 DSH session 必做，MUST 按序执行）
 
-1. 跑自检确认基线全绿：`pwsh dsh/scripts/selfcheck.ps1`（五段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁）。
+1. 跑自检确认基线全绿：`pwsh dsh/scripts/selfcheck.ps1`（六段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / patch 层 row 原语）。
 2. 读 `dsh/SKILL-MAP.md`（DSH 探测器）——技能一律按 **kebab 名**加载（`core-plan` 而非 `core.plan`）。
 3. 按 SKILL-MAP §〇 执行强初始化：读知识库（`knowledge/INDEX.md`）→ 架构设计待用户确认 → 预置子角色介入点。
 
@@ -23,7 +23,7 @@
 
 ## 二、维护（DSH 适配层）
 
-- 维护入口：`dsh/AGENTS.md` —— `dsh/skills/` 是技能**单一事实源**（直接改，无上游派生）；五段自检；插件 schema 门禁（2026-08-13 事故教训）+ preset 行解析门禁（2026-09-09 上游改名事故教训）。
+- 维护入口：`dsh/AGENTS.md` —— `dsh/skills/` 是技能**单一事实源**（直接改，无上游派生）；六段自检；插件 schema 门禁（2026-08-13 事故教训）+ preset 行解析门禁（2026-09-09 上游改名事故教训）+ patch 层 row 原语门禁（2026-09-18「把 home 级 patch 层的存在当违规并整文件删除」事故教训）。
 - 提交纪律：提交前自检全绿；不自动 git 提交（提交时机由用户决定）。
 
 ## 三、协议引用
