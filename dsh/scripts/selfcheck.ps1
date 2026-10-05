@@ -150,7 +150,13 @@ function Test-InstallManifest($manifestPath, $label, $namespace) {
 Test-InstallManifest (Join-Path $userSkills '.re-framework-manifest.yaml') 'user-global' $skillNamespace
 # Global tool group must be WITHDRAWN (user decision 2026-08-15): no
 # re-framework-tools-global row in any profile patch, no profile-local plugin
-# copy, no legacy ~/.dsh/cordis.patch.yml.
+# copy, and no re-framework-tools-global ROW in ~/.dsh/cordis.patch.yml.
+#
+# The home-level patch file is LEGAL DSH STATE and is judged by its ROW, never
+# by its existence: it is the home-level user patch layer (applied after every
+# profile layer, therefore outranking it) and it carries other frameworks'
+# rows plus machine-local settings. Before the 2026-09-18 fix this check failed
+# on mere existence and install.ps1 answered by deleting the whole file.
 $profilesDir = Join-Path $dshHome 'profiles'
 $globalGone = $true
 if (Test-Path $profilesDir) {
@@ -170,9 +176,24 @@ if (Test-Path $profilesDir) {
   }
 }
 if ($globalGone) { Write-Host "  OK global tool group withdrawn (tools live on the re-framework preset only)" }
-$legacyHomePatch = Join-Path $dshHome 'cordis.patch.yml'
-if (Test-Path $legacyHomePatch) {
-  Write-Host "  FAIL: legacy ~/.dsh/cordis.patch.yml still present — re-run install.ps1"; $fail = 1
+# The home-level layer is judged by the ROW, not the file. patch_layer.py
+# --has-row is read-only (never writes) and shares its row grammar with
+# install.ps1, so the gate and the cleanup cannot disagree.
+$homePatchFile = Join-Path $dshHome 'cordis.patch.yml'
+$patchLayerPy = Join-Path (Join-Path $srcRoot 'scripts') 'patch_layer.py'
+if (Test-Path $homePatchFile) {
+  # Capture output WITHOUT a pipeline: `python ... | Out-Null` leaves
+  # $LASTEXITCODE from the pipeline, not from python (measured: it reported 2
+  # instead of 1). Assign the call so the exit code is python's own.
+  $hasRowOut = python $patchLayerPy --has-row $homePatchFile --row-id 're-framework-tools-global' 2>&1
+  $hasRow = $LASTEXITCODE
+  if ($hasRow -eq 0) {
+    Write-Host "  FAIL: ~/.dsh/cordis.patch.yml still carries the re-framework-tools-global row — re-run install.ps1"; $fail = 1
+  } elseif ($hasRow -eq 1) {
+    Write-Host "  OK home-level patch layer present but without our row (legal: other frameworks' rows + machine-local settings live there)"
+  } else {
+    Write-Host "  FAIL: could not judge the home-level patch layer (patch_layer.py exit $hasRow)"; $fail = 1
+  }
 }
 
 # 4. plugin tool-schema shape (compiled JSON-Schema parameters; see check_plugin_schema.mjs)
