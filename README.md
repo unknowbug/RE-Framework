@@ -3,7 +3,7 @@
 > 基于《打破传统AI逆向的新思路：多Agent、自主管理上下文》(BitWarden, 看雪学苑 2026.06.18) 的方法论内核，
 > 工程化、Skills化、SubAgents化拆分升级：**领域无关核心 + 按需加载领域模块**，从二进制逆向到代码逆向到常规编程全兼容。
 > **DeepSeek Harness（DSH）是唯一维护宿主**（2026-08-21 起；Reasonix 宿主格式已归档至 `archive/reasonix/`，Fork 可恢复自行迭代）。
-> 验证协议继承 [Anchorlaw Protocol v0.23](https://github.com/unknowbug/anchorlaw)（MIT，协议引用，不复制实现）。
+> 验证协议继承 [Anchorlaw Protocol v0.24](https://github.com/unknowbug/anchorlaw)（MIT，协议引用，不复制实现）。
 
 ---
 
@@ -30,14 +30,14 @@ pwsh dsh/scripts/selfcheck.ps1
 ```
 RE-Framework/
 ├── AGENTS.md                  # DSH-first 索引（自动加载入口）
-├── spec/                      # 框架协议（铁律/工作流/产物/知识库/版本）+ Anchorlaw v0.23 引用
+├── spec/                      # 框架协议（铁律/工作流/产物/知识库/版本）+ Anchorlaw v0.24 引用
 ├── dsh/                       # DSH 宿主适配层（唯一维护区）
 │   ├── skills/                # 17 个 ref-* 技能（单一事实源，直接维护）
 │   ├── SKILL-MAP.md           # DSH 探测器（强初始化/路由/Phase 0-3/执行强制链 + dot→kebab 映射）
 │   ├── plugins/re-framework-tools.js   # 3 个 ref_* 模型工具
 │   ├── cordis.patch.yml       # agent preset 声明（ACTIVE carrier）
-│   ├── scripts/install.ps1 + selfcheck.ps1 + gen_cheatsheet.py   # 安装 + 五段自检 + 压实派生视图生成模板
-│   ├── tests/                 # test_manifest.py + check_plugin_schema.mjs + audit_preset_rows.mjs
+│   ├── scripts/install.ps1 + selfcheck.ps1 + gen_cheatsheet.py   # 安装 + 六段自检 + 压实派生视图生成模板
+│   ├── tests/                 # test_manifest.py + check_plugin_schema.mjs + audit_preset_rows.mjs + audit_prompt_variables.mjs
 │   └── AGENTS.md              # DSH 维护入口
 ├── templates/                 # 产物 schema（语言无关）
 ├── knowledge-builtin/         # 预置知识库
@@ -73,6 +73,8 @@ RE-Framework/
 
 | 版本 | 日期 | 内容 |
 |------|------|------|
+| v2.10 | 2026-10-17 | **DSH 0.2.x 适配收尾 + Anchorlaw 引用 v0.24**：(1) 删 4 处 `backgroundMode`——`@deepseek-ai/dsh-tool-subagent` 已移除该键，Schemastery 静默丢弃、**从未生效**；行门禁看不见这类"配置键已死"（与 `{{cwd}}` 同族）。(2) spawn 行补 `agentPreset: re-framework` + `allowedAgentPresets: [re-framework]`——0.2.x 用 preset 组合子代理，**两者必须同时给**，否则抛错；**fork 行不加**（`capabilities.agentPreset: false`，加了抛 "independent agent preset"）。(3) `engines.dsh: >=0.2.0 <0.3.0`（新版按 engines 独自判定兼容性）。(4) 子路径显示元数据：补 `./plugin/locale/*.json` + `./plugin/icon`（0.2.0 起不再读 `<subpath>/package.json` 取显示文本）。(5) **Anchorlaw v0.23 → v0.24**：纯宿主适配，§5/§9/§12/§13/§14/§15/§16 **逐节 diff 全为 0**，只升引用版本、无语义迁移。**实测**：`dsh --profile web --help` exit 0 零告警；重复 `install.ps1` exit 0（`already-installed` 只影响 Host API/agent 工具，不影响 CLI `add`）；六段自检全绿。**未验证**：新会话端到端 resume（需重启 Host） |
+| v2.9 | 2026-10-10 | **DSH 0.2.x 移除 `cwd` 提示词变量 + 模板变量门禁**：上游按升级指南 `docs/upgrade-guide/v0.2.1-alpha.1/working-directory/guide.md` §Migration 1 删除循环内建的 `{{cwd}}` 提示词变量（提交 `79bd3d8da7` 删掉 `packages/core/agent-loop/src/index.ts` 的 `variable('cwd', …)` 行），工作目录改由 `dsh-working-directory` 的 `working-directory:current` **运行时上下文**提供。**事故**：本 bundle 的 persona prefix 仍写 `Your working directory is {{cwd}}.`，而 persona 模板**渲染期严格解析** → re-framework preset 的会话在组装期（模型请求之前）直接抛 `unknown prompt variable "{{cwd}}" in section "deployment:persona-prefix"; registered variables: provider, model`。**根因（门禁盲区）**：第 5 段行门禁只证明「行能解析、包能挂载」，看不见**模板变量已死**——用真实 harness 的 `renderPrompt()` 复现证实（旧文本抛错、新文本通过）。**修复**：① `cordis.patch.yml` persona prefix 去掉 `{{cwd}}` 子句（改为指向运行时上下文，模型仍拿得到工作目录）；② 新增 fail-closed 门禁 `tests/audit_prompt_variables.mjs`（镜像上游 `interpolate()` 扫描规则；注册集合由扫描 harness 的 `systemPrompt.variable('<name>')` 注册点得出，跳过 tests 防白名单污染；**扫不到注册点即 exit 2 = FAIL**），接入 `selfcheck.ps1` 第 [6] 项，可用 `DSH_SKIP_PROMPT_VAR_AUDIT=1` 显式接受缺口；**实测反证**：把 `{{cwd}}` 放回夹具即变红（同时报畸形变量名），错 checkout 走 exit 2。自检 五段 → 六段 |
 | v2.8 | 2026-09-23 | **preset 载体迁移（目录 → bundle patch）+ 门禁盲区修复**：上游 DSH 0.1.7 把 agent preset 的载体由 `$DSH_HOME/.agent-presets/<id>/` 目录换成 **bundle patch 里的 `@deepseek-ai/dsh-agent-preset` 声明行**（旧目录无代码读取）。**事故**：`re-framework` preset 在 0.1.7 下不存在 → 会话 resume 报 `Unknown agent preset`。**根因（门禁盲区，已复现证实）**：行门禁 `rowNames()` 只走 `Array.isArray(row.config)`，既不认识 bundle 载体、也不走 `config.plugins[]` → **门禁全绿而运行时报错**（用旧门禁跑新载体：`0 reference(s)` 却判 "All preset rows resolvable"）。**修复**：① 门禁补**两种载体 + 三条递归路径**（`insert[]`/`config[]`/`config.plugins[]`，注释标"勿删"），默认目标改为**生效载体**、载体缺失即 FAIL，新增 **bundle 自引用识别**（exports 校验**且**要求目标文件存在）；**实测 0 → 28 行**。② `install.ps1` 重写为「校验 bundle → 先跑行门禁 → 技能装用户级 → `dsh plugin --profile <p> add <dsh 目录>`」；修掉一个 PowerShell 陷阱（`-Profile` 与 `foreach ($profile …)` **大小写不敏感同名**被覆盖 → 改名 `-ProfileName`）。③ `selfcheck.ps1` 第 3 段由"对账**死目录**"改为**检 bundle 是否被 profile 选中** + 用户级 sha256 对账（manifest v2）。④ 删除 `dsh/preset/` 与死目录（经人类确认）。⑤ `dsh/AGENTS.md` 事实源改为 `cordis.patch.yml`（报告 §5.1 指出的误导点，该文件每会话必读） |
 | v2.7 | 2026-09-23 | **Anchorlaw 引用 v0.22 → v0.23 升级核对（纯引用版本号，协议核心零变化）**：v0.23 = **DSH 0.1.7 preset 载体迁移**，属 §16 宿主适配范围。**独立复核协议自述**（*"the protocol core is unchanged"*）：§5/§9/§12/§13/§14/§15/§16 **逐节 diff 全为 0**；标题集合 92=92；**全文真实差异共 5 处**（LCS 比对实测）：版本头发布说明 +20 行 / v0.18 条目 supersession 注记 +5 行 / v0.18 DSH changelog 表行 1 行 / §8 Maturity 表行 1 行 / §11 audit 表行 1 行——后三处均为**表格行文本更新，非条款正文**。**方法论坑**：逐节 diff 的归一化必须**同时**把新旧两个版本号归到同一占位符，否则条款标题里字面的旧版本号会伪装成差异。**对宿主的实质影响**：preset 载体由目录改为 **bundle patch 声明行**、`config.plugins[]` 行不做路径锚定（须裸包名子路径）、preset 子树 `baseUrl` 是 **profile 目录**、anchor-* 技能改用户级全局、**项目级安装模式被撤回**。→ 本框架**不依赖**项目级安装，故该撤回不影响既有安装语义；载体迁移影响 dsh 适配层（已临时修复，**正式升级待办**见 `.investigations/dsh-preset-bundle-migration/报告.md` §6）。**引用升级 34 处**（33 处已跟踪 + 1 处生效载体），含**生效载体 `cordis.patch.yml` 的 persona**（该文件当时未被 git 跟踪，`git grep` 扫不到——枚举时必须补 `git status`） |
 | v2.6 | 2026-09-17 | **Anchorlaw v0.22 实质条款升级 + CoreSwap 论文研究吸收**：(1) 引用 v0.21 → **v0.22**——v0.22 新增**五条款**（§9 +37 行 / §14 +34 行 / §15 +75 行），**本次是实质升级非纯版本号**；五条款全部落地（§9.8 副作用边界与逆登记 → spec §5.6 + core-artifact；§15.4 判据前置集 → spec §4.5 + core-judge；§9.7.1 等价档位 → re-lift；§15.4 PI-1 halt 终态性 → spec §4.5 + core-fanout 汇聚完整性；§14.7 引用完整性 → spec §3 检查动作）。(2) **安装产物具备身份**——`install.ps1` 写 sha256 manifest，`selfcheck.ps1` 第 3 段从「数目录」升级为**内容对账**（MISSING/DRIFT/ORPHAN），并补两个既有真空洞：用户级 orphan 残留清理（限本框架命名空间，**绝不误删 `anchor-*`**）+ profile patch 改写前备份。(3) 新增触发点产物门 `audit_trigger_coverage.mjs`（**只判"触发后有无产物"，不判"该不该触发"**；实测误报率 **1.1%**）。(4) 交接声明证据等级（numeric 可继承 / qualitative 须回原始日志 / anchor 须属主自核），**限定语义性交接**避免过度工程 |

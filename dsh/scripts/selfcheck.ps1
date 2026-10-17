@@ -22,6 +22,13 @@
 #      (dsh-workflow-worker-thread → dsh-workflow-ptc) and the 2026-09-23 carrier
 #      migration, where the gate did not know the bundle carrier and stayed green
 #      while sessions reported `Unknown agent preset`.
+#   6. preset TEMPLATE variables via tests/audit_prompt_variables.mjs — every
+#      `{{name}}` in the same carrier must be a variable the harness actually
+#      registers (persona prefixes/suffixes interpolate strictly at render).
+#      Incident this gate exists to catch (2026-10-10): DSH 0.2.x removed the
+#      built-in `cwd` prompt variable (upstream 79bd3d8da7), our persona prefix
+#      still said `Your working directory is {{cwd}}.`, and every re-framework
+#      session failed to assemble — while sections 1-5 stayed green.
 
 $ErrorActionPreference = 'Continue'
 
@@ -203,6 +210,29 @@ if ($presetAudit -eq 2) {
   }
 } elseif ($presetAudit -ne 0) {
   Write-Host "  FAIL: unresolvable preset row(s) — upstream renamed/removed a plugin"; $fail = 1
+}
+
+# 6. preset template variables (fail-closed; see audit_prompt_variables.mjs)
+#
+# Same fail-closed contract as section 5: exit 2 = the audit could not RUN
+# (no harness checkout / no js-yaml / no registration point found), which is NOT
+# a pass — a gate that goes green when it cannot execute is exactly how a dead
+# `{{cwd}}` reference reached a live session. DSH_SKIP_PROMPT_VAR_AUDIT=1 accepts
+# the gap explicitly.
+Write-Host ""
+Write-Host "[6] preset template variables"
+node (Join-Path $srcRoot 'tests\audit_prompt_variables.mjs') 2>&1
+$variableAudit = $LASTEXITCODE
+if ($variableAudit -eq 2) {
+  if ($env:DSH_SKIP_PROMPT_VAR_AUDIT -eq '1') {
+    Write-Host "  WARN: prompt-variable audit skipped by explicit opt-out (DSH_SKIP_PROMPT_VAR_AUDIT=1)"
+  } else {
+    Write-Host "  FAIL: prompt-variable audit could not run (harness checkout/js-yaml unavailable)"
+    Write-Host "        set DSH_CHECKOUT to the harness checkout, or DSH_SKIP_PROMPT_VAR_AUDIT=1 to accept the gap"
+    $fail = 1
+  }
+} elseif ($variableAudit -ne 0) {
+  Write-Host "  FAIL: preset template references an unregistered prompt variable — upstream removed/renamed it"; $fail = 1
 }
 
 Write-Host ""

@@ -157,7 +157,7 @@ AGENTS.md 在任务开始时运行**探测器**，按以下决策树只加载匹
 
 ## 3. Anchorlaw 四接口面引用
 
-本框架的验证/执行/集成语义**不自行维护**，全部引用 [Anchorlaw Protocol v0.23](https://github.com/unknowbug/anchorlaw)（MIT），保持单一事实源：
+本框架的验证/执行/集成语义**不自行维护**，全部引用 [Anchorlaw Protocol v0.24](https://github.com/unknowbug/anchorlaw)（MIT），保持单一事实源：
 
 | 接口面 | Anchorlaw 章节 | 本框架的使用方式 |
 |--------|---------------|-----------------|
@@ -167,7 +167,7 @@ AGENTS.md 在任务开始时运行**探测器**，按以下决策树只加载匹
 | **Host（宿主）** | §16 Host Integration Contract | AGENTS.md 作为宿主集成点：触发表注册、confirm hook（confirmed 仅人类授予）、产物契约（落盘 + 索引更新）；hosts 自供执行者（本框架用 core.worker/core.judge）；**input-contract 确认标准（v0.14 泛化，§16.1）**——协议中立：input contract 仅在**语义收敛**后算 confirmed（v0.13 的 RE handover 表述已泛化为 semantic convergence，不再点名 RE framework）；**输入契约分层（v0.14）**：契约 = 需求 + 技术约束规范（facts），架构设计在流水线 stage 1 产出；三协议（requirements / Anchorlaw / RE）独立可操作 |
 
 **与 Anchorlaw 的版本同步契约**：本框架对 Anchorlaw 为**协议引用**（单一事实源），升级时对照其 changelog 核对引用条款：
-- 当前引用基线：**Anchorlaw v0.23**（2026-09-23 升级核对）
+- 当前引用基线：**Anchorlaw v0.24**（2026-10-17 升级核对）
 - 已知同源双写：本框架 §4.5 执行强制链 ↔ Anchorlaw §15.4 judge institutionalization（同一批实战反馈双侧落地）——升级 Anchorlaw 时须对照其 changelog 同步核对
 - 已知同源双写（v0.17 新增）：v0.17 变更触发点含「§12 challenge（Reasonix/Go audit）」——parse-error 分类修正 + 注释类语言降级声明由 RE 生态反馈回流协议；升级核对时关注此类回流
 - v0.16/v0.17 引用条款核对（2026-08-14）：§5/§9/§12/§13/§14/§15/§16 全部保留，无语义冲突；v0.16 = Go/Java 注释类语言注册 + Rust 明确不支持（设计决策）；v0.17 = parse-error 工具级标记（INFO，非 P1-P6）+ 注释类语言（C++/Go/Java）仅注解提取、P1-P6 不映射 + P7-P10 可靠性风险模式（LIFECYCLE/STATE_MACHINE/PATH-COORDINATION/COMPLEXITY，语言无关定义，Level 1 不要求）
@@ -183,6 +183,7 @@ AGENTS.md 在任务开始时运行**探测器**，按以下决策树只加载匹
   - **§14.7 引用完整性（新增节）**——协议把 §6.6 接口漂移分析**用于自身引用**，**仅可判定层**：版本时效（陈旧版本引用**即**接口漂移）/ 条款号存在性 / anchor 可解析；**语义兼容性明确排除**（不可判定，禁止机械尝试）；**历史归档排除**（不得为通过检查而改写历史）。→ 本框架落地：本节（§3）核对纪律即其实例；`ref-maintain` 核对动作
   - **证据状态诚实标注**：五条款在 §8/§11 多标 `scoped (no practice data yet)`——**这是诚实标注证据状态，不是"存疑待否"**；条款存在是为让宿主有**一个权威的实施与否证目标**
 - v0.23 引用条款核对（2026-09-23，Anchorlaw commit `cae72ed`）：**纯宿主适配变更，协议核心零变化**——协议自述 *"§16 host-adaptation scope; the protocol core is unchanged."*；**本次用逐节 diff 独立复核该自述**：§5/§9/§12/§13/§14/§15/§16 **逐节差异全为 0**（归一化写法须同时把 v0.22 与 v0.23 归到同一占位符，否则条款标题里字面的 `(v0.22)` 会伪装成差异——本次先踩后修正）；章节标题集合一致（92 = 92，仅版本标题不同）；**全文真实差异共 5 处**（LCS 型比对 `git diff --no-index` 实测）：① 版本头发布说明 **+20 行**；② v0.18 条目的 supersession 注记 **+5 行**；③ v0.18 DSH changelog 表行改写 1 行；④ §8 Maturity 表行改写 1 行；⑤ §11 audit 表行改写 1 行——③④⑤ **均为表格行文本更新，非条款正文**（④⑤ 由发布说明自述 "§8 maturity and §11 audit rows carry the updated DSH evidence"）。**两个比对方法论坑**：(a) 归一化须同时把新旧两个版本号归到同一占位符，否则条款标题里字面的 `(v0.22)` 会伪装成差异（实测可伪造 18 行对）；(b) **不可**用整文件位置对齐式比对（`Compare-Object -SyncWindow 0`）——早段任意插入会使后续全量错位、刷出满屏假差异；须用 LCS 型比对或**逐节独立比对**。v0.23 = **DSH 0.1.7 preset 载体迁移**：preset 不再是 `$DSH_HOME/.agent-presets/<id>/` 目录，而是 **bundle patch 里的 `@deepseek-ai/dsh-agent-preset` 声明行**；`dsh/` 成为一等 bundle 包（`package.json` + `cordis.patch.yml`）；`config.plugins[]` 内的行**不做路径锚定**（须用裸包名子路径）；preset 子树的 `baseUrl` 是 **profile 目录**而非 bundle（技能根须经已安装包解析）；11 个 anchor-* 技能改为装**用户级全局**而非内嵌。**另有一项对宿主有实质影响**：**项目级（Reasonix 式）安装模式被撤回**——DSH 没有项目级 plugin/preset 机制，项目级安装只能交付技能、永远交不到 preset persona 与四个工具；项目级技能改由 DSH 自带的 `<projectRoot>/.dsh/skills` 根提供（无需 installer）。→ **本框架的对应**：本框架是**用户级全局技能 + preset**形态，**不依赖**项目级安装模式，故该撤回**不影响本框架的既有安装语义**；但 preset 载体迁移**影响本框架的 dsh 适配层**（见 `.investigations/dsh-preset-bundle-migration/报告.md` 与 `dsh/SYNC.md`）。本框架的 `preset/` 目录形态已由该迁移**取代**（详见 SYNC）
+- v0.24 引用条款核对（2026-10-17，Anchorlaw commit `b7a7a4a`）：**纯宿主适配变更，协议核心零变化**——协议自述 *"§16 host-adaptation scope; the protocol core is unchanged."*；**逐节 diff 独立复核**：§5/§9/§12/§13/§14/§15/§16 **差异全为 0**（对称归一化 v0.23/v0.24 → 同一占位符）；标题集合 92 = 92（仅版本标题不同）；**全文真实差异 4 处**（LCS 比对）：① 版本头发布说明 **+18 行**；② changelog 表新增 **3 行**（两条变更条目 + 版本号行）；③ §8 Maturity 表行 1 行；④ §11 audit 表行 1 行——②③④ 均为**表格行文本更新，非条款正文**。v0.24 = **DSH 0.2.x 宿主适配收尾**：① 删除 persona 模板里已死的 `{{cwd}}` 提示词变量（上游 0.2.x 移除；严格插值会让 preset 在**组装期**直接失败）+ 新增 fail-closed 模板变量门禁；② 删除 4 个子代理行上**已不存在**的 `backgroundMode` 键（Schemastery 静默丢弃，从未生效）。**两项都不改协议条款**：§14 Skill Manifest / §15 Execution Topology / §16 Host Integration Contract 依然成立。→ **本框架的对应**：v2.9 已独立完成 ①（同源事故、各自门禁）；② 由本次 v2.10 完成，并顺带补 `agentPreset` 让子代理挂载本 preset（加强 §15.3 角色绑定）
 - 检查动作（§14.7 引用完整性的本框架实例）：Anchorlaw 发新版本后，重新 `git grep 'v0\.[0-9]'` 本仓库，核对**版本时效 / 条款号是否仍存在 / anchor 是否可解析**（可判定层）；**语义兼容性不机械尝试**（不可判定），**历史归档不改写**
 - 复核记录（2026-08-14，Anchorlaw HEAD `4931a1c`）：协议仍 **v0.17**（无新协议版本，基线不变）；HEAD 新增提交均为 dsh 适配层演进——`project-level install mode`（`-Project` 参数，Reasonix 式项目级技能部署到 `<dir>/.dsh/skills/`，借鉴本框架部署思路）+ `anchor.maintain` 正文修正（移除易变测试计数，不在本框架 swe 路由表内）——均不影响本框架引用条款
 
@@ -215,7 +216,7 @@ Phase 2: 分析（worker 角色，subagent）
 Phase 2.5: 验证（Anchorlaw 协议）
     ├── 全功能（可编译）→ anchorlaw test 运行 @anchor.test
     └── 降级（不可编译）→ uncompilable_functions.yaml + 诚实声明
-    retry cap = evidence saturation（Anchorlaw §9.4, v0.23）: 连续 3 轮无新数据层证据（trace/probe）→ 强制回 Phase 1 数据层采集/升级人类；产生新证据的轮次重置计数；工程修复/代码迭代不计数
+    retry cap = evidence saturation（Anchorlaw §9.4, v0.24）: 连续 3 轮无新数据层证据（trace/probe）→ 强制回 Phase 1 数据层采集/升级人类；产生新证据的轮次重置计数；工程修复/代码迭代不计数
     验证执行者分离: 分层标注（Full/Partial/Degraded）以实际执行为准——谁跑的、什么环境；
                     分析产物在无运行时证据前不得升 candidate（除非显式声明降级）
     │
@@ -247,9 +248,9 @@ Phase 3: 审查（judge 角色，subagent）
 - **编程任务**：写码/重构/编译/运行/调试/验证 → 主会话直接闭环；subagent 仅用于隔离审查（如独立 code review），**不派 subagent 做核心写码/迭代**。
 - **混合任务**（如"逆向 API 并复刻其行为"）：按子任务类型分别路由——逆向部分 subagent，编程部分主会话。
 
-**与 Anchorlaw v0.23 的两域对齐**：Anchorlaw 将 "programming is constructive" 收窄到 input-contract 域（§11 audit 注册），**逆向工程明确协议域外**（探索型、验证无界），两模式互补。本框架的执行模式路由与两域结构**同构**：
+**与 Anchorlaw v0.24 的两域对齐**：Anchorlaw 将 "programming is constructive" 收窄到 input-contract 域（§11 audit 注册），**逆向工程明确协议域外**（探索型、验证无界），两模式互补。本框架的执行模式路由与两域结构**同构**：
 - **RE 探索域（re-binary/re-code）** = Anchorlaw 域外——由本框架自理（subagent 勘探/分析 + 主会话命令委托闭环）；探索收敛后按 §16.1 **input-contract 确认标准**（v0.14 泛化：semantic convergence，协议中立）产出 confirmed input contract
-- **构造域（swe）** = Anchorlaw input-contract 域内——接 Anchorlaw 流水线语义（判据先行 + evidence saturation + C-gate halted escalation v0.23 + Judge 门禁），但执行模式保留主会话为主（§15.3 SHOULD 允许 host 自选；RE 复刻的"确定的子部分"是混合任务切片，非纯构造域）
+- **构造域（swe）** = Anchorlaw input-contract 域内——接 Anchorlaw 流水线语义（判据先行 + evidence saturation + C-gate halted escalation v0.24 + Judge 门禁），但执行模式保留主会话为主（§15.3 SHOULD 允许 host 自选；RE 复刻的"确定的子部分"是混合任务切片，非纯构造域）
 
 > 注：v0.15 之前评估的「编程=主会话为主」与 v0.10「并行 Worker 写码」范式冲突已由域收窄**消解**——并行 Worker 仅约束已收敛构造域，RE 域外由本框架自理，无需偏离声明。v0.14 泛化后 Anchorlaw 不再点名 RE framework（三协议独立可操作），本框架作为其普通宿主，RE 域外保障由 §15.1 域声明保留。
 
@@ -354,13 +355,13 @@ subagent 交付代码（逆向还原/移植/修复）前**必须逐项自检**�
 
 **反模式**：主会话直接写结论性 docs = **自评污染**（结论未经独立解读，与「主会话只执行不解读」同理）；「主会话可做 AGENTS.md/工具链文档维护」不得扩大解释到结论性知识库。
 
-**交接结论验证与切 Session 三态建议**（第五条，2026-08-21 吸收 CoreSwap 提案 3.4；对齐 Anchorlaw v0.23 §16.3 宿主交接验证）：
+**交接结论验证与切 Session 三态建议**（第五条，2026-08-21 吸收 CoreSwap 提案 3.4；对齐 Anchorlaw v0.24 §16.3 宿主交接验证）：
 
 | 场景 | 级别 | 说明 |
 |------|------|------|
 | 交接文档/台账中的「机制方向/待查假设」类结论 | **MUST 廉价独立验证 ≤1 轮后才可作前提** | 不得当公理续推（实证：M14 方向错误绕圈一轮、M11 seed 错位三犯——共同根因是未验证假设跨会话边界升格为公理） |
 | 闭合点（结论闭合 / judge 通过 / 修复验证完成 / 污染信号出现） | **MUST 主动给三态切换建议** | 建议切（附已外化清单 + 下轮开工点）/ 建议继续（附未闭合理由）/ 无差异——切 Session 决策是 **AI 职责**，不等用户察觉 |
-| 污染信号（同假设两轮无新证据、重复旧论证、旧结论引用含糊） | MUST 建议切 Session | 切前执行**「已验证事实与未验证假设分离落盘」**（交接文档标注验证状态，对齐 v0.23 §16.3） |
+| 污染信号（同假设两轮无新证据、重复旧论证、旧结论引用含糊） | MUST 建议切 Session | 切前执行**「已验证事实与未验证假设分离落盘」**（交接文档标注验证状态，对齐 v0.24 §16.3） |
 
 **判据前置集与 halt 终态性**（v0.22 吸收 Anchorlaw §15.1/§15.4）：
 
@@ -499,7 +500,7 @@ notes: |
 - **项目级可选强化（2026-08-15 CoreSwap 提议，2026-08-21 P3 载体优先级明确）**：框架保持通用层；项目可自定义更高详实度——五段式（现象/根因/定位/修复/教训）、判错经验独立沉淀、错误台账**载体灵活（优先级：项目级指定载体 > 框架默认 `discovered/errors/`——项目在其 AGENTS.md / SUBAGENT-KNOWLEDGE-GUIDE.md 指定独立台账如 `.investigations/<课题>/<课题>-errors.md` + 速查表，默认路径为回退）**、`SUBAGENT-KNOWLEDGE-GUIDE.md` 类项目强化文件（prompt 一行引用）。详见 `skills/core.knowledge`「项目级可选强化」节。
 - 知识条目分模块归属（`module:` 字段），与产物解耦——跨模块知识标注 `module: core`。
 - 错误账本条目格式详见 `skills/core.knowledge`（错误账本条目格式节）。
-- **知识库压实机制（2026-08-21 吸收 CoreSwap 提案，借鉴 DSH compaction：事件溯源/两级降压/事务性压实）**：台账 **append-only**（原文永不删除/改写，对齐 Anchorlaw v0.23 §15.4 supersession 链——载体归宿主）；条目头部带**结构化 front-matter**（id/status/supersedes/superseded_by/signature/verdict/lesson）作为派生视图数据源；速查表/索引等**派生视图由脚本机械生成**（禁止手维护，手改即被覆盖）；**压实 pass**（每 10 条新条目或课题结案触发）：同根因条目簇合并为 1 条 discovered 原则（回指 `source_entries`，`candidate` 走状态机），被合并条目标 `consolidated` **原文保留**。与既有机制关系：不冲突错误优先（原始证据链永久保留）、不冲突记录价值门（价值门管"写不写"、压实管"写了怎么组织"）。详见 core-knowledge「压实机制」节。
+- **知识库压实机制（2026-08-21 吸收 CoreSwap 提案，借鉴 DSH compaction：事件溯源/两级降压/事务性压实）**：台账 **append-only**（原文永不删除/改写，对齐 Anchorlaw v0.24 §15.4 supersession 链——载体归宿主）；条目头部带**结构化 front-matter**（id/status/supersedes/superseded_by/signature/verdict/lesson）作为派生视图数据源；速查表/索引等**派生视图由脚本机械生成**（禁止手维护，手改即被覆盖）；**压实 pass**（每 10 条新条目或课题结案触发）：同根因条目簇合并为 1 条 discovered 原则（回指 `source_entries`，`candidate` 走状态机），被合并条目标 `consolidated` **原文保留**。与既有机制关系：不冲突错误优先（原始证据链永久保留）、不冲突记录价值门（价值门管"写不写"、压实管"写了怎么组织"）。详见 core-knowledge「压实机制」节。
 
 ---
 
@@ -543,7 +544,7 @@ notes: |
 - ❌ 跨模块引用其他领域模块的 skill 正文（§1.6）
 - ❌ @anchor.test 缺 source 字段（视为凭空编造，审查直接驳回）
 - ❌ @anchor.idk 写得模糊（必须具体到可验证的条件）
-- ❌ 连续 3 轮假设验证仍无新数据层证据（evidence saturation 违规，Anchorlaw §9.4 v0.23）— 必须回勘探取新证据，不得继续盲迭代
+- ❌ 连续 3 轮假设验证仍无新数据层证据（evidence saturation 违规，Anchorlaw §9.4 v0.24）— 必须回勘探取新证据，不得继续盲迭代
 
 ---
 

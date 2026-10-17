@@ -2,13 +2,13 @@
 
 > **定位**: 通用工程方法论框架（逆向 + 编程）。**DeepSeek Harness（DSH）是唯一维护宿主**。
 > **宿主说明**: 维护入口见 `dsh/AGENTS.md`；DSH 会话探测器见 `dsh/SKILL-MAP.md`；Reasonix 宿主格式已停止维护并归档（`archive/reasonix/`，Fork 可恢复自行迭代）。
-> **协议**: `spec/engineering-framework-v1.md`（框架协议）+ [Anchorlaw Protocol v0.23](https://github.com/unknowbug/anchorlaw)（验证协议，协议引用）。
+> **协议**: `spec/engineering-framework-v1.md`（框架协议）+ [Anchorlaw Protocol v0.24](https://github.com/unknowbug/anchorlaw)（验证协议，协议引用）。
 
 ---
 
 ## 〇、开始工作前（每个 DSH session 必做，MUST 按序执行）
 
-1. 跑自检确认基线全绿：`pwsh dsh/scripts/selfcheck.ps1`（五段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁）。
+1. 跑自检确认基线全绿：`pwsh dsh/scripts/selfcheck.ps1`（六段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁）。
 2. 读 `dsh/SKILL-MAP.md`（DSH 探测器）——技能一律按 **kebab 名**加载（`core-plan` 而非 `core.plan`）。
 3. 按 SKILL-MAP §〇 执行强初始化：读知识库（`knowledge/INDEX.md`）→ 架构设计待用户确认 → 预置子角色介入点。
 
@@ -23,11 +23,11 @@
 
 ## 二、维护（DSH 适配层）
 
-- 维护入口：`dsh/AGENTS.md` —— `dsh/skills/` 是技能**单一事实源**（直接改，无上游派生）；五段自检；插件 schema 门禁（2026-08-13 事故教训）+ preset 行解析门禁（2026-09-09 上游改名事故教训）。
+- 维护入口：`dsh/AGENTS.md` —— `dsh/skills/` 是技能**单一事实源**（直接改，无上游派生）；六段自检；插件 schema 门禁（2026-08-13 事故教训）+ preset 行解析门禁（2026-09-09 上游改名事故教训）+ preset 模板变量门禁（2026-10-10 上游删除 `cwd` 提示词变量事故教训）。
 - 提交纪律：提交前自检全绿；不自动 git 提交（提交时机由用户决定）。
 
 ## 三、协议引用
 
 - **框架协议**：`spec/engineering-framework-v1.md`（§1 铁律 / §3 Anchorlaw 引用与升级核对 / §4 工作流 / §5 产物 schema / §6 知识库 / §7 版本管理 / §8 诚实声明）。
-- **验证协议**：[Anchorlaw v0.23](https://github.com/unknowbug/anchorlaw)（协议引用，不复制实现）；升级核对见 spec §3 同步契约。
+- **验证协议**：[Anchorlaw v0.24](https://github.com/unknowbug/anchorlaw)（协议引用，不复制实现）；升级核对见 spec §3 同步契约。
 - **Reasonix 归档**：宿主格式（dot 名技能、`.reasonix/skills/` 部署、`install.py`/`validate_manifest.py`）已归档至 `archive/reasonix/`，不再维护；Fork 用户可按 `archive/reasonix/RESTORE.md` 恢复自行迭代。

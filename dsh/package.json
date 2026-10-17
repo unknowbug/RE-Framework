@@ -1,17 +1,24 @@
 {
   "name": "@dsh-external/dsh-re-framework",
-  "version": "2.8.0",
+  "version": "2.10.0",
   "private": true,
   "description": "RE-Framework 方法论工作台 —— 逆向+编程通用工程框架的 DSH 宿主适配 bundle：re-framework agent preset + ref_* 工具插件",
   "type": "module",
   "exports": {
     "./plugin": "./plugins/re-framework-tools.js",
+    "./plugin/icon": "./assets/plugin.svg",
+    "./plugin/locale/*.json": "./locale/plugin/*.json",
     "./package.json": "./package.json"
   },
   "files": [
     "plugins/re-framework-tools.js",
-    "cordis.patch.yml"
+    "cordis.patch.yml",
+    "assets/plugin.svg",
+    "locale/plugin/*.json"
   ],
+  "engines": {
+    "dsh": ">=0.2.0 <0.3.0"
+  },
   "license": "MIT",
   "dsh": {
     "bundle": {

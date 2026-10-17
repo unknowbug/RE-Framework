@@ -13,6 +13,15 @@
 # NOTE (2026-09-23): the legacy `preset/` directory has been DELETED — this file
 # is the single carrier for the preset. Editing `preset/` was already a no-op
 # before its removal (nothing read that directory).
+#
+# NOTE (2026-10-10): DSH 0.2.x REMOVED the `cwd` prompt variable (upstream
+# 79bd3d8da7, packages/core/agent-loop/src/index.ts: the row
+# `variable('cwd', …)` is gone). The working directory now reaches the model as
+# the required `working-directory:current` runtime-context entry, so persona
+# templates may reference ONLY registered variables (`provider`, `model`).
+# Strict interpolation renders `{{cwd}}` as a hard failure at session assembly:
+#   unknown prompt variable "{{cwd}}" in section "deployment:persona-prefix"
+# Guarded by tests/audit_prompt_variables.mjs (selfcheck section 6).
 
 - insert:
     - id: preset-re-framework
@@ -26,7 +35,7 @@
             name: '@deepseek-ai/dsh-persona'
             config:
               prefix: |-
-                You are a coding agent powered by the {{model}} model, running on the DeepSeek Harness, operating the RE-Framework v2 methodology (generic engineering framework for reverse engineering + programming; spec/engineering-framework-v1.md, referencing Anchorlaw Protocol v0.23). Your working directory is {{cwd}}.
+                You are a coding agent powered by the {{model}} model, running on the DeepSeek Harness, operating the RE-Framework v2 methodology (generic engineering framework for reverse engineering + programming; spec/engineering-framework-v1.md, referencing Anchorlaw Protocol v0.24). The session working directory arrives in the runtime context (`Current working directory: …`) — the harness no longer registers a `cwd` prompt variable.
 
                 Enforce the framework's initialization discipline at the start of every session, in order, before any analysis (Phase 0): (1) read the knowledge base FIRST (knowledge/INDEX.md, then relevant builtin/discovered entries; do not guess); (2) plan the architecture (core-plan: lightweight ≤3 points / heavyweight full doc) and get user confirmation BEFORE analysis — never start analysis without an approved architecture; (3) pre-plan ALL sub-role intervention points (scout/worker/fan-out/judge/knowledge) in the plan, then only check them during execution, never improvise.
 
@@ -140,19 +149,30 @@
               - id: tool-subagent-list-agents
                 name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'
 
+              # DSH 0.2.x removed `backgroundMode` (every delegation is now a managed
+              # activation returning { kind: 'activation', subagentId }). Subagents
+              # mount THIS preset so they inherit the RE persona and ref_* tools.
+              # spawn supports agentPreset; the value MUST also be listed in
+              # allowedAgentPresets (tool-subagent/preset-selection.ts:29-30), and the
+              # provider must advertise capabilities.agentPreset.
               - id: tool-subagent
                 name: '@deepseek-ai/dsh-tool-subagent'
                 config:
                   provider: spawn
                   toolName: subagent
-                  backgroundMode: continuable
+                  agentPreset: re-framework
+                  allowedAgentPresets:
+                    - re-framework
 
+              # fork does NOT advertise capabilities.agentPreset
+              # (subagent-fork-in-process/src/index.ts:63) and inherits the parent
+              # composition, so it must NOT carry agentPreset or allowedAgentPresets —
+              # setting either throws "independent agent preset".
               - id: tool-subagent-fork
                 name: '@deepseek-ai/dsh-tool-subagent'
                 config:
                   provider: fork
                   toolName: subagent_fork
-                  backgroundMode: continuable
 
               # Optional external-agent providers. Production dsh does NOT install these
               # bundles: install the matching Bundle in this Profile and restart the Host,
@@ -164,7 +184,6 @@
                 config:
                   provider: codex
                   toolName: subagent_codex
-                  backgroundMode: one-shot
                   maxDepth: provider-managed
 
               - id: tool-subagent-claude-code
@@ -173,7 +192,6 @@
                 config:
                   provider: claude-code
                   toolName: subagent_claude_code
-                  backgroundMode: one-shot
                   maxDepth: provider-managed
 
               - id: workflow-ptc

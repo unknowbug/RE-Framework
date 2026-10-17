@@ -17,9 +17,10 @@
 #
 # What this script does:
 #   1. verifies the bundle package (package.json + the patch it names)
-#   2. runs the preset-row gate BEFORE installing (a bundle whose rows do not
-#      resolve installs cleanly and then fails at session creation — the
-#      2026-09-23 incident)
+#   2. runs the preset gates BEFORE installing (a bundle whose rows do not
+#      resolve, or whose persona template references a variable the harness no
+#      longer registers, installs cleanly and then fails at session creation —
+#      the 2026-09-23 and 2026-10-10 incidents)
 #   3. copies the ref-* skills to the user-global root
 #   4. installs/selects the bundle in every target profile with
 #      `dsh plugin --profile <p> add <bundle dir>` (pnpm dependency + the profile's
@@ -180,6 +181,13 @@ Write-Host "  OK bundle: $bundleName  patch: $patchRel"
 #    incident (gate green, `Unknown agent preset` on resume).
 node (Join-Path $srcRoot 'tests\audit_preset_rows.mjs') 2>&1
 if ($LASTEXITCODE -ne 0) { throw "preset row gate failed - refusing to install" }
+
+#    The template-variable gate runs BEFORE install for the same reason: a preset
+#    whose persona template references a variable the harness no longer registers
+#    installs cleanly and then fails at session assembly — the 2026-10-10 incident
+#    (`unknown prompt variable "{{cwd}}"` while every older section stayed green).
+node (Join-Path $srcRoot 'tests\audit_prompt_variables.mjs') 2>&1
+if ($LASTEXITCODE -ne 0) { throw "preset template-variable gate failed - refusing to install" }
 
 # 3. Skills → user-global root (visible in every session, on any preset, in any
 #    project). The preset ALSO serves them from the bundle via skill-filesystem

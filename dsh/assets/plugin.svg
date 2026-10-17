@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <!-- RE-Framework: a magnifier over a layer stack (reverse engineering + methodology) -->
+  <path d="M3 5.5 10 3l7 2.5-7 2.5-7-2.5Z"/>
+  <path d="M3 10.5 10 13l7-2.5"/>
+  <path d="M3 15.5 10 18l7-2.5"/>
+  <circle cx="16.5" cy="15" r="3.2"/>
+  <path d="m19 17.5 2 2"/>
+</svg>
