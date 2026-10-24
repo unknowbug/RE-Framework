@@ -143,11 +143,17 @@
             isolate:
               workflowEngine: true
             config:
+              # DSH 0.2.1-rc.3 removed the standalone `./list-agents` subpath export:
+              # the package's main entry now registers send_message, interrupt_agent
+              # AND list_agents together (upstream 4df09d37d5, "register shared
+              # control tools together"; guide
+              # docs/upgrade-guide/v0.2.1-rc.1/subagent-control-tools/guide.md §Migration 3).
+              # The old `tool-subagent-list-agents` row resolved to nothing
+              # (ERR_PACKAGE_PATH_NOT_EXPORTED) and broke the preset mount; `list_agents`
+              # stays available through the control row, exactly as upstream's own
+              # standard preset does (it deleted the same row).
               - id: tool-subagent-control
                 name: '@deepseek-ai/dsh-tool-subagent-control'
-
-              - id: tool-subagent-list-agents
-                name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'
 
               # DSH 0.2.x removed `backgroundMode` (every delegation is now a managed
               # activation returning { kind: 'activation', subagentId }). Subagents
