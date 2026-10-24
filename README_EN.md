@@ -22,8 +22,12 @@ pwsh dsh/scripts/install.ps1
 #      this repository stays untouched
 #    → choose the re-framework preset when you want the full workbench persona
 
-# 3. Self-check (toolchain / skill manifest / installed artifacts / plugin schemas)
+# 3. Self-check (toolchain / skill manifest / installed artifacts / plugin schemas / preset gates / target modules + guard)
 pwsh dsh/scripts/selfcheck.ps1
+
+# 4. Target modularity (recommended for large projects; spec §5.7)
+python scripts/target_modules.py <project> derive   # derive target modules -> partition artifacts/code/knowledge
+python scripts/target_modules.py <project> verify   # gates G1-G9
 ```
 
 **Standard DSH-session flow**: root `AGENTS.md` (DSH-first index) → read `dsh/SKILL-MAP.md` first (DSH detector: init discipline / task routing / Phase 0-3 / enforcement chain) → load skills by **kebab name**.
@@ -37,16 +41,97 @@ RE-Framework/
 ├── dsh/                       # DSH host adaptation (the only maintained area)
 │   ├── skills/                # 17 ref-* skills (single source of truth, edited directly)
 │   ├── SKILL-MAP.md           # DSH detector (init/routing/Phase 0-3/enforcement chain + dot→kebab map)
-│   ├── plugins/re-framework-tools.js   # 3 ref_* model tools
+│   ├── plugins/re-framework-tools.js   # 3 ref_* model tools + contract guard (R1/R3/R5)
 │   ├── cordis.patch.yml       # agent preset declaration (ACTIVE carrier)
 │   ├── scripts/install.ps1 + selfcheck.ps1 + gen_cheatsheet.py   # install + 7-item self-check + compaction derived-view template
-│   ├── tests/                 # test_manifest.py + check_plugin_schema.mjs + audit_preset_rows.mjs + audit_prompt_variables.mjs
+│   ├── tests/                 # test_manifest / check_plugin_schema / audit_preset_rows / audit_prompt_variables / test_target_modules / test_contract_guard
 │   └── AGENTS.md              # DSH maintenance entry
 ├── templates/                 # Artifact schemas (language-agnostic)
 ├── knowledge-builtin/         # Built-in knowledge base
 ├── scripts/merge_index.py     # Parallel index merge (ref_merge_index dependency)
+├── scripts/target_modules.py  # Target-module manager: derive / verify G1-G9 / plan→apply→rollback / repair (spec §5.7)
 └── archive/reasonix/          # Reasonix host format archive (read-only, RESTORE.md restorable)
 ```
+
+## Target modularity (v2.12, spec §5.7)
+
+**Problem it solves**: in a large project, conclusions from different subsystems (renderer / netcode / gameplay; Java packages / .NET namespaces / build units) pile up in one flat artifact tree (`classes/`, `functions/`, `cross_refs/`): nobody can tell which conclusions belong to which subsystem, the same fact gets derived twice, and merges conflict. The framework used to have only **domain modules** (core / re-binary / re-code / swe) and no layer for **the target program's own modules**.
+
+**Approach**: manage **artifacts, code and knowledge** by the target program's own modules; modules come from target evidence, not from a hand-written list.
+
+### Concepts
+
+- **Target module ≠ domain module**: the former is a program subsystem (`netcode`), the latter a framework packaging unit (`re-binary`). The index keeps them apart as `target_module` and `module`.
+- **A boundary is a hypothesis**: every boundary carries evidence (build file / RTTI / namespace / section / package) and `confidence` (derived / converged / disputed / confirmed). Artifacts without evidence go to `unassigned/` — **first-class and allowed to persist**, never force-fitted.
+- **Reviews bind to module + revision**: when the module structure or an artifact's module changes, `candidate | confirmed` drops back to `draft` (the previous status is recorded in the journal), because the old review no longer applies to the new ownership — the same applicability rule as Anchorlaw.
+
+### Layout
+
+```
+<project>/.artifacts/
+├── target-modules.yaml        # module map: revision + per-module boundaries/provides/requires/history
+├── target-modules.state.json  # machine state read by the contract guard (generated; never hand-edited)
+├── index.yaml                 # each entry carries target_module / module_revision
+├── modules/<id>/              # artifacts: classes/ functions/ xrefs/ conclusions/
+│   └── reviews/<rev>.md       # judge review for this module at this revision (G8)
+├── unassigned/                # first-class unassigned bucket
+├── _migrations/<rev>/         # plan.json + journal.json + backup/ (auditable, reversible)
+└── _audit/guard.jsonl         # guard denials and bypasses
+```
+
+Code lands in `work/<id>/` (`config.code_root` is configurable; an empty workspace asks on first run); knowledge lands in `knowledge/discovered/modules/<id>/`, with cross-module lessons in `shared/` (`modules: [a,b]` back-references, no duplication).
+
+### Workflow
+
+1. **`derive`** from `package.json` workspaces / `Cargo.toml` workspace / `pom.xml` modules / a `--hints` file; it writes the map, the directories and the index.
+2. **Write artifacts to `modules/<id>/`** and keep `index.yaml` in sync (`target_module` + `module_revision`).
+3. **`verify`** runs G1-G9; fix what it reports (legacy flat trees go through `plan adopt-legacy` → `apply` into `unassigned/`).
+4. **judge reviews one module**: scope = `module:<id>@<rev>`, writing `reviews/<rev>.md`; `candidate` requires it (G8 / guard R3).
+5. **Corrections**: wrong boundary or ownership → `plan` (reassign / split / merge / rename / demote / quarantine) → `apply` (transactional: backup + journal, reverse rollback on failure).
+6. **`repair`** rebuilds index/state from disk (recovery after bypasses).
+
+### Gates G1-G9 (fail-closed)
+
+| Gate | Check |
+|---|---|
+| G1 | unique ownership, no duplicate content across modules |
+| G2 | every active module has at least one boundary with evidence |
+| G3 | unassigned counts (map vs disk) agree |
+| G4 | every index entry's `module_revision` matches the map |
+| G5 | no orphan module directories; retired modules hold no artifacts |
+| G6 | `provides` unique, `requires` resolvable |
+| G7 | every applied revision has `plan.json` + `journal.json` |
+| G8 | `candidate/confirmed` modules have `reviews/<rev>.md` for the current revision |
+| G9 | no stray artifacts outside `modules/` and `unassigned/` |
+
+### Contract guard (deny before the action, same shape as DSH `fs-observation-policy`)
+
+Evaluated before `write`/`edit`; a denial carries a one-line recovery and a stable code:
+
+| Rule | Trigger | Code |
+|---|---|---|
+| R1 | write into an undeclared module directory | `REF_MODULE_UNDECLARED` → `ref_modules derive` or write `unassigned/` |
+| R3 | `status: candidate/confirmed` without a review at this revision | `REF_REVIEW_MISSING` → invoke `core-judge` (scope=module:<id>) |
+| R5 | knowledge entry missing `signature/verdict/lesson/status` | `REF_KB_FRONTMATTER` → add the front-matter |
+
+Self-rescue: `REF_GUARD=off` (guard idles, **every bypass is audited**); out-of-bounds writes are still found by G1-G9 on the next run and fixed by `repair`. The guard only sees tool calls — `pwsh` writes are a known bypass, not a claimed coverage.
+
+### What judge does not do
+
+**Judge reviews modules, not the global whole**: a large project's global state is not reviewable; judge reviews one module (its artifacts + obligation state + gate results), writes `reviews/<rev>.md`, and the global side gets only G8's mechanical coverage check. **A module too large for one review pass must be split** — that is how granularity is decided. Cross-cutting behavior becomes an `integration-<feature>` module reviewed on its own instead of widening judge scope.
+
+### Commands
+
+```powershell
+python scripts/target_modules.py <project> derive [--hints modules.yaml]
+python scripts/target_modules.py <project> status [--json]
+python scripts/target_modules.py <project> verify [--json]          # G1-G9
+python scripts/target_modules.py <project> plan reassign --from A --to B --files f.yaml
+python scripts/target_modules.py <project> apply <plan.json>        # failed applies roll back
+python scripts/target_modules.py <project> repair
+```
+
+**Verification status**: fixture tests pass (G1/G5/G6/G8/G9 counter-cases, migration rollback, guard R1/R3/R5, audited `REF_GUARD=off`); **not yet run on a real large project** — spec §9 marks it `CONJECTURE`, and derivation accuracy is waiting for field data.
 
 ## Skills (17, kebab names)
 

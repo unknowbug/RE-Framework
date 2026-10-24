@@ -19,8 +19,12 @@ pwsh dsh/scripts/install.ps1
 #    → ref-* 技能开箱即用，cwd 在项目、产物落项目、本仓库零污染
 #    → 需要框架工作台人格时再选 re-framework preset
 
-# 3. 自检（工具链 / 技能 manifest / 安装产物 / 插件 schema）
+# 3. 自检（工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 门禁 / 目标模块 + 守卫）
 pwsh dsh/scripts/selfcheck.ps1
+
+# 4. 目标模块化（大型工程建议；spec §5.7）
+python scripts/target_modules.py <项目> derive   # 推导目标模块 → 分区产物/代码/知识
+python scripts/target_modules.py <项目> verify   # G1-G9 门禁
 ```
 
 **DSH 会话标准流程**：根 `AGENTS.md`（DSH-first 索引）→ 先读 `dsh/SKILL-MAP.md`（DSH 探测器：强初始化 / 任务路由 / Phase 0-3 / 执行强制链）→ 按 **kebab 名**加载技能执行。
@@ -34,16 +38,97 @@ RE-Framework/
 ├── dsh/                       # DSH 宿主适配层（唯一维护区）
 │   ├── skills/                # 17 个 ref-* 技能（单一事实源，直接维护）
 │   ├── SKILL-MAP.md           # DSH 探测器（强初始化/路由/Phase 0-3/执行强制链 + dot→kebab 映射）
-│   ├── plugins/re-framework-tools.js   # 3 个 ref_* 模型工具
+│   ├── plugins/re-framework-tools.js   # 3 个 ref_* 模型工具 + 契约守卫（R1/R3/R5）
 │   ├── cordis.patch.yml       # agent preset 声明（ACTIVE carrier）
 │   ├── scripts/install.ps1 + selfcheck.ps1 + gen_cheatsheet.py   # 安装 + 七段自检 + 压实派生视图生成模板
-│   ├── tests/                 # test_manifest.py + check_plugin_schema.mjs + audit_preset_rows.mjs + audit_prompt_variables.mjs
+│   ├── tests/                 # test_manifest / check_plugin_schema / audit_preset_rows / audit_prompt_variables / test_target_modules / test_contract_guard
 │   └── AGENTS.md              # DSH 维护入口
 ├── templates/                 # 产物 schema（语言无关）
 ├── knowledge-builtin/         # 预置知识库
 ├── scripts/merge_index.py     # 并行索引合并（ref_merge_index 依赖）
+├── scripts/target_modules.py  # 目标模块管理：derive / verify G1-G9 / plan→apply→rollback / repair（spec §5.7）
 └── archive/reasonix/          # Reasonix 宿主格式归档（只读，RESTORE.md 可恢复）
 ```
+
+## 目标模块化（v2.12，spec §5.7）
+
+**要解决的问题**：大型工程里，不同子系统（renderer / netcode / gameplay；Java 包 / .NET 命名空间 / 源码构建单元）的结论会混在同一棵扁平产物树（`classes/`、`functions/`、`cross_refs/`）里——找不到"这条结论属于谁"，同一事实被两处重复推导，合并时冲突。框架以前只有**领域模块**（core / re-binary / re-code / swe），没有**目标程序自己的模块**这一层。
+
+**做法**：按目标程序自身的模块管理**产物、代码与知识**；模块来自目标证据，不是人工列清单。
+
+### 核心概念
+
+- **目标模块 ≠ 领域模块**：前者是程序的子系统（如 `netcode`），后者是框架打包单元（`re-binary`）。索引里分别用 `target_module` 与 `module`，不混用。
+- **边界是假设，不是事实**：每条边界带证据（构建文件 / RTTI / 命名空间 / section / 包）与 `confidence`（derived / converged / disputed / confirmed）；拿不到证据的产物进 `unassigned/`——**未分配是一等公民，允许长期存在**，不硬塞。
+- **评审与确认绑定「模块 + 修订」**：模块结构或归属一变，`candidate | confirmed` 自动回 `draft`（原状态记 journal），因为旧评审不再适用于新归属——与 Anchorlaw 的 proof applicability 同源。
+
+### 落盘布局
+
+```
+<project>/.artifacts/
+├── target-modules.yaml        # 模块地图：revision + 每模块边界证据/provides/requires/历史
+├── target-modules.state.json  # 契约守卫读取的机器态（脚本生成，禁止手改）
+├── index.yaml                 # 每条带 target_module / module_revision
+├── modules/<id>/              # 产物：classes/ functions/ xrefs/ conclusions/
+│   └── reviews/<rev>.md       # judge 对该模块该修订的审查记录（G8 依据）
+├── unassigned/                # 未分配桶（一等公民）
+├── _migrations/<rev>/         # plan.json + journal.json + backup/（修正可审计、可回滚）
+└── _audit/guard.jsonl         # 契约守卫的拒绝/绕过审计
+```
+
+代码落 `work/<id>/`（`config.code_root` 可配，空白工作区首次启动提示设置）；知识落 `knowledge/discovered/modules/<id>/`，跨模块经验进 `shared/`（`modules: [a,b]` 回指，不复制两份）。
+
+### 工作流
+
+1. **`derive`**：从 `package.json` workspaces / `Cargo.toml` workspace / `pom.xml` modules / `--hints` 文件推导模块，生成地图、目录与索引。
+2. **产物写 `modules/<id>/`**，同步 `index.yaml`（`target_module` + `module_revision`）。
+3. **`verify`**：跑 G1-G9；红了按提示修（遗留平铺目录用 `plan adopt-legacy` → `apply` 迁入 `unassigned/`）。
+4. **judge 审模块**：scope = `module:<id>@<rev>`，产出 `reviews/<rev>.md`；`candidate` 必须有它（G8 / 守卫 R3）。
+5. **修正**：边界/归属错 → `plan`（reassign / split / merge / rename / demote / quarantine）→ `apply`（事务：备份 + journal，失败逆序回滚）。
+6. **`repair`**：从磁盘重建 index/state（守卫/旁路改动后的兜底）。
+
+### 门禁 G1-G9（fail-closed）
+
+| 门禁 | 判定 |
+|---|---|
+| G1 | 归属唯一、无跨模块重复内容 |
+| G2 | 每个 active 模块至少有 1 条边界证据（禁止拍脑袋模块） |
+| G3 | 未分配计数（地图 vs 磁盘）一致 |
+| G4 | 索引条目 `module_revision` 与地图一致 |
+| G5 | 无孤儿模块目录；retired 模块不得持有产物 |
+| G6 | `provides` 全局唯一、`requires` 可解析 |
+| G7 | 每个已应用修订都有 `plan.json` + `journal.json` |
+| G8 | `candidate/confirmed` 模块必须有当前修订的 `reviews/<rev>.md` |
+| G9 | 不得有 `modules/`、`unassigned/` 之外的散落产物 |
+
+### 契约守卫（动作前拒绝，DSH `fs-observation-policy` 同款）
+
+守卫在 `write`/`edit` 执行前判定，拒绝时给**一行可执行恢复**（稳定错误码）：
+
+| 规则 | 触发 | 错误码 |
+|---|---|---|
+| R1 | 写入未声明的模块目录 | `REF_MODULE_UNDECLARED` → `ref_modules derive` 或写 `unassigned/` |
+| R3 | 无当前修订评审就写 `status: candidate/confirmed` | `REF_REVIEW_MISSING` → 先派 `core-judge`（scope=module:<id>） |
+| R5 | 知识条目缺 `signature/verdict/lesson/status` | `REF_KB_FRONTMATTER` → 补齐 front-matter |
+
+自救：`REF_GUARD=off`（守卫空转，**每次绕过写审计**）；绕过期间的越界写入由 G1-G9 在下次运行时发现，`repair` 修复。守卫只覆盖工具调用，`pwsh` 直写属于已知旁路——不假装全覆盖。
+
+### judge 的边界
+
+**judge 审模块，不审全局**：大型工程的全局不可审，judge 只审一个模块（该模块产物 + 义务状态 + 门禁结果），产出 `reviews/<rev>.md`；全局只有 G8 做机械覆盖检查。**模块大到一次审不完 → 拆模块**，粒度由此可判。跨模块的横切行为建 `integration-<feature>` 模块单独审，而不是扩大 judge 视野。
+
+### 命令速查
+
+```powershell
+python scripts/target_modules.py <project> derive [--hints modules.yaml]
+python scripts/target_modules.py <project> status [--json]
+python scripts/target_modules.py <project> verify [--json]          # G1-G9
+python scripts/target_modules.py <project> plan reassign --from A --to B --files f.yaml
+python scripts/target_modules.py <project> apply <plan.json>        # 失败自动回滚
+python scripts/target_modules.py <project> repair
+```
+
+**验证状态**：fixture 测试全过（G1/G5/G6/G8/G9 逐条反证、迁移回滚、守卫 R1/R3/R5、`REF_GUARD=off` 审计）；**真实大工程尚未试跑**——spec §9 标 `CONJECTURE`，推导准确率待实战记录。
 
 ## 技能清单（17 个，kebab 名，DSH 加载用右列）
 
