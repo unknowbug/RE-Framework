@@ -53,7 +53,8 @@ dsh/
 - **单一事实源**：`skills/`（技能正文，直接维护）、`plugins/re-framework-tools.js`（工具插件）、**`cordis.patch.yml`（agent preset 声明，ACTIVE carrier）**、`package.json`（bundle 身份）——只改这四处，然后跑 `scripts/install.ps1`
 - **安装产物**：`<profile>/package.json` 的 `dsh.profile.bundles`（**preset 的存在性由它决定**，DSH >= 0.1.7）、`~/.dsh/skills/ref-*`（用户级全局技能，含 `.re-framework-manifest.yaml`）——**禁止手改**
 - **已删除路径**：`dsh/preset/`（2026-09-23 删）与 `~/.dsh/.agent-presets/re-framework/`（死目录，可删）均为 DSH 0.1.7 载体迁移前的遗留物，**没有任何代码读它们**
-- 改动后必须 `scripts/selfcheck.ps1` 全绿（工具链 / 技能 manifest / bundle 选中 + 产物对账 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁）
+- 改动后必须 `scripts/selfcheck.ps1` 全绿（工具链 / 技能 manifest / bundle 选中 + 产物对账 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 fixture 门禁）
+- **目标模块化（spec §5.7）**：`scripts/target_modules.py`（derive / verify G1-G9 / plan-apply-rollback / repair）+ 插件契约守卫（R1/R3/R5，`REF_GUARD=off` 自救并审计）；自检第 7 段跑 fixture 测试
 - **preset 模板变量**：persona prefix/suffix 等模板在**渲染期严格解析** `{{name}}`，只认 harness 当前注册的变量（DSH 0.2.x 起仅 `provider` / `model`；**工作目录不再有 `cwd` 变量**，见 `working-directory:current` 运行时上下文）。改模板后跑 `tests/audit_prompt_variables.mjs`（自检第 6 段）
 - 多框架共存：技能/工具命名空间按框架前缀隔离（ref-*/ref_* 与 anchor-*/anchorlaw_*）；`<profile>/cordis.patch.yml` 是用户级工具登记点（insert 形态），可查可控；**工具 parameters 必须编译后 JSON Schema（挂载前跑 tests/check_plugin_schema.mjs）**
 

@@ -40,6 +40,14 @@ whenToUse: 任何工程任务（re-binary / re-code / swe 所有模块）开始�
             3. 用户批准后才开始执行
 ```
 
+## 目标模块分解（Phase 0 必做，spec §5.7）
+
+- **先推导再拆任务**：`python scripts/target_modules.py <project> derive [--hints <file>]`，把**目标程序自身的模块**（RTTI/命名空间/包/构建单元/区段）写进 `.artifacts/target-modules.yaml`；没有构建文件时用 hints，仍无证据的产物进 `unassigned/`（不猜）。
+- **重量档**：架构文档第 3 节按模块组织（模块 id → 产物 → 验收判据），judge 预置按**模块**列（scope = `module:<id>` + revision）。
+- **轻量档**：≤3 模块可 inline 写计划（模块 id + 一句话边界），但仍须 `derive` 出地图（哪怕单模块），否则产物无法归属。
+- 模块 = **目标程序**的模块；框架的 core/re-binary/re-code/swe 是领域模块，两者不混用（index 的 `module` vs `target_module`）。
+- 边界是假设：无证据进 `unassigned/`；边界变更走 `plan/apply`（升 revision，候选/确认回 draft，原状态记 journal）。
+
 ## 架构文档模板
 
 ### 轻量（.investigations/000-架构设计/架构计划.md）
@@ -52,9 +60,11 @@ whenToUse: 任何工程任务（re-binary / re-code / swe 所有模块）开始�
 模式档位: 轻量
 ---
 ## 范围（含明确不做什么）
+## 目标模块（spec §5.7：模块 id + 一句话边界；≤3 可 inline）
 ## 任务拆解（子任务 → 预期产物）
 ## 验证方式
 ## judge 预置            # spec §4.5 执行强制链：计划阶段就排 judge 项
+  - 模块验收 MUST（scope=module:<id>@<rev>，写 reviews/<rev>.md）
   - 收尾交付 MUST judge（三源核对）
   - 各阶段结论 candidate 授予 SHOULD judge
 ## fan-out 预置          # spec §4.5：多假设场景计划阶段排 fan-out 项
@@ -86,8 +96,8 @@ whenToUse: 任何工程任务（re-binary / re-code / swe 所有模块）开始�
 ## 5. 人工决策 HOOK 点（节点/触发条件/决策内容）
 ## 6. 风险 & 回退
 ## 7. judge 步骤预置          # spec §4.5：随计划排 judge 项，不是事后补
-   - 节点: <结论/产物> | 级别: MUST/SHOULD | 审查对象: <快照/git diff/验证记录>
-   - 节点: 收尾交付 | MUST | 三源核对
+   - 节点: <模块 id> 验收 | MUST | scope=module:<id>@<rev> | 产出 reviews/<rev>.md
+   - 节点: 收尾交付 | MUST | 三源核对（全局只有 G8 机械检查，不做全局语义审查）
 ## 8. fan-out 步骤预置         # spec §4.5：多假设分叉场景随计划排 fan-out 项
    - 节点: <分叉点> | 候选: <互斥假设 a/b/c> | .bN 并行 | 禁止主会话自推
 ## 9. 知识库更新               # spec §4.5 第四条：每 Phase 末尾知识库步骤标注产出者

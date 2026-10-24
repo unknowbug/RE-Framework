@@ -17,6 +17,13 @@
 //   ref_merge_index        — merge parallel-worker index fragments (scripts/merge_index.py, core.artifact §5.1)
 //   ref_init               — create the project skeleton (.artifacts/.investigations/knowledge)
 //
+// Contract guard (spec §5.7): deny-only preconditions on write/edit, in the
+// style of DSH's fs-observation-policy — the action fails before it happens and
+// the one-line message names the recovery. Rules R1 (undeclared module),
+// R3 (candidate without a judge review at this revision), R5 (knowledge entry
+// without reviewable front-matter). REF_GUARD=off is the audited self-rescue
+// switch; every denial and bypass is appended to .artifacts/_audit/guard.jsonl.
+//
 // Maintained by: DSH agent (RE-Framework maintainer). Source of truth:
 // this repository's dsh/ subtree (cordis.patch.yml + plugins/ + skills/), per dsh/AGENTS.md.
 
@@ -256,4 +263,129 @@ export function apply(ctx, config = {}) {
       return out
     },
   })
+
+  // ── contract guard (spec §5.7) ─────────────────────────────────────────────
+  //
+  // Deny-only preconditions, mirroring DSH's fs-observation-policy pattern: the
+  // action fails *before* it happens and the message names the next step. State
+  // is read from .artifacts/target-modules.state.json on every call (disk, never
+  // cached), so a resumed session sees the same map. REF_GUARD=off is the
+  // audited self-rescue switch; damage from a bypass is still caught by the
+  // target_modules gates.
+  //   R1 REF_MODULE_UNDECLARED — artifact write into an undeclared module
+  //   R3 REF_REVIEW_MISSING    — candidate/confirmed without a review at this revision
+  //   R5 REF_KB_FRONTMATTER    — knowledge entry missing signature/verdict/lesson/status
+  const guardFs = (() => {
+    try { return process.getBuiltinModule('node:fs') } catch (error) { return undefined }
+  })()
+  const guardPath = (() => {
+    try { return process.getBuiltinModule('node:path') } catch (error) { return undefined }
+  })()
+  const GUARDED_TOOLS = new Set(['write', 'edit'])
+  const bypassedAgents = new WeakSet()
+  let bypassedAnonymous = false
+
+  function guardAudit(cwd, entry) {
+    if (guardFs === undefined || guardPath === undefined || !cwd) return
+    try {
+      const dir = guardPath.join(cwd, '.artifacts', '_audit')
+      guardFs.mkdirSync(dir, { recursive: true })
+      guardFs.appendFileSync(guardPath.join(dir, 'guard.jsonl'),
+        JSON.stringify(Object.assign({ at: new Date().toISOString() }, entry)) + '\n', 'utf8')
+    } catch (error) {
+      // Auditing must never block the turn.
+    }
+  }
+
+  function guardState(cwd) {
+    if (guardFs === undefined || guardPath === undefined || !cwd) return undefined
+    try {
+      const file = guardPath.join(cwd, '.artifacts', 'target-modules.state.json')
+      if (!guardFs.existsSync(file)) return undefined
+      const state = JSON.parse(guardFs.readFileSync(file, 'utf8'))
+      return state && Array.isArray(state.modules) ? state : undefined
+    } catch (error) {
+      return undefined
+    }
+  }
+
+  function relativeTo(cwd, filePath) {
+    if (!cwd || guardPath === undefined) return String(filePath).replace(/\\/g, '/')
+    return guardPath.relative(cwd, guardPath.resolve(cwd, String(filePath))).replace(/\\/g, '/')
+  }
+
+  function contractGuard(exec) {
+    try {
+      if (!GUARDED_TOOLS.has(exec.name)) return undefined
+      const args = exec.arguments || {}
+      const filePath = args.file_path
+      if (typeof filePath !== 'string' || filePath === '') return undefined
+      const cwd = sessionCwd(exec)
+      const state = guardState(cwd)
+      if (state === undefined) return undefined
+      const relative = relativeTo(cwd, filePath)
+
+      if (process.env.REF_GUARD === 'off') {
+        const key = exec.agent
+        if (key !== undefined) {
+          if (!bypassedAgents.has(key)) {
+            bypassedAgents.add(key)
+            guardAudit(cwd, { event: 'bypass', reason: 'REF_GUARD=off' })
+          }
+        } else if (!bypassedAnonymous) {
+          bypassedAnonymous = true
+          guardAudit(cwd, { event: 'bypass', reason: 'REF_GUARD=off' })
+        }
+        return undefined
+      }
+
+      const match = /(?:^|\/)\.artifacts\/modules\/([^/]+)\//.exec(relative)
+      const moduleId = match ? match[1] : undefined
+      const known = new Set(state.modules.map((entry) => entry && entry.id))
+      const content = typeof args.content === 'string' ? args.content
+        : (typeof args.new_string === 'string' ? args.new_string : '')
+
+      // R1 - an artifact must land in a declared module (or in unassigned/).
+      if (moduleId !== undefined && !known.has(moduleId)) {
+        guardAudit(cwd, { event: 'deny', code: 'REF_MODULE_UNDECLARED', tool: exec.name, path: relative })
+        return 'REF_MODULE_UNDECLARED: module "' + moduleId + '" is not declared'
+          + ' - run ref_modules derive (or write under .artifacts/unassigned/), then retry'
+      }
+
+      // R3 - candidate/confirmed needs a judge review recorded for this revision.
+      const isYaml = relative.endsWith('.yaml') || relative.endsWith('.yml')
+      const isReviewFile = relative.includes('/reviews/')
+      if (moduleId !== undefined && isYaml && !isReviewFile
+        && /status:\s*(candidate|confirmed)/.test(content)) {
+        const module = state.modules.find((entry) => entry && entry.id === moduleId)
+        const reviews = (module && module.reviews) || []
+        const revision = String(state.revision)
+        if (!reviews.includes(revision)) {
+          guardAudit(cwd, { event: 'deny', code: 'REF_REVIEW_MISSING', tool: exec.name,
+            path: relative, revision: state.revision })
+          return 'REF_REVIEW_MISSING: module "' + moduleId + '" has no judge review at revision '
+            + revision + ' - invoke core-judge (scope module:' + moduleId + '), then retry'
+        }
+      }
+
+      // R5 - knowledge entries must stay reviewable at the index level.
+      if (exec.name === 'write' && relative.startsWith('knowledge/discovered/')
+        && relative.endsWith('.md')) {
+        const missing = ['signature', 'verdict', 'lesson', 'status']
+          .filter((key) => !new RegExp('^' + key + ':', 'm').test(content))
+        if (missing.length > 0) {
+          guardAudit(cwd, { event: 'deny', code: 'REF_KB_FRONTMATTER', tool: exec.name, path: relative })
+          return 'REF_KB_FRONTMATTER: knowledge entry missing front-matter: ' + missing.join(', ')
+            + ' - add them, then retry'
+        }
+      }
+      return undefined
+    } catch (error) {
+      return undefined
+    }
+  }
+
+  if (typeof ctx.tools.guard === 'function') {
+    ctx.effect(() => ctx.tools.guard(contractGuard))
+  }
 }

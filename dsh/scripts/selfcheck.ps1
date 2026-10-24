@@ -29,6 +29,9 @@
 #      built-in `cwd` prompt variable (upstream 79bd3d8da7), our persona prefix
 #      still said `Your working directory is {{cwd}}.`, and every re-framework
 #      session failed to assemble — while sections 1-5 stayed green.
+#   7. target-module manager + contract guard (spec §5.7) via fixture tests:
+#      scripts/target_modules.py (derive / G1-G9 / plan-apply-rollback) and the
+#      plugin guard (R1/R3/R5 + audit + REF_GUARD=off).
 
 $ErrorActionPreference = 'Continue'
 
@@ -234,6 +237,19 @@ if ($variableAudit -eq 2) {
 } elseif ($variableAudit -ne 0) {
   Write-Host "  FAIL: preset template references an unregistered prompt variable — upstream removed/renamed it"; $fail = 1
 }
+
+# 7. target-module manager + contract guard (spec §5.7)
+#
+# Fixture tests: the manager runs a real project fixture (derive, G1-G9, legacy
+# adoption, reassign, failed-apply rollback); the guard runs against a fake
+# Cordis context (declared-module, review-at-revision, KB front-matter, audited
+# bypass). Both are local and need no harness checkout.
+Write-Host ""
+Write-Host "[7] target modules + contract guard"
+python (Join-Path $srcRoot 'tests\test_target_modules.py') 2>&1 | Select-Object -Last 6
+if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: target_modules fixture tests failed"; $fail = 1 }
+node (Join-Path $srcRoot 'tests\test_contract_guard.mjs') 2>&1 | Select-Object -Last 4
+if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: contract-guard tests failed"; $fail = 1 }
 
 Write-Host ""
 if ($fail -eq 0) { Write-Host "== ALL CHECKS PASSED ==" } else { Write-Host "== CHECKS FAILED ==" }

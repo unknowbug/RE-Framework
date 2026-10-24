@@ -40,7 +40,7 @@ python dsh/tests/test_manifest.py
 # 2. 部署到 DSH 运行时（写 ~/.dsh，需全盘权限）
 pwsh dsh/scripts/install.ps1
 
-# 3. 六段总自检（工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁）
+# 3. 七段总自检（工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁）
 pwsh dsh/scripts/selfcheck.ps1
 ```
 

@@ -481,6 +481,49 @@ notes: |
 
 ---
 
+### 5.7 目标模块产物与修正协议（v2.12）
+
+产物、代码与知识 MUST 按**目标程序自身的模块结构**归位——模块来自目标证据（RTTI/命名空间/包/section/构建单元），不是人工拍脑袋的清单。
+
+**事实源** `.artifacts/target-modules.yaml`：
+
+```yaml
+schema_version: 1
+project: <name>
+revision: <n>                     # 每次归属/边界变更 +1
+config: {code_root: work, kb_partition: true, naming: auto}
+modules:
+  - id: <stable-slug>             # 一旦创建不改名；alias/history 记旧名
+    title: <人读名>
+    aliases: []
+    boundaries:                   # 边界证据（结构性假设）
+      - {kind: rtti-cluster|namespace|package|section|import-group|module-graph|build-unit|community|hint,
+         locator: <定位>, evidence: <证据文件>}
+    confidence: derived|converged|disputed|confirmed
+    provides: [<contract-id>]     # 对外契约（唯一提供者）
+    requires: [<contract-id>]     # 依赖的契约
+    code_dirs: [work/<id>]
+    status: active|retired
+unassigned: {reason: <原因>, entries: <n>}   # 一等公民，允许长期存在
+history: [{revision, action, detail, at, plan}]
+```
+
+**落盘**：产物 `.artifacts/modules/<id>/`（`classes/ functions/ xrefs/ types/ conclusions/ reviews/<rev>.md`）；未分配 `.artifacts/unassigned/`；迁移 `.artifacts/_migrations/<rev>/{plan.json,journal.json,backup/}`；审计 `.artifacts/_audit/guard.jsonl`。代码落 `config.code_root/<id>/`；知识落 `knowledge/discovered/modules/<id>/`，跨模块知识进 `shared/`。
+
+**索引**：`index.yaml` 条目 MUST 带 `target_module: <id>|unassigned` 与 `module_revision`；`module` 字段继续表示领域模块（re-binary/re-code/swe），两者不混用。
+
+**门禁 G1-G9**（`scripts/target_modules.py verify`，fail-closed）：G1 归属唯一/无重复内容；G2 边界必须有证据；G3 未分配计数一致；G4 修订一致；G5 无孤儿目录、retired 不持产物；G6 `provides` 唯一且 `requires` 可解析；G7 每次已应用修订都有 plan/journal；G8 `candidate|confirmed` 模块必须有当前修订的 `reviews/<rev>.md`；G9 不得有 `modules/`、`unassigned/` 之外的散落产物（遗留平铺须 `plan adopt-legacy`）。
+
+**修正协议**：错误分类 E1 边界错（split/merge/rename）、E2 挂错模块（reassign）、E3 强塞未分配（demote）、E4 跨模块重复（dedupe）、E5 孤儿（quarantine）、E6 修订不一致（rebuild-index）。修正 MUST 走 `plan`（只读，含影响面）→ `apply`（revision+1、备份、journal、重算索引、重跑门禁）→ 失败按 journal 逆序回滚；禁止删除式修正（只 quarantine/superseded）。**迁移使候选/确认失效**：被移动产物的 `candidate|confirmed` 回 `draft`，原状态记入 journal（评审与确认绑定「模块 + 修订」）。
+
+**契约守卫**（deny-only，动作前拒绝；稳定错误码 + 一行恢复）：`REF_MODULE_UNDECLARED`（写入未声明模块）、`REF_REVIEW_MISSING`（无当前修订评审就写 candidate/confirmed）、`REF_KB_FRONTMATTER`（知识条目缺 signature/verdict/lesson/status）。自救：`REF_GUARD=off`（写 `guard.jsonl` 审计）；绕过期间的越界写入由 G1-G9 在下次运行发现，`repair` 修复。
+
+**judge 范围**：judge 审**模块**不审全局——scope = `module:<id>` + `revision`，输入限于该模块产物 + 义务状态 + 门禁结果；全局只有 G8 机械检查「candidate+ 模块都有评审记录」。模块过大（超出一次审查带宽）→ 拆分，粒度由此可判。
+
+命令：`python scripts/target_modules.py <project> derive|status|verify|plan|apply|repair`。
+
+---
+
 ## 6. 知识库生长机制
 
 - 知识库分两层：`knowledge/builtin/`（预置，不随项目变化）+ `knowledge/discovered/`（项目运行中 AI 自动写入）。
@@ -564,5 +607,6 @@ notes: |
 | retry cap 区分 | **VERIFIED** | 用户明确拍板：≤3 只约束逆向假设验证轮次，工程修复不计数 |
 | order-dependent 语义 | **VERIFIED（实战项目实证）** | 生物群系平局 tie-break + Java ThreadLocal 缓存依赖查询序列，实证 + 修复闭环 |
 | merge_index 工具（R-2） | **CONJECTURE** | 冒烟测试通过，尚未实战（替代主会话手动合并） |
+| 目标模块产物与修正协议（§5.7） | **CONJECTURE** | P1 已实现并有 fixture 测试（G1-G9、迁移回滚、守卫 R1/R3/R5），**尚未在真实大工程上试跑**；推导启发式误判率未知 |
 
 > 诚实声明：标注 CONJECTURE 的部分是工作假设，价值待实践检验。用实际项目验证它们，而不是假设它们有效。

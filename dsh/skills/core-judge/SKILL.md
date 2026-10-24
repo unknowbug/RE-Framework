@@ -23,8 +23,10 @@ whenToUse: confirmed 授予前/重大转向/收尾交付 MUST、candidate 授予
 | confirmed 授予前 | **MUST**（拍板前必须有 judge 意见） |
 | 重大转向（结案重开/根因定论/范围决策） | **MUST** |
 | 收尾交付前（三源核对） | **MUST** |
+| 模块验收（模块内 draft→candidate，spec §5.7） | **MUST**（scope = `module:<id>` + `revision`） |
 | candidate 授予（各阶段结论） | SHOULD |
 
+> **judge 审模块，不审全局**：大型工程的全局不可审，judge 只审一个模块（该模块产物 + 义务状态 + 门禁结果），产出 `reviews/<rev>.md`；全局仅由 G8 机械检查"candidate+ 模块都有评审记录"。模块大到一次审不完 → 拆模块，而不是扩大审查范围。
 > judge 步骤应在 core.plan 架构设计阶段**预置进 todo 计划**，不是事后补。
 > 「编程=主会话直接闭环」不豁免 judge——审查门是强制项（实战实证：收敛门被误读为自评后，judge 缺位导致 5 项问题收尾才暴露）。
 
@@ -42,10 +44,13 @@ whenToUse: confirmed 授予前/重大转向/收尾交付 MUST、candidate 授予
 10. **验证副作用与逆**（Anchorlaw v0.24 §9.8，spec §5.6）: 本轮验证动作的 in-place 副作用（覆盖日志/原地重建 index/改门控默认值/污染执行体）是否登记了**可寻址的逆**，或给出显式不可逆声明及原因？未登记 → 意见中标注；**不得要求自动回退**（失败轮证据价值更高）
 11. **等价档位与 `S`**（Anchorlaw v0.24 §9.7.1）: 跨载体/跨形态的量化结论是否声明了等价档位（E1/E2/E3）与共同观测 key 集 `S`，并说明 `S` 之外无分支？未声明或用了 §9.7.1 无效声明清单中的形态（计数恒等当集合恒等 / 同口径当无伪差 / 合理解释当验证 / 前提存在当满足）→ 意见中标注
 12. **halt 终态性**（Anchorlaw v0.24 §15.4 PI-1）: 若本轮是 gate C 触发的 halt，是否以**机械信号**终止（非零退出或等价 host 标记）且**未被静默继承**为下一轮基底？被继承 → 判为流程不变量破裂并驳回
+13. **模块范围（spec §5.7）**: 审查是否只覆盖声明的 `module:<id>` 与 `revision`（不得顺手审别的模块/全局）？该模块 `boundaries` 是否有证据、`provides/requires` 是否闭合、G1-G9 是否绿？评审结尾必须写 `reviews/<rev>.md`（G8/守卫 R3 依赖它）；模块超出一次审查带宽 → 意见为"拆模块"，不是"审更多"
 
 ## 产出
 
 审查意见（opinion）落盘 `.investigations/<任务>/review-<NNN>.md`：逐项结论（通过/驳回/建议）+ 推荐状态（保持 draft / 建议 candidate）+ 理由。**不含状态修改动作。**
+
+模块验收另须写 `.artifacts/modules/<id>/reviews/<rev>.md`（front-matter：`scope: module:<id>@<rev>`、`verdict: pass|reject`、`findings`）；这是 G8 与守卫 R3 放行 candidate 的唯一依据，缺它则 candidate 写入被拒。
 
 ## 约束
 

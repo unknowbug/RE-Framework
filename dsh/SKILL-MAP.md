@@ -51,6 +51,7 @@
 |------|--------------------------|--------------------------|
 | 并行 worker 索引合并（§5.1） | `ref_merge_index` | `python scripts/merge_index.py <project>` |
 | 项目骨架初始化（.artifacts/.investigations/knowledge） | `ref_init` | （脚本内联于插件，等价目录创建） |
+| **目标模块管理（§5.7）**：derive / verify G1-G9 / plan→apply→rollback / repair | —（脚本；守卫 R1/R3/R5 在 re-framework preset 内自动生效） | `python scripts/target_modules.py <project> derive\|verify\|plan\|apply\|repair` |
 | 环境/技能状态 | `ref_status` | — |
 
 **约定**：re-framework preset 会话内做框架动作**优先用 ref_* 工具**（封装了脚本路径解析与会话 cwd 语义）；其他会话直接用 pwsh 跑脚本（`merge_index.py` 保留在仓库根）。

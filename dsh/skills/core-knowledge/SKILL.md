@@ -46,12 +46,21 @@ knowledge/
     ├── errors/                       # ★ 错误账本（独立存放，优先级最高，详实度最高）
     │   ├── error-001-<slug>.md       #   每条错误一个文件（含完整诊断/排除链条）
     │   └── error-002-<slug>.md
-    ├── compiler-idioms.md          # 编译器/语言惯用法
-    ├── f5-bugs.md                  # 还原工具误译模式及修正
-    ├── algorithm-fingerprints.md   # 已确认的算法/协议指纹
-    ├── anti-patterns.md            # 混淆/反逆向手法
-    └── process-lessons.md          # 流程/执行反模式（judge/scout 缺位等复盘教训）
+    ├── modules/<id>/                 # 按目标模块分区的知识（spec §5.7）
+    │   ├── compiler-idioms.md
+    │   ├── f5-bugs.md
+    │   ├── algorithm-fingerprints.md
+    │   └── anti-patterns.md
+    ├── shared/                       # 跨模块通用知识（编译器惯用法、通用反逆向手法）
+    └── process-lessons.md            # 流程/执行反模式（judge/scout 缺位等复盘教训）
 ```
+
+### 按目标模块分区（spec §5.7）
+
+- **分区依据是目标程序的模块**（`.artifacts/target-modules.yaml` 的 `id`），不是领域模块：`modules/<id>/` 只放该模块的知识；跨模块复用的进 `shared/`，条目里用 `modules: [a, b]` 回指，**不复制两份**。
+- **加载时只查相关模块 + shared**（大工程不能每次全量读）；`INDEX.md` 按模块分区生成，速查表由脚本生成，禁手维护。
+- **条目 front-matter 必填** `signature / verdict / lesson / status`（缺任一项 → 守卫 `REF_KB_FRONTMATTER` 拒绝写入，且 judge 无法在索引层审查）。错误账本仍按 `errors/error-<NNN>-<slug>.md` 平铺（错误优先，不按模块切碎）。
+- **模块边界变更**（split/merge/rename）时，知识目录随地图迁移；迁移由 `target_modules.py plan` 记录，原文不重写，被合并条目用 supersession 回指。
 
 ## 触发条件 → 写入位置
 
