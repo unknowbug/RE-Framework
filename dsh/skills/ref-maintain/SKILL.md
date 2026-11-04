@@ -40,9 +40,11 @@ python dsh/tests/test_manifest.py
 # 2. 部署到 DSH 运行时（写 ~/.dsh，需全盘权限）
 pwsh dsh/scripts/install.ps1
 
-# 3. 七段总自检（工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁）
+# 3. 七段总自检（工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁）
 pwsh dsh/scripts/selfcheck.ps1
 ```
+
+**边界资产（`~/.dsh/cordis.patch.yml`）**：home 级 patch 是**合法 DSH 层**（在所有 profile 层之后应用，优先级更高），可同时承载其他框架的 row 与本机偏好。判据是「**是否还带本框架的 row**」，不是「文件是否存在」；清理只走 `dsh/scripts/patch_layer.py` 的 row 级摘除（保留注释/BOM/行尾/兄弟条目），**绝不整文件删除**。
 
 ## 上游 DSH 升级核对（每次 harness 升级后）
 

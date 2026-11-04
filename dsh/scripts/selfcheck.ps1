@@ -41,20 +41,32 @@ $fail = 0
 # anchor-* skills live there too, so every check is scoped to this prefix).
 $skillNamespace = '^(core|re|recode|swe|ref)-'
 
+# Python resolver: Kylin/some Linux distributions ship only `python3`.
+$pythonExe = $null
+foreach ($candidate in @('python', 'python3')) {
+  if (Get-Command $candidate -ErrorAction SilentlyContinue) { $pythonExe = $candidate; break }
+}
+
 Write-Host "== RE-Framework DSH self-check =="
 
 # 1. toolchain
 Write-Host ""
 Write-Host "[1] toolchain"
-python --version 2>&1
-if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: python not available"; $fail = 1 }
+if (-not $pythonExe) {
+  Write-Host "  FAIL: python not available (tried python, python3)"; $fail = 1
+} else {
+  & $pythonExe --version 2>&1
+  if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: python not available"; $fail = 1 }
+}
 
 # 2. skill manifest (DSH naming + frontmatter + set + cross-refs; dsh/skills is
 #    the single source of truth since the Reasonix format was archived)
 Write-Host ""
 Write-Host "[2] skill manifests"
-python (Join-Path $srcRoot 'tests\test_manifest.py') 2>&1
-if ($LASTEXITCODE -ne 0) { $fail = 1 }
+if ($pythonExe) {
+  & $pythonExe (Join-Path (Join-Path $srcRoot 'tests') 'test_manifest.py') 2>&1
+  if ($LASTEXITCODE -ne 0) { $fail = 1 }
+} else { $fail = 1 }
 
 # 3. installed artifacts
 Write-Host ""
@@ -160,7 +172,7 @@ function Test-InstallManifest($manifestPath, $label, $namespace) {
 Test-InstallManifest (Join-Path $userSkills '.re-framework-manifest.yaml') 'user-global' $skillNamespace
 # Global tool group must be WITHDRAWN (user decision 2026-08-15): no
 # re-framework-tools-global row in any profile patch, no profile-local plugin
-# copy, no legacy ~/.dsh/cordis.patch.yml.
+# copy, and the home-level patch layer must not carry our withdrawn row.
 $profilesDir = Join-Path $dshHome 'profiles'
 $globalGone = $true
 if (Test-Path $profilesDir) {
@@ -173,22 +185,42 @@ if (Test-Path $profilesDir) {
       Write-Host "  FAIL: profile $($profile.Name) still has re-framework-tools-global — re-run install.ps1"
       $globalGone = $false; $fail = 1
     }
-    if (Test-Path (Join-Path $profile.FullName 'plugins\re-framework')) {
-      Write-Host "  FAIL: profile $($profile.Name) still has plugins\re-framework — re-run install.ps1"
+    if (Test-Path (Join-Path (Join-Path $profile.FullName 'plugins') 're-framework')) {
+      Write-Host "  FAIL: profile $($profile.Name) still has plugins/re-framework — re-run install.ps1"
       $globalGone = $false; $fail = 1
     }
   }
 }
 if ($globalGone) { Write-Host "  OK global tool group withdrawn (tools live on the re-framework preset only)" }
-$legacyHomePatch = Join-Path $dshHome 'cordis.patch.yml'
-if (Test-Path $legacyHomePatch) {
-  Write-Host "  FAIL: legacy ~/.dsh/cordis.patch.yml still present — re-run install.ps1"; $fail = 1
+# The home-level patch layer ($DSH_HOME/cordis.patch.yml) is LEGAL DSH state:
+# it is applied after every profile layer and may carry other frameworks' rows
+# and machine-local settings. Existence is NOT a violation — the judged fact is
+# whether it still carries OUR withdrawn row (patch_layer.py, shared with
+# install.ps1). A missing file counts as absent.
+$homePatchFile = Join-Path $dshHome 'cordis.patch.yml'
+$patchLayerPy = Join-Path (Join-Path $srcRoot 'scripts') 'patch_layer.py'
+if (Test-Path $homePatchFile) {
+  if ($pythonExe) {
+    & $pythonExe $patchLayerPy --has-row $homePatchFile --row-id 're-framework-tools-global' 2>&1 | Out-Null
+    $homeRow = $LASTEXITCODE
+    if ($homeRow -eq 0) {
+      Write-Host "  FAIL: ~/.dsh/cordis.patch.yml still carries re-framework-tools-global — re-run install.ps1"
+      $fail = 1
+    } elseif ($homeRow -eq 1) {
+      Write-Host "  OK home-level patch layer exists without our row (legal; other rows are untouched)"
+    } else {
+      Write-Host "  FAIL: could not inspect ~/.dsh/cordis.patch.yml (patch_layer.py exit $homeRow)"
+      $fail = 1
+    }
+  } else {
+    Write-Host "  WARN: home patch exists but python is unavailable; cannot verify its rows"
+  }
 }
 
 # 4. plugin tool-schema shape (compiled JSON-Schema parameters; see check_plugin_schema.mjs)
 Write-Host ""
 Write-Host "[4] plugin tool schemas"
-node (Join-Path $srcRoot 'tests\check_plugin_schema.mjs') 2>&1
+node (Join-Path (Join-Path $srcRoot 'tests') 'check_plugin_schema.mjs') 2>&1
 if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: plugin tool schemas not compiled JSON Schema"; $fail = 1 }
 
 # 5. preset row resolvability (fail-closed; see audit_preset_rows.mjs)
@@ -201,7 +233,7 @@ if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: plugin tool schemas not compiled 
 # harness checkout that does not install presets at all).
 Write-Host ""
 Write-Host "[5] preset row resolvability"
-node (Join-Path $srcRoot 'tests\audit_preset_rows.mjs') 2>&1
+node (Join-Path (Join-Path $srcRoot 'tests') 'audit_preset_rows.mjs') 2>&1
 $presetAudit = $LASTEXITCODE
 if ($presetAudit -eq 2) {
   if ($env:DSH_SKIP_PRESET_AUDIT -eq '1') {
@@ -224,7 +256,7 @@ if ($presetAudit -eq 2) {
 # the gap explicitly.
 Write-Host ""
 Write-Host "[6] preset template variables"
-node (Join-Path $srcRoot 'tests\audit_prompt_variables.mjs') 2>&1
+node (Join-Path (Join-Path $srcRoot 'tests') 'audit_prompt_variables.mjs') 2>&1
 $variableAudit = $LASTEXITCODE
 if ($variableAudit -eq 2) {
   if ($env:DSH_SKIP_PROMPT_VAR_AUDIT -eq '1') {
@@ -238,17 +270,22 @@ if ($variableAudit -eq 2) {
   Write-Host "  FAIL: preset template references an unregistered prompt variable — upstream removed/renamed it"; $fail = 1
 }
 
-# 7. target-module manager + contract guard (spec §5.7)
+# 7. fixture gates: target-module manager, contract guard, patch layer (spec §5.7)
 #
-# Fixture tests: the manager runs a real project fixture (derive, G1-G9, legacy
-# adoption, reassign, failed-apply rollback); the guard runs against a fake
-# Cordis context (declared-module, review-at-revision, KB front-matter, audited
-# bypass). Both are local and need no harness checkout.
+# The manager runs a real project fixture (derive, G1-G9, legacy adoption,
+# reassign, failed-apply rollback); the guard runs against a fake Cordis context
+# (declared-module, review-at-revision, KB front-matter, audited bypass); the
+# patch-layer tests lock the "a patch file is not a violation, a row is" rule
+# (PR #2 / 2026-09-18). All local; no harness checkout needed.
 Write-Host ""
-Write-Host "[7] target modules + contract guard"
-python (Join-Path $srcRoot 'tests\test_target_modules.py') 2>&1 | Select-Object -Last 6
-if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: target_modules fixture tests failed"; $fail = 1 }
-node (Join-Path $srcRoot 'tests\test_contract_guard.mjs') 2>&1 | Select-Object -Last 4
+Write-Host "[7] fixture gates (target modules / contract guard / patch layer)"
+if ($pythonExe) {
+  & $pythonExe (Join-Path (Join-Path $srcRoot 'tests') 'test_target_modules.py') 2>&1 | Select-Object -Last 6
+  if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: target_modules fixture tests failed"; $fail = 1 }
+  & $pythonExe (Join-Path (Join-Path $srcRoot 'tests') 'test_home_patch.py') 2>&1 | Select-Object -Last 2
+  if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: patch-layer tests failed"; $fail = 1 }
+} else { $fail = 1 }
+node (Join-Path (Join-Path $srcRoot 'tests') 'test_contract_guard.mjs') 2>&1 | Select-Object -Last 4
 if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: contract-guard tests failed"; $fail = 1 }
 
 Write-Host ""

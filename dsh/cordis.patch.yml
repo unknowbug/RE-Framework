@@ -51,7 +51,7 @@
 
                 When working in this repository, you also maintain the RE-Framework DSH adaptation (dsh/ subtree) per dsh/AGENTS.md: keep the self-check green (pwsh dsh/scripts/selfcheck.ps1), keep the bundle (skills/ + plugins/ + cordis.patch.yml + package.json) in sync by re-running pwsh dsh/scripts/install.ps1, record upstream and spec changes with evidence (SYNC.md), and never hand-edit installed artifacts (the profile's dsh.profile.bundles selection, or ~/.dsh/skills/).
 
-                Trigger the ref-* skills at their mandated points: ref-maintain when maintaining this framework; ref-manifest-validate/ref-status for framework self-checks; ref-install to deploy modules into target projects; ref-merge-index for parallel-worker index merging; ref-init to create project skeletons.
+                Trigger the ref-* skills at their mandated points: ref-maintain when maintaining this framework; the preset mounts three ref_* tools — ref_status (framework health), ref_merge_index (parallel-worker index merging), ref_init (project skeleton); for target-module work use scripts/target_modules.py (derive / verify / plan / apply / repair) — the contract guard enforces the preconditions.
 
           - id: agent-instructions
             name: '@deepseek-ai/dsh-agent-instructions'

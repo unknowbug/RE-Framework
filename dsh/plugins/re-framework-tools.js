@@ -28,7 +28,12 @@
 // this repository's dsh/ subtree (cordis.patch.yml + plugins/ + skills/), per dsh/AGENTS.md.
 
 export const name = 're-framework-tools'
-export const inject = ['tools']
+// `subprocess` is REQUIRED, not optional: apply() needs it to register every
+// ref_* tool, and Cordis does not guarantee service readiness by tree order
+// (mounts are async). Declaring it here makes Cordis wait for the service;
+// without it, apply() could run first and silently return, so the tools would
+// never register (measured on DSH 0.2.0-rc.2: PR #1 + issue #3, 2026-09-30).
+export const inject = ['tools', 'subprocess']
 
 export function apply(ctx, config = {}) {
   // Optional capabilities, read with ctx.get and handled when absent.
@@ -36,7 +41,11 @@ export function apply(ctx, config = {}) {
   const skills = ctx.get('skills')
   const fsService = ctx.get('fs')
   const sandboxPolicy = ctx.get('sandboxPolicy')
-  if (subprocess === undefined) return
+  if (subprocess === undefined) {
+    // Defensive only: `inject` above makes Cordis wait for the service.
+    ctx.logger?.warn?.('re-framework-tools: subprocess service unavailable; ref_* tools not registered')
+    return
+  }
 
   const ALL_TOOLS = ['status', 'merge_index', 'init']
   const enabled = new Set(
@@ -53,7 +62,23 @@ export function apply(ctx, config = {}) {
 
   let pythonPathPromise
   function pythonPath() {
-    if (!pythonPathPromise) pythonPathPromise = subprocess.resolveExecutable('python')
+    // Kylin/some Linux distributions ship only `python3`; try both, and keep
+    // the failure message explicit (a silent fallback would hide a missing
+    // interpreter until the first tool call).
+    if (!pythonPathPromise) {
+      pythonPathPromise = (async () => {
+        let lastError
+        for (const candidate of ['python', 'python3']) {
+          try {
+            return await subprocess.resolveExecutable(candidate)
+          } catch (error) {
+            lastError = error
+          }
+        }
+        throw new Error('python interpreter not found (tried python, python3)'
+          + (lastError ? ': ' + String(lastError.message || lastError) : ''))
+      })()
+    }
     return pythonPathPromise
   }
 

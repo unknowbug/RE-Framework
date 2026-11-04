@@ -68,6 +68,33 @@ $userSkills = Join-Path $dshHome 'skills'
 # (e.g. Anchorlaw's anchor-*) skills are left untouched.
 $skillNamespace = '^(core|re|recode|swe|ref)-'
 
+# Python resolver: several Linux distributions (Kylin included) ship only
+# `python3`. The ref_* tools use the same fallback.
+function Resolve-PythonExe {
+  foreach ($candidate in @('python', 'python3')) {
+    if (Get-Command $candidate -ErrorAction SilentlyContinue) { return $candidate }
+  }
+  throw "python interpreter not found (tried python, python3)"
+}
+$pythonExe = Resolve-PythonExe
+
+# Native-command runner. Windows PowerShell 5.1 promotes a native command's
+# stderr output to a TERMINATING error under $ErrorActionPreference = 'Stop'
+# (Node >= 22 writes warnings there), so capture with the EAP relaxed and judge
+# success by the exit code only. Diagnostics go to stdout for the same reason.
+function Invoke-Native {
+  param([string]$FilePath, [string[]]$Arguments)
+  $previous = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    $output = (& $FilePath @Arguments 2>&1 | Out-String)
+    $code = $LASTEXITCODE
+  } finally {
+    $ErrorActionPreference = $previous
+  }
+  [pscustomobject]@{ code = $code; output = $output }
+}
+
 Write-Host "== RE-Framework DSH bundle install =="
 Write-Host "bundle      : $srcRoot"
 Write-Host "dshHome     : $dshHome"
@@ -75,26 +102,36 @@ Write-Host "user skills : $userSkills (user-global, any session)"
 
 # 0. Schema gate: never copy a plugin whose tool schemas are not compiled JSON
 #    Schema (a flat spec would break every session once mounted anywhere).
-node (Join-Path $srcRoot 'tests\check_plugin_schema.mjs') 2>&1
-if ($LASTEXITCODE -ne 0) {
+$schemaCheck = Join-Path (Join-Path $srcRoot 'tests') 'check_plugin_schema.mjs'
+$schema = Invoke-Native 'node' @('--no-warnings', $schemaCheck)
+if ($schema.output.Trim()) { Write-Host $schema.output.Trim() }
+if ($schema.code -ne 0) {
   throw "plugin tool-schema check failed - refusing to install"
 }
 
 # 1. Cleanup legacy wrong mounts (2026-08-13 incident + 2026-08-15 reversal):
-#    a) ~/.dsh/cordis.patch.yml — the host never reads it (only
-#       profiles/<profile>/cordis.patch.yml).
+#    a) ~/.dsh/cordis.patch.yml is LEGAL DSH state: the home-level user patch
+#       layer, applied after every profile layer (so it outranks them). It also
+#       carries other frameworks' rows and machine-local settings, so this
+#       script NEVER deletes the file: if it still holds the withdrawn
+#       re-framework-tools-global row, only THAT ROW is removed and every other
+#       byte is kept (patch_layer.py, shared with selfcheck.ps1).
 #    b) ~/.dsh/plugins/re-framework/ — wrong location.
 #    c) re-framework-tools-global insert rows in every profile patch — the
 #       global tool group is withdrawn per user decision; skills stay global.
-$legacyHomePatch = Join-Path $dshHome 'cordis.patch.yml'
-if (Test-Path $legacyHomePatch) {
-  $legacyContent = Get-Content $legacyHomePatch -Raw -ErrorAction SilentlyContinue
-  if ($legacyContent -match 're-framework-tools-global') {
-    Remove-Item $legacyHomePatch -Force
-    Write-Host "  - removed legacy ~/.dsh/cordis.patch.yml (host does not read it)"
+$rowId = 're-framework-tools-global'
+$patchLayerPy = Join-Path (Join-Path $srcRoot 'scripts') 'patch_layer.py'
+$homePatch = Join-Path $dshHome 'cordis.patch.yml'
+if (Test-Path $homePatch) {
+  $withdraw = Invoke-Native $pythonExe @($patchLayerPy, '--remove-row', $homePatch, '--row-id', $rowId, '--backup')
+  if ($withdraw.code -ne 0) {
+    throw "failed to withdraw $rowId from $homePatch (nothing was written; see the message above)"
+  }
+  if ($withdraw.output -match 'removed') {
+    Write-Host "  - withdrew $rowId from ~/.dsh/cordis.patch.yml (row only; comments, BOM and other rows kept)"
   }
 }
-$legacyPlugins = Join-Path $dshHome 'plugins\re-framework'
+$legacyPlugins = Join-Path (Join-Path $dshHome 'plugins') 're-framework'
 if (Test-Path $legacyPlugins) {
   Remove-Item $legacyPlugins -Recurse -Force
   Write-Host "  - removed legacy ~/.dsh/plugins/re-framework/ (wrong location)"
@@ -113,44 +150,17 @@ if (Test-Path $profilesDir) {
 foreach ($profile in $profiles) {
   $patchPath = Join-Path $profile.FullName 'cordis.patch.yml'
   if (Test-Path $patchPath) {
-    $py = @'
-import io, os, yaml
-path = os.environ['REF_PATCH_PATH']
-with io.open(path, encoding='utf-8') as f:
-    data = yaml.safe_load(f)
-rows = list(data) if isinstance(data, list) else []
-kept = [r for r in rows if not (
-    isinstance(r, dict) and any(
-        (e or {}).get('id') == 're-framework-tools-global' for e in (r.get('insert') or [])))]
-if len(kept) != len(rows):
-    out = yaml.safe_dump(kept, allow_unicode=True, sort_keys=False)
-    with io.open(path, 'w', encoding='utf-8', newline='\n') as f:
-        f.write(out)
-    print('removed')
-else:
-    print('absent')
-'@
-    $tmpPy = Join-Path $env:TEMP 'ref-patch-withdraw.py'
-    Set-Content -Path $tmpPy -Value $py -Encoding UTF8
-    $env:REF_PATCH_PATH = $patchPath
-    # Transactional edit (paper §5.2.2 Algorithm 10: backup -> try -> catch -> restore).
-    # The patch file is host-shared state: other frameworks' rows live in it too, so a
-    # bad rewrite is not recoverable by re-running this script. Back up first.
-    $patchBackup = "$patchPath.bak-ref-install"
-    Copy-Item -Path $patchPath -Destination $patchBackup -Force
-    $result = python $tmpPy 2>&1
-    $mergeCode = $LASTEXITCODE
-    Remove-Item $tmpPy -Force -ErrorAction SilentlyContinue
-    Remove-Item Env:REF_PATCH_PATH -ErrorAction SilentlyContinue
-    if ($mergeCode -ne 0) {
-      Copy-Item -Path $patchBackup -Destination $patchPath -Force
-      throw "failed to withdraw patch row from $patchPath (restored from $patchBackup)"
+    # Same primitive as the home layer: entry-level, text-level, atomic. It
+    # writes only when the row is really present and leaves the .bak itself.
+    $withdraw = Invoke-Native $pythonExe @($patchLayerPy, '--remove-row', $patchPath, '--row-id', $rowId, '--backup')
+    if ($withdraw.code -ne 0) {
+      throw "failed to withdraw $rowId from $patchPath (nothing was written; see the message above)"
     }
-    if ($result -match 'removed') {
-      Write-Host "  - withdrew re-framework-tools-global from $patchPath"
+    if ($withdraw.output -match 'removed') {
+      Write-Host "  - withdrew $rowId from $patchPath (row only)"
     }
   }
-  $profilePluginDir = Join-Path $profile.FullName 'plugins\re-framework'
+  $profilePluginDir = Join-Path (Join-Path $profile.FullName 'plugins') 're-framework'
   if (Test-Path $profilePluginDir) {
     Remove-Item $profilePluginDir -Recurse -Force
     Write-Host "  - removed $profilePluginDir (profile-local plugin copy)"
@@ -179,15 +189,17 @@ Write-Host "  OK bundle: $bundleName  patch: $patchRel"
 #    The row gate runs BEFORE install: a bundle whose preset rows do not resolve
 #    installs cleanly and then fails at session creation — exactly the 2026-09-23
 #    incident (gate green, `Unknown agent preset` on resume).
-node (Join-Path $srcRoot 'tests\audit_preset_rows.mjs') 2>&1
-if ($LASTEXITCODE -ne 0) { throw "preset row gate failed - refusing to install" }
+$rowGate = Invoke-Native 'node' @((Join-Path (Join-Path $srcRoot 'tests') 'audit_preset_rows.mjs'))
+if ($rowGate.output.Trim()) { Write-Host $rowGate.output.Trim() }
+if ($rowGate.code -ne 0) { throw "preset row gate failed - refusing to install" }
 
 #    The template-variable gate runs BEFORE install for the same reason: a preset
 #    whose persona template references a variable the harness no longer registers
 #    installs cleanly and then fails at session assembly — the 2026-10-10 incident
 #    (`unknown prompt variable "{{cwd}}"` while every older section stayed green).
-node (Join-Path $srcRoot 'tests\audit_prompt_variables.mjs') 2>&1
-if ($LASTEXITCODE -ne 0) { throw "preset template-variable gate failed - refusing to install" }
+$variableGate = Invoke-Native 'node' @((Join-Path (Join-Path $srcRoot 'tests') 'audit_prompt_variables.mjs'))
+if ($variableGate.output.Trim()) { Write-Host $variableGate.output.Trim() }
+if ($variableGate.code -ne 0) { throw "preset template-variable gate failed - refusing to install" }
 
 # 3. Skills → user-global root (visible in every session, on any preset, in any
 #    project). The preset ALSO serves them from the bundle via skill-filesystem
@@ -214,7 +226,7 @@ if (Test-Path (Join-Path $srcRoot 'skills')) {
         Write-Host "  - kept local override (marker .keep-local): $($dir.Name)"
         continue
       }
-      if (-not (Test-Path (Join-Path $srcRoot "skills\$($dir.Name)"))) {
+      if (-not (Test-Path (Join-Path (Join-Path $srcRoot 'skills') $dir.Name))) {
         Remove-Item -Path $dir.FullName -Recurse -Force
         Write-Host "  - removed orphan user-global skill: $($dir.Name) (dropped upstream)"
       }
@@ -222,7 +234,7 @@ if (Test-Path (Join-Path $srcRoot 'skills')) {
   }
 
   New-Item -ItemType Directory -Path $userSkills -Force | Out-Null
-  Copy-Item -Path (Join-Path $srcRoot 'skills\*') -Destination $userSkills -Recurse -Force
+  Copy-Item -Path (Join-Path (Join-Path $srcRoot 'skills') '*') -Destination $userSkills -Recurse -Force
 }
 
 # 5. Install manifest: give the installed artifacts an identity so "installed"
@@ -269,8 +281,9 @@ if ($targetProfiles.Count -eq 0) {
     throw "dsh not found on PATH - the bundle is installed through 'dsh plugin --profile <p> add <dir>'"
   }
   foreach ($profileName in $targetProfiles) {
-    dsh plugin --profile $profileName add $bundleDir
-    if ($LASTEXITCODE -ne 0) { throw "failed to install the bundle into profile '$profileName'" }
+    $add = Invoke-Native 'dsh' @('plugin', '--profile', $profileName, 'add', $bundleDir)
+    if ($add.output.Trim()) { Write-Host $add.output.Trim() }
+    if ($add.code -ne 0) { throw "failed to install the bundle into profile '$profileName'" }
     $selectedIn += $profileName
     Write-Host "  OK bundle installed + selected in dsh.profile.bundles (profile: $profileName)"
   }
