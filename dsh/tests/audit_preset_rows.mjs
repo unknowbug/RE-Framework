@@ -55,7 +55,60 @@ import { pathToFileURL, fileURLToPath } from 'node:url'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const REPO = resolve(HERE, '..', '..')
 
-const HARNESS = process.env.DSH_CHECKOUT ?? 'D:\\git\\deepseek-harness'
+/**
+ * harness 布局：源码 checkout（有 `packages/`）或已安装的 asar 运行时。
+ *
+ * DSH Desktop 把整个运行时打进 `resources/app.asar`，**普通 Node 的 fs 读不到 asar**——
+ * 这种布局必须用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"` 跑本脚本（Electron 的 fs 透明
+ * 读 asar）。两种布局的包都落在 `<HARNESS>/node_modules`，所以包名解析与 exports
+ * 校验的代码不变，只有包清单的来源不同（checkout: packages/；asar: node_modules/@deepseek-ai）。
+ */
+const CHECKOUT = process.env.DSH_CHECKOUT ?? 'D:\\git\\deepseek-harness'
+
+/**
+ * Resolve the installed Desktop runtime, preferring the running app:
+ *   DSH_NODE_EXECUTABLE = "<install>\DeepSeek Harness.exe"
+ *   DSH_INSTALL_DIR     = "<install>\resources\app.asar\dsh\node_modules\@deepseek-ai\dsh"
+ * The latter points INSIDE the asar, so it is split at "app.asar" rather than
+ * used as a directory. process.execPath covers Electron-run-as-node.
+ */
+function detectHarnessInstall() {
+  const exe = process.env.DSH_NODE_EXECUTABLE
+  const installDirEnv = process.env.DSH_INSTALL_DIR ?? ''
+  const marker = 'app.asar'
+  const markerIndex = installDirEnv.indexOf(marker)
+  let resources = exe ? join(dirname(exe), 'resources') : undefined
+  let asarDsh = markerIndex >= 0
+    ? join(installDirEnv.slice(0, markerIndex + marker.length), 'dsh')
+    : undefined
+  if (markerIndex >= 0) resources = installDirEnv.slice(0, markerIndex).replace(/[\\/]+$/, '')
+  if (!resources && process.execPath) resources = join(dirname(process.execPath), 'resources')
+  if (!resources) {
+    for (const candidate of [
+      process.env.ProgramFiles ? join(process.env.ProgramFiles, 'DeepSeek Harness', 'resources') : undefined,
+      process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, 'Programs', 'DeepSeek Harness', 'resources') : undefined,
+    ]) {
+      if (candidate && existsSync(join(candidate, 'app.asar'))) { resources = candidate; break }
+    }
+  }
+  if (!asarDsh && resources) asarDsh = join(resources, 'app.asar', 'dsh')
+  return { resources, asarDsh }
+}
+
+const { resources: INSTALL_DIR, asarDsh: ASAR_DSH } = detectHarnessInstall()
+
+/**
+ * Layout: a running Desktop session (DSH_NODE_EXECUTABLE set) always validates
+ * its own asar runtime; otherwise a source checkout wins (development) and a
+ * Desktop install without a checkout falls back to asar.
+ */
+const runningDesktop = typeof process.env.DSH_NODE_EXECUTABLE === 'string'
+const LAYOUT = runningDesktop && ASAR_DSH !== undefined && existsSync(join(ASAR_DSH, 'node_modules')) ? 'asar'
+  : existsSync(join(CHECKOUT, 'packages')) ? 'checkout'
+    : ASAR_DSH !== undefined && existsSync(join(ASAR_DSH, 'node_modules')) ? 'asar'
+      : 'checkout'
+
+const HARNESS = LAYOUT === 'asar' ? ASAR_DSH : CHECKOUT
 /**
  * 已安装 harness 的位置：上游从 **这个基准** 解析裸包名（specifier.ts 模块注释），
  * 因为本地 preset 在用户 home 下，Node 向上查找走不到 harness 依赖。
@@ -73,7 +126,8 @@ function detectHarnessBase() {
   const explicit = process.env.DSH_HARNESS_BASE
   if (explicit) return explicit
   const marker = join('node_modules', '@deepseek-ai')
-  const candidates = [join(HARNESS, 'apps', 'cli'), HARNESS]
+  // asar 布局：harness 根（app.asar/dsh）下的 node_modules 就是完整安装面。
+  const candidates = LAYOUT === 'asar' ? [HARNESS] : [join(HARNESS, 'apps', 'cli'), HARNESS]
   // 真实安装布局：dsh 可执行文件在 <prefix>/dsh.cmd，harness 在 <prefix>/node_modules/dsh
   try {
     const { execPath } = process
@@ -120,7 +174,11 @@ if (installedMode) {
 }
 
 // ── 解析器（harness 的 entryListSchema + 其 js-yaml）；缺失则跳过并显式说明 ──
-const schemaEntry = join(HARNESS, 'vendor', 'include', 'lib', 'index.js')
+// checkout：include 构建产物在 vendor/；已安装布局：它就是一个普通依赖包。
+const schemaEntry = (LAYOUT === 'asar'
+  ? [join(HARNESS, 'node_modules', '@deepseek-ai', 'cordis-plugin-include', 'lib', 'index.js')]
+  : [join(HARNESS, 'vendor', 'include', 'lib', 'index.js')]
+).find(existsSync)
 const yamlCandidates = [
   join(HARNESS, 'node_modules', 'js-yaml', 'dist', 'js-yaml.mjs'),
   // pnpm store 兜底：版本号会随上游升级变动，故动态发现而非写死
@@ -134,8 +192,14 @@ const yamlCandidates = [
   })(),
 ]
 
-if (!existsSync(schemaEntry)) {
-  console.log(`SKIP: harness checkout not found at ${HARNESS} (set DSH_CHECKOUT) — cannot resolve packages`)
+if (schemaEntry === undefined) {
+  console.log(`SKIP: cannot read the harness at ${HARNESS} (layout: ${LAYOUT}) — cannot resolve packages`)
+  if (LAYOUT === 'checkout' && INSTALL_DIR !== undefined) {
+    console.log('      this install is packed in app.asar, which plain Node cannot read:')
+    console.log(`      run this gate with ELECTRON_RUN_AS_NODE=1 "${join(INSTALL_DIR, '..', 'DeepSeek Harness.exe')}"`)
+  } else if (LAYOUT === 'checkout') {
+    console.log('      set DSH_CHECKOUT to a harness source checkout')
+  }
   process.exit(2)
 }
 const yamlPath = yamlCandidates.find(existsSync)
@@ -162,17 +226,23 @@ function baseLooksUsable(base, names) {
 const include = await import(pathToFileURL(schemaEntry).href)
 const yaml = await import(pathToFileURL(yamlPath).href)
 
-/** 收集 harness workspace 里所有包：name -> { dir, exports } */
+/** 收集 harness 里所有包：name -> { dir, exports } */
 function collectPackages() {
   const map = new Map()
   const roots = []
-  const pkgs = join(HARNESS, 'packages')
-  if (existsSync(pkgs)) {
-    for (const g of readdirSync(pkgs, { withFileTypes: true })) {
-      if (g.isDirectory()) roots.push(join(pkgs, g.name))
+  if (LAYOUT === 'asar') {
+    // 已安装布局：@deepseek-ai/<pkg> 直接挂在 node_modules 下（没有 workspace 的 packages/）。
+    const scope = join(HARNESS, 'node_modules', '@deepseek-ai')
+    if (existsSync(scope)) roots.push(scope)
+  } else {
+    const pkgs = join(HARNESS, 'packages')
+    if (existsSync(pkgs)) {
+      for (const g of readdirSync(pkgs, { withFileTypes: true })) {
+        if (g.isDirectory()) roots.push(join(pkgs, g.name))
+      }
     }
+    roots.push(join(HARNESS, 'vendor'), join(HARNESS, 'apps'))
   }
-  roots.push(join(HARNESS, 'vendor'), join(HARNESS, 'apps'))
   for (const root of roots) {
     if (!existsSync(root)) continue
     for (const entry of readdirSync(root, { withFileTypes: true })) {

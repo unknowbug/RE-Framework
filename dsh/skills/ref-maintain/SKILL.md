@@ -13,11 +13,11 @@ whenToUse: 维护 RE-Framework 的 DSH 适配层（dsh/ 子树）时——任何
 
 ## 维护铁律
 
-1. **自检全绿**：任何改动前先跑 `pwsh dsh/scripts/selfcheck.ps1` 确认基线，改动后必须再次全绿（六段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁——第 4 项防 2026-08-13 事故复发（插件 schema 扁平化致全部会话崩），第 5 项防 2026-09-09 事故复发（上游改名插件包致 preset 挂载失败），第 6 项防 2026-10-10 事故复发（上游删除 `{{cwd}}` 提示词变量致 persona 模板渲染期抛错）；第 5、6 项**不可执行时按 FAIL 处理**，仅 `DSH_SKIP_PRESET_AUDIT=1` / `DSH_SKIP_PROMPT_VAR_AUDIT=1` 可显式接受缺口）。
+1. **自检全绿**：任何改动前先跑 `pwsh dsh/scripts/selfcheck.ps1` 确认基线，改动后必须再次全绿（七段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁——第 4 项防 2026-08-13 事故复发（插件 schema 扁平化致全部会话崩），第 5 项防 2026-09-09 事故复发（上游改名插件包致 preset 挂载失败），第 6 项防 2026-10-10 事故复发（上游删除 `{{cwd}}` 提示词变量致 persona 模板渲染期抛错）；第 5、6 项**不可执行时按 FAIL 处理**，仅 `DSH_SKIP_PRESET_AUDIT=1` / `DSH_SKIP_PROMPT_VAR_AUDIT=1` 可显式接受缺口）。
 2. **单一事实源**：技能正文**直接改 `dsh/skills/<name>/SKILL.md`**（无上游派生；Reasonix 归档 `archive/reasonix/` 不参与同步，恢复走其 RESTORE.md）；`tests/test_manifest.py` 守护 manifest 形态（命名/frontmatter/技能集/交叉引用）。
 3. **命名纪律**：DSH 技能名必须 kebab-case（`core-plan` 而非 `core.plan`）；插件工具名 `ref_*`。
 4. **插件持久化纪律**：动态插件（cordis_define 定义）只在当前进程存活——持久能力必须落成 `dsh/plugins/re-framework-tools.js` + preset 行，禁止把维护性能力留在动态插件里。
-5. **preset 纪律（2026-09-23 载体迁移后）**：preset 的**存在性 = bundle 被某 profile 的 `dsh.profile.bundles` 选中**（`install.ps1` 调 `dsh plugin --profile <p> add <dsh 目录>` 完成，DSH >= 0.1.7）；旧的 `~/.dsh/.agent-presets/re-framework/` 目录**已死**（无代码读取，install.ps1 不再写入，**不得再当作"装好了"的证据**）。shipped preset（harness 安装目录）一律只读，改动只能以复制派生。
+5. **preset 纪律（2026-09-23 载体迁移后）**：preset 的**存在性 = bundle 被某 profile 的 `dsh.profile.bundles` 选中**（源码/CLI 宿主由 `install.ps1` 调 `dsh plugin --profile <p> add <dsh 目录>` 完成；**Electron-owned `desktop` profile 由 install.ps1 直接写同形条目**——bundles 追加 + `link:` 依赖 + `node_modules` junction，因为 CLI 拒绝该 profile 名；DSH >= 0.1.7）。旧的 `~/.dsh/.agent-presets/re-framework/` 目录**已死**（无代码读取，install.ps1 不再写入，**不得再当作"装好了"的证据**）。shipped preset（harness 安装目录）一律只读，改动只能以复制派生。
 6. **模板变量纪律（2026-10-10 事故教训）**：`cordis.patch.yml` 里 persona 的 `prefix`/`suffix` 等模板在**渲染期严格解析** `{{name}}`，只认 harness 当前注册的变量（DSH 0.2.x 起为 `provider` / `model`）；**`cwd` 已被上游删除**（工作目录见 `working-directory:current` 运行时上下文）。改模板后跑 `tests/audit_prompt_variables.mjs`（selfcheck 第 6 项）。
 7. **schema 门禁（2026-08-13 事故教训）**：`ctx.tools.register()` 不编译 parameters——必须传**编译后 JSON Schema**（`{type:'object', properties, required}`）；扁平 spec 投影给模型无顶层 type → 所有会话崩。install.ps1 复制插件前与 selfcheck 第 4 项都强制跑 `tests/check_plugin_schema.mjs`（fail closed）。
 8. **可见性现状（2026-08-15 用户拍板 + 2026-08-21 迁移）**：技能**用户级全局**（`~/.dsh/skills/ref-*`，任何会话按需加载）+ preset 内嵌双路径；工具**仅 re-framework preset**（3 个 ref_*：status/merge_index/init——manifest_validate/install 随 Reasonix 归档退役）；**无 global 工具组**——install.ps1 幂等清理 profile patch 残留（re-framework-tools-global insert 行）。
@@ -45,6 +45,12 @@ pwsh dsh/scripts/selfcheck.ps1
 ```
 
 **边界资产（`~/.dsh/cordis.patch.yml`）**：home 级 patch 是**合法 DSH 层**（在所有 profile 层之后应用，优先级更高），可同时承载其他框架的 row 与本机偏好。判据是「**是否还带本框架的 row**」，不是「文件是否存在」；清理只走 `dsh/scripts/patch_layer.py` 的 row 级摘除（保留注释/BOM/行尾/兄弟条目），**绝不整文件删除**。
+
+## Desktop 宿主（2026-11-13）
+
+- Desktop（Electron）把运行时打进 `resources/app.asar`，profile 为 `~/.dsh/profiles/desktop`（**Electron-owned**）。`install.ps1` 一轮同时维护 desktop + web：desktop 由脚本直接写 `dsh.profile.bundles` + `link:` 依赖 + `node_modules` junction（CLI 按设计拒绝 `desktop` 这个 profile 名），web 仍走 `dsh plugin add`；`dsh` CLI 仅在存在非 desktop profile 时必需。
+- 门禁布局感知：`DSH_NODE_EXECUTABLE` / `DSH_INSTALL_DIR`（后者指向 asar 内的 dsh 包，按 `resources/app.asar` 边界切分）存在时用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"` 跑 `.mjs` 门禁（普通 Node 的 fs 读不到 asar）；源码 checkout 用 `node`。行门禁从 `node_modules/@deepseek-ai/*` 取包，变量门禁扫编译后的 `lib/`。
+- Desktop 验证：`pwsh dsh/scripts/selfcheck.ps1` 首行应显示 `harness layout: asar (...)`，七段全绿；两个 profile 的 `dsh.profile.bundles` 都含 `@dsh-external/dsh-re-framework`。安装后需**重启 Desktop** 并在新会话选 RE-Framework（技能是用户级全局，无需重启即见）。
 
 ## 上游 DSH 升级核对（每次 harness 升级后）
 

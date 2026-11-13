@@ -11,14 +11,14 @@
 | 能力 | DSH 形态 |
 |------|----------|
 | 17 个方法论技能（core/re-binary/re-code/swe 四模块 + ref-maintain） | `skills/` → **用户级全局 `~/.dsh/skills/`**（任何 preset/工作目录的会话按需加载）+ preset 内嵌（re-framework 完整工作台） |
-| 5 个工具（status/validate/install/merge-index/init） | 仅 re-framework preset（`ref_*` 工具是框架 python 脚本的包装；其他会话用 pwsh 直接跑脚本） |
+| 3 个工具（status/merge-index/init）+ 契约守卫 | 仅 re-framework preset（`ref_*` 工具是框架 python 脚本/模块管理器的包装；其他会话用 pwsh 直接跑脚本） |
 | Phase 0-3 工作流 + 执行强制链（scout/fan-out/judge/knowledge） | agent preset `re-framework`（人格 + subagent 隔离） |
 | manifest 守护 | `tests/test_manifest.py`（命名/frontmatter/技能集/交叉引用）+ `SYNC.md`（溯源） |
 
 ## 可见性设计（v2.1 修订，2026-08-15 用户拍板：无 global 工具组）
 
 - **技能用户级全局**：17 个 ref-* 装到 `~/.dsh/skills/`，任何会话（任何 preset、任何工作目录）按需加载——方法论在任何项目（如 CoreSwap）用标准工具集即可执行；与 Anchorlaw 的 anchor-*（同样用户级全局）命名空间独立（ref-*/anchor-*），互不冲突。技能是纯指令，加载不触碰工作区外文件，无沙箱问题。
-- **工具仅 preset**：全部 5 个 `ref_*` 工具只在 re-framework preset 会话出现——它们是框架 python 脚本（install.py / validate_manifest.py / merge_index.py）的便利包装，其他会话直接用 pwsh 跑脚本即可，无需全局工具组。
+- **工具仅 preset**：3 个 `ref_*` 工具（status / merge_index / init）只在 re-framework preset 会话出现——它们是框架脚本与目标模块管理器的便利包装，其他会话直接用 pwsh 跑脚本即可，无需全局工具组。
 - **权限边界**（实测）：跨工作区**读**放行、**写**仅限会话工作区——项目侧操作（读框架源 + 写目标项目工作区内）pwsh 直接可跑。
 
 ## 快速开始
@@ -31,7 +31,16 @@ pwsh dsh/scripts/install.ps1
 pwsh dsh/scripts/selfcheck.ps1
 ```
 
-装完后，**任何 preset 会话**（standard 等）都能在技能目录看到 17 个 ref-* 技能按需加载；选 **re-framework** preset 另有完整工作台（人格 + 5 个 `ref_*` 工具）。工作目录指向项目本身（如 `E:\PYTHON\CoreSwap`）即可，无需指向本仓库。
+装完后，**任何 preset 会话**（standard 等）都能在技能目录看到 17 个 ref-* 技能按需加载；选 **re-framework** preset 另有完整工作台（人格 + 3 个 `ref_*` 工具）。工作目录指向项目本身（如 `E:\PYTHON\CoreSwap`）即可，无需指向本仓库。
+
+## DSH Desktop 端（2026-11-13）
+
+DSH Desktop（Electron）把运行时打进 `resources/app.asar`，profile 是 `~/.dsh/profiles/desktop`（**Electron-owned**）。`install.ps1` 一轮同时维护 desktop 与 web：
+
+- **desktop**：脚本直接写 `dsh.profile.bundles` + `link:` 依赖 + `node_modules/@dsh-external/...` junction——CLI 按设计拒绝 `desktop` 这个 profile 名（`apps/cli/src/args.ts` rejectElectronProfile），直接写出的内容与 `dsh plugin add` 同形。
+- **web / 源码 checkout**：仍走 `dsh plugin --profile web add <dsh 目录>`。
+
+门禁布局感知：源码 checkout 用 `node`；Desktop 用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"`（普通 Node 的 fs 读不到 asar），行门禁从 `node_modules/@deepseek-ai/*` 取包、变量门禁扫编译后的 `lib/`；布局由 `DSH_NODE_EXECUTABLE` / `DSH_INSTALL_DIR`（指向 asar 内，按 `app.asar` 切分）自动判定。安装后需**重启 Desktop** 并新开会话选择 RE-Framework；17 个 ref-* 技能在任何 Desktop 会话都可见（用户级全局）。
 
 ## 目录结构
 

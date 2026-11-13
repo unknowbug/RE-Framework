@@ -46,7 +46,61 @@ import { pathToFileURL, fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const REPO = resolve(HERE, '..', '..')
-const HARNESS = process.env.DSH_CHECKOUT ?? 'D:\\git\\deepseek-harness'
+
+/**
+ * harness 布局：源码 checkout（有 `packages/`）或已安装的 asar 运行时。
+ *
+ * DSH Desktop 把运行时打进 `resources/app.asar`，普通 Node 的 fs 读不到 asar—
+ * 这种布局必须用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"` 跑本脚本。注册点扫描的差别：
+ * checkout 扫 `packages|apps|vendor` 的 src/ 与 lib/，已安装布局扫
+ * `node_modules/@deepseek-ai/<pkg>/lib`（编译产物）。
+ */
+const CHECKOUT = process.env.DSH_CHECKOUT ?? 'D:\\git\\deepseek-harness'
+
+/**
+ * Resolve the installed Desktop runtime, preferring the running app:
+ *   DSH_NODE_EXECUTABLE = "<install>\DeepSeek Harness.exe"
+ *   DSH_INSTALL_DIR     = "<install>\resources\app.asar\dsh\node_modules\@deepseek-ai\dsh"
+ * The latter points INSIDE the asar, so it is split at "app.asar" rather than
+ * used as a directory. process.execPath covers Electron-run-as-node.
+ */
+function detectHarnessInstall() {
+  const exe = process.env.DSH_NODE_EXECUTABLE
+  const installDirEnv = process.env.DSH_INSTALL_DIR ?? ''
+  const marker = 'app.asar'
+  const markerIndex = installDirEnv.indexOf(marker)
+  let resources = exe ? join(dirname(exe), 'resources') : undefined
+  let asarDsh = markerIndex >= 0
+    ? join(installDirEnv.slice(0, markerIndex + marker.length), 'dsh')
+    : undefined
+  if (markerIndex >= 0) resources = installDirEnv.slice(0, markerIndex).replace(/[\\/]+$/, '')
+  if (!resources && process.execPath) resources = join(dirname(process.execPath), 'resources')
+  if (!resources) {
+    for (const candidate of [
+      process.env.ProgramFiles ? join(process.env.ProgramFiles, 'DeepSeek Harness', 'resources') : undefined,
+      process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, 'Programs', 'DeepSeek Harness', 'resources') : undefined,
+    ]) {
+      if (candidate && existsSync(join(candidate, 'app.asar'))) { resources = candidate; break }
+    }
+  }
+  if (!asarDsh && resources) asarDsh = join(resources, 'app.asar', 'dsh')
+  return { resources, asarDsh }
+}
+
+const { resources: INSTALL_DIR, asarDsh: ASAR_DSH } = detectHarnessInstall()
+
+/**
+ * Layout: a running Desktop session (DSH_NODE_EXECUTABLE set) always validates
+ * its own asar runtime; otherwise a source checkout wins (development) and a
+ * Desktop install without a checkout falls back to asar.
+ */
+const runningDesktop = typeof process.env.DSH_NODE_EXECUTABLE === 'string'
+const LAYOUT = runningDesktop && ASAR_DSH !== undefined && existsSync(join(ASAR_DSH, 'node_modules')) ? 'asar'
+  : existsSync(join(CHECKOUT, 'packages')) ? 'checkout'
+    : ASAR_DSH !== undefined && existsSync(join(ASAR_DSH, 'node_modules')) ? 'asar'
+      : 'checkout'
+
+const HARNESS = LAYOUT === 'asar' ? ASAR_DSH : CHECKOUT
 
 /** 上游 core/system-prompt/src/index.ts:192/195 的镜像 */
 const VARIABLE_NAME = /^[a-z][a-z0-9_]*$/
@@ -67,7 +121,11 @@ if (positional.length > 0) {
 }
 
 // ── 解析器（harness 的 entryListSchema + 其 js-yaml）；缺失则无法执行 ──────────
-const schemaEntry = join(HARNESS, 'vendor', 'include', 'lib', 'index.js')
+// checkout：include 构建产物在 vendor/；已安装布局：它就是一个普通依赖包。
+const schemaEntry = (LAYOUT === 'asar'
+  ? [join(HARNESS, 'node_modules', '@deepseek-ai', 'cordis-plugin-include', 'lib', 'index.js')]
+  : [join(HARNESS, 'vendor', 'include', 'lib', 'index.js')]
+).find(existsSync)
 const yamlCandidates = [
   join(HARNESS, 'node_modules', 'js-yaml', 'dist', 'js-yaml.mjs'),
   // pnpm store 兜底：版本号随上游升级变动，故动态发现而非写死
@@ -81,8 +139,14 @@ const yamlCandidates = [
   })(),
 ]
 
-if (!existsSync(schemaEntry)) {
-  console.log(`SKIP: harness checkout not found at ${HARNESS} (set DSH_CHECKOUT) — cannot read the composition schema`)
+if (schemaEntry === undefined) {
+  console.log(`SKIP: cannot read the harness at ${HARNESS} (layout: ${LAYOUT}) — cannot read the composition schema`)
+  if (LAYOUT === 'checkout' && INSTALL_DIR !== undefined) {
+    console.log('      this install is packed in app.asar, which plain Node cannot read:')
+    console.log(`      run this gate with ELECTRON_RUN_AS_NODE=1 "${join(INSTALL_DIR, '..', 'DeepSeek Harness.exe')}"`)
+  } else if (LAYOUT === 'checkout') {
+    console.log('      set DSH_CHECKOUT to a harness source checkout')
+  }
   process.exit(2)
 }
 const yamlPath = yamlCandidates.find(existsSync)
@@ -124,16 +188,32 @@ function collectRegisteredVariables() {
       while ((m = registration.exec(text)) !== null) names.add(m[1])
     }
   }
-  walk(join(HARNESS, 'packages'), 0)
-  // apps/ 与 vendor/ 里的注册点（若存在）一并算上：集合宁宽勿窄，避免假 FAIL。
-  for (const extra of ['apps', 'vendor']) walk(join(HARNESS, extra), 2)
+  if (LAYOUT === 'asar') {
+    // 已安装布局：编译产物在 node_modules/@deepseek-ai/<pkg>/lib，没有 workspace 的 packages/。
+    const scope = join(HARNESS, 'node_modules', '@deepseek-ai')
+    if (existsSync(scope)) {
+      for (const entry of readdirSync(scope, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue
+        walk(join(scope, entry.name, 'lib'), 2)
+      }
+    }
+  } else {
+    walk(join(HARNESS, 'packages'), 0)
+    // apps/ 与 vendor/ 里的注册点（若存在）一并算上：集合宁宽勿窄，避免假 FAIL。
+    for (const extra of ['apps', 'vendor']) walk(join(HARNESS, extra), 2)
+  }
   return names
 }
 
 const registered = collectRegisteredVariables()
 if (registered.size === 0) {
-  console.log(`SKIP: no \`systemPrompt.variable(...)\` registration found under ${HARNESS} — cannot derive the registered set`)
-  console.log('      set DSH_CHECKOUT to the harness checkout the sessions actually boot')
+  console.log(`SKIP: no \`systemPrompt.variable(...)\` registration found under ${HARNESS} (layout: ${LAYOUT}) — cannot derive the registered set`)
+  if (LAYOUT === 'checkout' && INSTALL_DIR !== undefined) {
+    console.log('      this install is packed in app.asar, which plain Node cannot read:')
+    console.log(`      run this gate with ELECTRON_RUN_AS_NODE=1 "${join(INSTALL_DIR, '..', 'DeepSeek Harness.exe')}"`)
+  } else {
+    console.log('      set DSH_CHECKOUT to the harness checkout the sessions actually boot')
+  }
   process.exit(2)
 }
 

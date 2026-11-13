@@ -154,6 +154,13 @@
               # standard preset does (it deleted the same row).
               - id: tool-subagent-control
                 name: '@deepseek-ai/dsh-tool-subagent-control'
+                config:
+                  # DSH 0.2.2-rc.1 disables `interrupt_agent` in the base bundle
+                  # and in every shipped preset (models interrupted subagents too
+                  # eagerly; messaging/wait/interrupt service APIs remain). Align
+                  # with that default; a project can re-enable it in its profile
+                  # patch: `- id: <preset row> config: { ..., interrupt: true }`.
+                  interrupt: false
 
               # DSH 0.2.x removed `backgroundMode` (every delegation is now a managed
               # activation returning { kind: 'activation', subagentId }). Subagents

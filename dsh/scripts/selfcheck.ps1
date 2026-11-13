@@ -47,6 +47,63 @@ foreach ($candidate in @('python', 'python3')) {
   if (Get-Command $candidate -ErrorAction SilentlyContinue) { $pythonExe = $candidate; break }
 }
 
+# ── harness 运行时选择 ──────────────────────────────────────────────────────
+# Sections 5/6/7 read the harness's packages and sources. A source checkout can
+# use plain `node`; DSH Desktop packs the runtime into resources\app.asar, which
+# plain Node's fs cannot read, so those gates must run under
+# ELECTRON_RUN_AS_NODE=1 "<app>.exe" (Electron's fs reads asar transparently).
+$checkout = if ($env:DSH_CHECKOUT) { $env:DSH_CHECKOUT } else { 'D:\git\deepseek-harness' }
+# The running Desktop app exposes its own layout, which beats guessing install
+# paths: DSH_NODE_EXECUTABLE is the app exe, and DSH_INSTALL_DIR points INSIDE
+# resources\app.asar (…\app.asar\dsh\node_modules\@deepseek-ai\dsh), so it is
+# split at "app.asar" rather than used as a directory.
+$harnessExe = if ($env:DSH_NODE_EXECUTABLE -and (Test-Path $env:DSH_NODE_EXECUTABLE)) { $env:DSH_NODE_EXECUTABLE } else { $null }
+$installDir = $null
+if ($env:DSH_INSTALL_DIR -and $env:DSH_INSTALL_DIR -match 'app\.asar') {
+  $installDir = $env:DSH_INSTALL_DIR.Substring(0, $env:DSH_INSTALL_DIR.IndexOf('app.asar')).TrimEnd('\', '/')
+}
+if (-not $installDir) {
+  # The Desktop app is not always under %ProgramFiles% (this machine installs it
+  # on D:). The running process's own path is the reliable detector.
+  $desktopProcess = Get-Process -Name 'DeepSeek Harness' -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($desktopProcess -and $desktopProcess.Path) {
+    $candidate = Join-Path (Split-Path $desktopProcess.Path -Parent) 'resources'
+    if (Test-Path (Join-Path $candidate 'app.asar')) { $installDir = $candidate; $harnessExe = $desktopProcess.Path }
+  }
+}
+if (-not $installDir) {
+  foreach ($candidate in @(
+      (Join-Path $env:ProgramFiles 'DeepSeek Harness\resources'),
+      (Join-Path $env:LOCALAPPDATA 'Programs\DeepSeek Harness\resources'))) {
+    if ($candidate -and (Test-Path (Join-Path $candidate 'app.asar'))) { $installDir = $candidate; break }
+  }
+}
+$harnessLayout = 'unknown'
+if ($harnessExe) {
+  $harnessLayout = 'asar'
+} elseif (Test-Path (Join-Path $checkout 'packages')) {
+  $harnessLayout = 'checkout'
+} elseif ($installDir) {
+  $candidateExe = Join-Path (Split-Path $installDir -Parent) 'DeepSeek Harness.exe'
+  if (Test-Path $candidateExe) { $harnessLayout = 'asar'; $harnessExe = $candidateExe }
+}
+Write-Host "harness layout: $harnessLayout$(if ($harnessExe) { " ($harnessExe)" })"
+
+# Run a harness/JS gate under the current layout (returns its exit code).
+function Invoke-HarnessGate([string]$scriptPath) {
+  if ($harnessLayout -eq 'asar') {
+    $previous = $env:ELECTRON_RUN_AS_NODE
+    $env:ELECTRON_RUN_AS_NODE = '1'
+    try { & $harnessExe $scriptPath 2>&1 | Out-Host; return $LASTEXITCODE }
+    finally {
+      if ($null -eq $previous) { Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue }
+      else { $env:ELECTRON_RUN_AS_NODE = $previous }
+    }
+  }
+  & node $scriptPath 2>&1 | Out-Host
+  return $LASTEXITCODE
+}
+
 Write-Host "== RE-Framework DSH self-check =="
 
 # 1. toolchain
@@ -220,8 +277,8 @@ if (Test-Path $homePatchFile) {
 # 4. plugin tool-schema shape (compiled JSON-Schema parameters; see check_plugin_schema.mjs)
 Write-Host ""
 Write-Host "[4] plugin tool schemas"
-node (Join-Path (Join-Path $srcRoot 'tests') 'check_plugin_schema.mjs') 2>&1
-if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: plugin tool schemas not compiled JSON Schema"; $fail = 1 }
+$schemaAudit = Invoke-HarnessGate (Join-Path (Join-Path $srcRoot 'tests') 'check_plugin_schema.mjs')
+if ($schemaAudit -ne 0) { Write-Host "  FAIL: plugin tool schemas not compiled JSON Schema"; $fail = 1 }
 
 # 5. preset row resolvability (fail-closed; see audit_preset_rows.mjs)
 #
@@ -233,13 +290,12 @@ if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: plugin tool schemas not compiled 
 # harness checkout that does not install presets at all).
 Write-Host ""
 Write-Host "[5] preset row resolvability"
-node (Join-Path (Join-Path $srcRoot 'tests') 'audit_preset_rows.mjs') 2>&1
-$presetAudit = $LASTEXITCODE
+$presetAudit = Invoke-HarnessGate (Join-Path (Join-Path $srcRoot 'tests') 'audit_preset_rows.mjs')
 if ($presetAudit -eq 2) {
   if ($env:DSH_SKIP_PRESET_AUDIT -eq '1') {
     Write-Host "  WARN: preset audit skipped by explicit opt-out (DSH_SKIP_PRESET_AUDIT=1)"
   } else {
-    Write-Host "  FAIL: preset audit could not run (harness checkout/js-yaml unavailable)"
+    Write-Host "  FAIL: preset audit could not run (harness unreadable — set DSH_CHECKOUT, or use Electron for an asar install)"
     Write-Host "        set DSH_CHECKOUT to the harness checkout, or DSH_SKIP_PRESET_AUDIT=1 to accept the gap"
     $fail = 1
   }
@@ -256,13 +312,12 @@ if ($presetAudit -eq 2) {
 # the gap explicitly.
 Write-Host ""
 Write-Host "[6] preset template variables"
-node (Join-Path (Join-Path $srcRoot 'tests') 'audit_prompt_variables.mjs') 2>&1
-$variableAudit = $LASTEXITCODE
+$variableAudit = Invoke-HarnessGate (Join-Path (Join-Path $srcRoot 'tests') 'audit_prompt_variables.mjs')
 if ($variableAudit -eq 2) {
   if ($env:DSH_SKIP_PROMPT_VAR_AUDIT -eq '1') {
     Write-Host "  WARN: prompt-variable audit skipped by explicit opt-out (DSH_SKIP_PROMPT_VAR_AUDIT=1)"
   } else {
-    Write-Host "  FAIL: prompt-variable audit could not run (harness checkout/js-yaml unavailable)"
+    Write-Host "  FAIL: prompt-variable audit could not run (harness unreadable — set DSH_CHECKOUT, or use Electron for an asar install)"
     Write-Host "        set DSH_CHECKOUT to the harness checkout, or DSH_SKIP_PROMPT_VAR_AUDIT=1 to accept the gap"
     $fail = 1
   }
@@ -285,8 +340,8 @@ if ($pythonExe) {
   & $pythonExe (Join-Path (Join-Path $srcRoot 'tests') 'test_home_patch.py') 2>&1 | Select-Object -Last 2
   if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: patch-layer tests failed"; $fail = 1 }
 } else { $fail = 1 }
-node (Join-Path (Join-Path $srcRoot 'tests') 'test_contract_guard.mjs') 2>&1 | Select-Object -Last 4
-if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: contract-guard tests failed"; $fail = 1 }
+$guardAudit = Invoke-HarnessGate (Join-Path (Join-Path $srcRoot 'tests') 'test_contract_guard.mjs')
+if ($guardAudit -ne 0) { Write-Host "  FAIL: contract-guard tests failed"; $fail = 1 }
 
 Write-Host ""
 if ($fail -eq 0) { Write-Host "== ALL CHECKS PASSED ==" } else { Write-Host "== CHECKS FAILED ==" }

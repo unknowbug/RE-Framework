@@ -95,6 +95,60 @@ function Invoke-Native {
   [pscustomobject]@{ code = $code; output = $output }
 }
 
+# ── harness runtime selection ───────────────────────────────────────────────
+# Gates read the harness's packages and sources. A source checkout uses node;
+# DSH Desktop packs the runtime into resources\app.asar, which plain Node's fs
+# cannot read, so the same scripts run under ELECTRON_RUN_AS_NODE=1 "<app>.exe".
+$checkout = if ($env:DSH_CHECKOUT) { $env:DSH_CHECKOUT } else { 'D:\git\deepseek-harness' }
+# The running Desktop app exposes its own layout, which beats guessing install
+# paths: DSH_NODE_EXECUTABLE is the app exe, and DSH_INSTALL_DIR points INSIDE
+# resources\app.asar (…\app.asar\dsh\node_modules\@deepseek-ai\dsh), so it is
+# split at "app.asar" rather than used as a directory.
+$harnessExe = if ($env:DSH_NODE_EXECUTABLE -and (Test-Path $env:DSH_NODE_EXECUTABLE)) { $env:DSH_NODE_EXECUTABLE } else { $null }
+$installDir = $null
+if ($env:DSH_INSTALL_DIR -and $env:DSH_INSTALL_DIR -match 'app\.asar') {
+  $installDir = $env:DSH_INSTALL_DIR.Substring(0, $env:DSH_INSTALL_DIR.IndexOf('app.asar')).TrimEnd('\', '/')
+}
+if (-not $installDir) {
+  # The Desktop app is not always under %ProgramFiles% (this machine installs it
+  # on D:). The running process's own path is the reliable detector.
+  $desktopProcess = Get-Process -Name 'DeepSeek Harness' -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($desktopProcess -and $desktopProcess.Path) {
+    $candidate = Join-Path (Split-Path $desktopProcess.Path -Parent) 'resources'
+    if (Test-Path (Join-Path $candidate 'app.asar')) { $installDir = $candidate; $harnessExe = $desktopProcess.Path }
+  }
+}
+if (-not $installDir) {
+  foreach ($candidate in @(
+      (Join-Path $env:ProgramFiles 'DeepSeek Harness\resources'),
+      (Join-Path $env:LOCALAPPDATA 'Programs\DeepSeek Harness\resources'))) {
+    if ($candidate -and (Test-Path (Join-Path $candidate 'app.asar'))) { $installDir = $candidate; break }
+  }
+}
+$harnessLayout = 'unknown'
+if ($harnessExe) {
+  $harnessLayout = 'asar'
+} elseif (Test-Path (Join-Path $checkout 'packages')) {
+  $harnessLayout = 'checkout'
+} elseif ($installDir) {
+  $candidateExe = Join-Path (Split-Path $installDir -Parent) 'DeepSeek Harness.exe'
+  if (Test-Path $candidateExe) { $harnessLayout = 'asar'; $harnessExe = $candidateExe }
+}
+Write-Host "harness     : $harnessLayout$(if ($harnessExe) { " ($harnessExe)" })"
+
+function Invoke-HarnessGate([string]$scriptPath) {
+  if ($harnessLayout -eq 'asar') {
+    $previous = $env:ELECTRON_RUN_AS_NODE
+    $env:ELECTRON_RUN_AS_NODE = '1'
+    try { return Invoke-Native $harnessExe @($scriptPath) }
+    finally {
+      if ($null -eq $previous) { Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue }
+      else { $env:ELECTRON_RUN_AS_NODE = $previous }
+    }
+  }
+  return Invoke-Native 'node' @($scriptPath)
+}
+
 Write-Host "== RE-Framework DSH bundle install =="
 Write-Host "bundle      : $srcRoot"
 Write-Host "dshHome     : $dshHome"
@@ -103,7 +157,7 @@ Write-Host "user skills : $userSkills (user-global, any session)"
 # 0. Schema gate: never copy a plugin whose tool schemas are not compiled JSON
 #    Schema (a flat spec would break every session once mounted anywhere).
 $schemaCheck = Join-Path (Join-Path $srcRoot 'tests') 'check_plugin_schema.mjs'
-$schema = Invoke-Native 'node' @('--no-warnings', $schemaCheck)
+$schema = Invoke-HarnessGate $schemaCheck
 if ($schema.output.Trim()) { Write-Host $schema.output.Trim() }
 if ($schema.code -ne 0) {
   throw "plugin tool-schema check failed - refusing to install"
@@ -189,7 +243,7 @@ Write-Host "  OK bundle: $bundleName  patch: $patchRel"
 #    The row gate runs BEFORE install: a bundle whose preset rows do not resolve
 #    installs cleanly and then fails at session creation — exactly the 2026-09-23
 #    incident (gate green, `Unknown agent preset` on resume).
-$rowGate = Invoke-Native 'node' @((Join-Path (Join-Path $srcRoot 'tests') 'audit_preset_rows.mjs'))
+$rowGate = Invoke-HarnessGate (Join-Path (Join-Path $srcRoot 'tests') 'audit_preset_rows.mjs')
 if ($rowGate.output.Trim()) { Write-Host $rowGate.output.Trim() }
 if ($rowGate.code -ne 0) { throw "preset row gate failed - refusing to install" }
 
@@ -197,7 +251,7 @@ if ($rowGate.code -ne 0) { throw "preset row gate failed - refusing to install" 
 #    whose persona template references a variable the harness no longer registers
 #    installs cleanly and then fails at session assembly — the 2026-10-10 incident
 #    (`unknown prompt variable "{{cwd}}"` while every older section stayed green).
-$variableGate = Invoke-Native 'node' @((Join-Path (Join-Path $srcRoot 'tests') 'audit_prompt_variables.mjs'))
+$variableGate = Invoke-HarnessGate (Join-Path (Join-Path $srcRoot 'tests') 'audit_prompt_variables.mjs')
 if ($variableGate.output.Trim()) { Write-Host $variableGate.output.Trim() }
 if ($variableGate.code -ne 0) { throw "preset template-variable gate failed - refusing to install" }
 
@@ -276,11 +330,45 @@ $selectedIn = @()
 if ($targetProfiles.Count -eq 0) {
   Write-Host "  skip: no DSH profile found under $profilesDir"
 } else {
-  $dshCmd = Get-Command dsh -ErrorAction SilentlyContinue
-  if (-not $dshCmd) {
-    throw "dsh not found on PATH - the bundle is installed through 'dsh plugin --profile <p> add <dir>'"
+  # The CLI refuses the Electron-owned `desktop` profile by name
+  # (apps/cli/src/args.ts rejectElectronProfile), so `dsh` is only required
+  # when at least one non-desktop profile is targeted; that profile is written
+  # directly below.
+  $needsCli = @($targetProfiles | Where-Object { $_ -ne 'desktop' })
+  if ($needsCli.Count -gt 0) {
+    $dshCmd = Get-Command dsh -ErrorAction SilentlyContinue
+    if (-not $dshCmd) {
+      throw "dsh not found on PATH - the bundle is installed through 'dsh plugin --profile <p> add <dir>'"
+    }
   }
   foreach ($profileName in $targetProfiles) {
+    if ($profileName -ieq 'desktop') {
+      # Write exactly what the CLI would write: the link dependency, the
+      # ordered bundles entry, and the node_modules junction.
+      $desktopDir = Join-Path $profilesDir $profileName
+      $manifestPath = Join-Path $desktopDir 'package.json'
+      if (-not (Test-Path $manifestPath)) { throw "desktop profile has no package.json at $desktopDir" }
+      $bundleSpec = 'link:' + ($bundleDir -replace '\\', '/')
+      $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+      if (-not ($manifest.dsh.profile.bundles -contains $bundleName)) {
+        $manifest.dsh.profile.bundles += $bundleName
+      }
+      if (-not ($manifest.PSObject.Properties.Name -contains 'dependencies')) {
+        $manifest | Add-Member -NotePropertyName dependencies -NotePropertyValue ([pscustomobject]@{})
+      }
+      $manifest.dependencies | Add-Member -NotePropertyName $bundleName -NotePropertyValue $bundleSpec -Force
+      [IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Depth 8), (New-Object System.Text.UTF8Encoding($false)))
+
+      $scopeDir = Join-Path $desktopDir ('node_modules\' + (Split-Path $bundleName -Parent))
+      New-Item -ItemType Directory -Path $scopeDir -Force | Out-Null
+      $linkPath = Join-Path $scopeDir (Split-Path $bundleName -Leaf)
+      if (-not (Test-Path $linkPath)) {
+        New-Item -ItemType Junction -Path $linkPath -Target $bundleDir | Out-Null
+      }
+      $selectedIn += $profileName
+      Write-Host "  OK bundle installed + selected directly (Electron-owned profile: the CLI refuses 'desktop')"
+      continue
+    }
     $add = Invoke-Native 'dsh' @('plugin', '--profile', $profileName, 'add', $bundleDir)
     if ($add.output.Trim()) { Write-Host $add.output.Trim() }
     if ($add.code -ne 0) { throw "failed to install the bundle into profile '$profileName'" }
