@@ -32,6 +32,12 @@
 #   7. target-module manager + contract guard (spec §5.7) via fixture tests:
 #      scripts/target_modules.py (derive / G1-G9 / plan-apply-rollback) and the
 #      plugin guard (R1/R3/R5 + audit + REF_GUARD=off).
+#   8. known regressions via tests/audit_known_regressions.mjs — every already
+#      fixed defect ({{cwd}}, backgroundMode, removed subpaths, inject race,
+#      desktop direct-install, asar runtime, parseEntryYaml, zero-row silent
+#      green, ...) is re-asserted structurally; plus the Anchorlaw reference
+#      baseline must agree across spec/persona/README/AGENTS/ref-maintain.
+#      Modeled on Anchorlaw 0.27.1 ("gate the fixes instead of remembering them").
 
 $ErrorActionPreference = 'Continue'
 
@@ -342,6 +348,20 @@ if ($pythonExe) {
 } else { $fail = 1 }
 $guardAudit = Invoke-HarnessGate (Join-Path (Join-Path $srcRoot 'tests') 'test_contract_guard.mjs')
 if ($guardAudit -ne 0) { Write-Host "  FAIL: contract-guard tests failed"; $fail = 1 }
+
+# 8. known regressions (fail-closed; see tests/audit_known_regressions.mjs)
+#
+# Every fixed defect is re-asserted structurally, so a later cleanup cannot
+# silently bring it back. Exit 2 = a guard file is missing (cannot judge), which
+# must fail like any other unexecutable gate.
+Write-Host ""
+Write-Host "[8] known regressions"
+$regressionAudit = Invoke-HarnessGate (Join-Path (Join-Path $srcRoot 'tests') 'audit_known_regressions.mjs')
+if ($regressionAudit -eq 2) {
+  Write-Host "  FAIL: known-regression gate could not run (guard file missing)"; $fail = 1
+} elseif ($regressionAudit -ne 0) {
+  Write-Host "  FAIL: a known regression came back — see the gate output above"; $fail = 1
+}
 
 Write-Host ""
 if ($fail -eq 0) { Write-Host "== ALL CHECKS PASSED ==" } else { Write-Host "== CHECKS FAILED ==" }

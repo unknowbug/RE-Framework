@@ -27,7 +27,7 @@
 # 1. 安装/同步到 DSH 运行时（preset + 用户级技能）
 pwsh dsh/scripts/install.ps1
 
-# 2. 自检（工具链 / 技能 manifest / 框架自扫 / 安装产物 / 插件 schema）
+# 2. 八段自检（工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行 / 模板变量 / fixture / 已知回归）
 pwsh dsh/scripts/selfcheck.ps1
 ```
 
@@ -35,10 +35,10 @@ pwsh dsh/scripts/selfcheck.ps1
 
 ## DSH Desktop 端（2026-11-13）
 
-DSH Desktop（Electron）把运行时打进 `resources/app.asar`，profile 是 `~/.dsh/profiles/desktop`（**Electron-owned**）。`install.ps1` 一轮同时维护 desktop 与 web：
+DSH Desktop（Electron）把运行时打进 `resources/app.asar`，profile 是 `~/.dsh/profiles/desktop`（**Electron-owned**）。`install.ps1` 一轮同时维护所有 profile（desktop / tavern / web）：
 
 - **desktop**：脚本直接写 `dsh.profile.bundles` + `link:` 依赖 + `node_modules/@dsh-external/...` junction——CLI 按设计拒绝 `desktop` 这个 profile 名（`apps/cli/src/args.ts` rejectElectronProfile），直接写出的内容与 `dsh plugin add` 同形。
-- **web / 源码 checkout**：仍走 `dsh plugin --profile web add <dsh 目录>`。
+- **tavern / web / 源码 checkout**：仍走 `dsh plugin --profile web add <dsh 目录>`。
 
 门禁布局感知：源码 checkout 用 `node`；Desktop 用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"`（普通 Node 的 fs 读不到 asar），行门禁从 `node_modules/@deepseek-ai/*` 取包、变量门禁扫编译后的 `lib/`；布局由 `DSH_NODE_EXECUTABLE` / `DSH_INSTALL_DIR`（指向 asar 内，按 `app.asar` 切分）自动判定。安装后需**重启 Desktop** 并新开会话选择 RE-Framework；17 个 ref-* 技能在任何 Desktop 会话都可见（用户级全局）。
 
@@ -62,7 +62,7 @@ dsh/
 - **单一事实源**：`skills/`（技能正文，直接维护）、`plugins/re-framework-tools.js`（工具插件）、**`cordis.patch.yml`（agent preset 声明，ACTIVE carrier）**、`package.json`（bundle 身份）——只改这四处，然后跑 `scripts/install.ps1`
 - **安装产物**：`<profile>/package.json` 的 `dsh.profile.bundles`（**preset 的存在性由它决定**，DSH >= 0.1.7）、`~/.dsh/skills/ref-*`（用户级全局技能，含 `.re-framework-manifest.yaml`）——**禁止手改**
 - **已删除路径**：`dsh/preset/`（2026-09-23 删）与 `~/.dsh/.agent-presets/re-framework/`（死目录，可删）均为 DSH 0.1.7 载体迁移前的遗留物，**没有任何代码读它们**
-- 改动后必须 `scripts/selfcheck.ps1` 全绿（工具链 / 技能 manifest / bundle 选中 + 产物对账 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁）
+- 改动后必须 `scripts/selfcheck.ps1` 全绿（工具链 / 技能 manifest / bundle 选中 + 产物对账 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁 / 已知回归门禁）
 - **目标模块化（spec §5.7）**：`scripts/target_modules.py`（derive / verify G1-G9 / plan-apply-rollback / repair）+ 插件契约守卫（R1/R3/R5，`REF_GUARD=off` 自救并审计）；自检第 7 段跑 fixture 测试
 - **patch 层（install/selfcheck 共用）**：`scripts/patch_layer.py` 按 **row** 判定与摘除（`--has-row` / `--remove-row`），保留注释/BOM/行尾/同 `insert` 的兄弟条目；home 级 `~/.dsh/cordis.patch.yml` 是**合法层**，存在 ≠ 违规，**绝不整文件删除**
 - **preset 模板变量**：persona prefix/suffix 等模板在**渲染期严格解析** `{{name}}`，只认 harness 当前注册的变量（DSH 0.2.x 起仅 `provider` / `model`；**工作目录不再有 `cwd` 变量**，见 `working-directory:current` 运行时上下文）。改模板后跑 `tests/audit_prompt_variables.mjs`（自检第 6 段）
@@ -71,5 +71,5 @@ dsh/
 ## 依赖
 
 - Python 3.x（脚本仅 stdlib；`merge_index.py` 需 PyYAML）
-- Node.js **≥ 24.9**（DSH 0.2.1-rc.2 起的硬要求；`tests/*.mjs` 门禁与插件加载都跑在 Node 上）
-- 验证协议引用 [Anchorlaw v0.24](https://github.com/unknowbug/anchorlaw)（协议引用，不复制实现；swe 模块可选装 anchorlaw CLI）
+- Node.js **≥ 24.22.3**（或 26.13.1；DSH 0.2.3-alpha.1 起的硬要求；`tests/*.mjs` 门禁与插件加载都跑在 Node 上）
+- 验证协议引用 [Anchorlaw v0.27.1](https://github.com/unknowbug/anchorlaw)（协议引用，不复制实现；swe 模块可选装 anchorlaw CLI）

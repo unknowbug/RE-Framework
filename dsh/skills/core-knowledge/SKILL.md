@@ -62,6 +62,15 @@ knowledge/
 - **条目 front-matter 必填** `signature / verdict / lesson / status`（缺任一项 → 守卫 `REF_KB_FRONTMATTER` 拒绝写入，且 judge 无法在索引层审查）。错误账本仍按 `errors/error-<NNN>-<slug>.md` 平铺（错误优先，不按模块切碎）。
 - **模块边界变更**（split/merge/rename）时，知识目录随地图迁移；迁移由 `target_modules.py plan` 记录，原文不重写，被合并条目用 supersession 回指。
 
+## 内置实战知识库（`knowledge-builtin/portable/`，2026-11-17）
+
+`knowledge-builtin/portable/` 是**跨项目实战案例库**（CoreSwap A 类，273 条 / 8 卷），不是项目知识库：
+
+- 先读 `knowledge-builtin/portable/index.yaml`（key = `卷#条目`，如 `01#12`）定位，再读对应卷正文；提炼规则见同目录 `rules.md`（人工维护，逐条引用 key）。
+- 条目保留来源置信度（多数 `candidate`，部分 `confirmed`）——**导入不等于确认**；引用格式 `portable/01#12`，与项目实测冲突时以实测为准，并把冲突写入项目 `knowledge/`。
+- 晋升路径：条目 → `rules.md` 规则 →（人类确认 + 跨域复现）→ `spec/` 条款；`candidate` 永不直接进 spec。
+- **不手改** 8 个卷文件；重新导入：`python scripts/absorb_portable_knowledge.py`（`--check` 只校验 273 条与索引）。
+
 ## 触发条件 → 写入位置
 
 | 触发 | 写入 | 价值门 |
@@ -169,7 +178,7 @@ lesson: "一行教训（速查表生成源）"
 ```
 
 - 正文五段式**不变**（错误优先原则不动）；front-matter 是**生成视图的数据源**，不是给人读的。
-- `supersedes`/`superseded_by` 双向链接对齐 **Anchorlaw v0.24 §15.4 结论 supersession 链**（载体归宿主，本技能即宿主落地）——任一条目可机械回答"当前有效结论是什么、被谁取代"。
+- `supersedes`/`superseded_by` 双向链接对齐 **Anchorlaw v0.27.1 §15.4 结论 supersession 链**（载体归宿主，本技能即宿主落地）——任一条目可机械回答"当前有效结论是什么、被谁取代"。
 
 ### 2. 派生视图禁止手维护（机械层，MUST）
 

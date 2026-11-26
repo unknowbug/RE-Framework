@@ -306,7 +306,16 @@ const SELF_BUNDLE = (() => {
  * 递归 1/3 是那次事故的修复本体，**勿删**。
  */
 function rowNames(file) {
-  const rows = yaml.load(readFileSync(file, 'utf8'), { schema: include.entryListSchema })
+  // DSH 0.2.2-rc.3 replaced the exported `entryListSchema` with `parseEntryYaml`
+  // (cordis 4.0.0-rc.12 include refactor). Older harnesses only expose the
+  // schema, so prefer the function and fall back — this gate must run against
+  // both the installed runtime and a newer checkout. Passing `schema: undefined`
+  // would silently fall back to the default schema, which cannot parse `!!js`,
+  // and then report a PARSE FAIL on our own bundle patch.
+  const text = readFileSync(file, 'utf8')
+  const rows = typeof include.parseEntryYaml === 'function'
+    ? include.parseEntryYaml(text)
+    : yaml.load(text, { schema: include.entryListSchema })
   const out = []
   const walk = list => {
     for (const row of list ?? []) {
@@ -419,6 +428,7 @@ function classify(name, presetDir, sourceTree) {
 }
 
 let bad = 0
+let totalRows = 0
 for (const { file, sourceTree } of files) {
   console.log(`\n== ${file}${installedMode ? '  (legacy installed copy — 排查用)' : ''}`)
   if (!existsSync(file)) {
@@ -440,6 +450,15 @@ for (const { file, sourceTree } of files) {
     continue
   }
   let fileBad = 0
+  // "Green on things that were never looked at" is the same silent-green class as
+  // the 2026-09-09 incident: an empty/misparsed carrier yields zero rows, and a
+  // zero-row pass proves nothing. Fail closed instead.
+  if (names.length === 0) {
+    console.log(`   NO SCAN: parsed 0 rows from ${file} — empty file or the parser no longer matches the carrier; not a pass`)
+    bad++
+    continue
+  }
+  totalRows += names.length
   for (const name of names.sort()) {
     const r = classify(name, dirname(file), sourceTree)
     if (!r.ok) { fileBad++; bad++ }
@@ -448,5 +467,7 @@ for (const { file, sourceTree } of files) {
   console.log(`   -> ${names.length} reference(s), ${fileBad} unresolvable`)
 }
 
-console.log(bad === 0 ? '\nAll preset rows resolvable ✅' : `\n${bad} unresolvable preset row(s) ❌`)
+console.log(bad === 0
+  ? `\nAll preset rows resolvable ✅ (${totalRows} row(s) across ${files.length} file(s))`
+  : `\n${bad} unresolvable preset row(s) ❌`)
 process.exit(bad === 0 ? 0 : 1)

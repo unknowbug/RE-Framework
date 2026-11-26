@@ -36,14 +36,23 @@ export const name = 're-framework-tools'
 export const inject = ['tools', 'subprocess']
 
 export function apply(ctx, config = {}) {
-  // Optional capabilities, read with ctx.get and handled when absent.
+  // Hard dependency: `inject` declares it, so the loader waited for it.
   const subprocess = ctx.get('subprocess')
-  const skills = ctx.get('skills')
-  const fsService = ctx.get('fs')
-  const sandboxPolicy = ctx.get('sandboxPolicy')
+  // Optional capabilities are resolved PER CALL, not captured once here: a service
+  // that publishes after apply() would otherwise stay bound to undefined forever
+  // and silently degrade the tools that use them (issue #4; Anchorlaw 0.26.2 fixed
+  // the same class, where a late-publishing service degraded skills/fs permanently).
+  const skillsOf = () => ctx.get('skills')
+  const fsOf = () => ctx.get('fs')
+  const sandboxPolicyOf = () => ctx.get('sandboxPolicy')
   if (subprocess === undefined) {
-    // Defensive only: `inject` above makes Cordis wait for the service.
-    ctx.logger?.warn?.('re-framework-tools: subprocess service unavailable; ref_* tools not registered')
+    // Defensive only: `inject` above makes Cordis wait for the service. Say so
+    // instead of returning silently — a silent return leaves the entry active with
+    // zero tools registered and nothing in the log.
+    ctx.logger?.warn?.(
+      're-framework-tools: the subprocess service is missing after activation; '
+      + 'the ref_* tools were NOT registered',
+    )
     return
   }
 
@@ -125,6 +134,7 @@ export function apply(ctx, config = {}) {
     } catch (error) {
       // fall through
     }
+    const sandboxPolicy = sandboxPolicyOf()
     if (sandboxPolicy && sandboxPolicy.workspaceRoot) return sandboxPolicy.workspaceRoot
     return '.'
   }
@@ -132,6 +142,7 @@ export function apply(ctx, config = {}) {
   // Locate the RE-Framework repository: walk up from cwd until a directory
   // holds AGENTS.md + scripts/validate_manifest.py (the framework markers).
   async function resolveRepo(cwd) {
+    const fsService = fsOf()
     if (fsService === undefined) return cwd
     let dir = cwd
     for (let i = 0; i < 8; i++) {
@@ -159,6 +170,7 @@ export function apply(ctx, config = {}) {
 
   async function absPath(p, cwd) {
     const raw = String(p)
+    const fsService = fsOf()
     if (fsService !== undefined) {
       try {
         const target = await fsService.resolve(raw, { cwd })
@@ -202,12 +214,18 @@ export function apply(ctx, config = {}) {
         lines.push('[python check failed: ' + error.message + ']')
       }
       try {
-        const fs = await fsService?.listDir(await fsService.resolve('skills/modules', { cwd: repo }))
-        const modules = (fs || []).map((e) => e.name.replace(/\.yaml$/, '')).filter((n) => n)
-        lines.push(`[modules: ${modules.length ? modules.join(', ') : 'none found'}]`)
+        const fsService = fsOf()
+        if (fsService === undefined) {
+          lines.push('[modules: fs service unavailable]')
+        } else {
+          const fs = await fsService.listDir(await fsService.resolve('skills/modules', { cwd: repo }))
+          const modules = (fs || []).map((e) => e.name.replace(/\.yaml$/, '')).filter((n) => n)
+          lines.push(`[modules: ${modules.length ? modules.join(', ') : 'none found'}]`)
+        }
       } catch (error) {
         lines.push('[modules: not resolvable from repo]')
       }
+      const skills = skillsOf()
       if (skills !== undefined) {
         try {
           const list = await skills.list({ cwd, scope: exec && exec.agent })

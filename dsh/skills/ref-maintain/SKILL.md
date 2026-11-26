@@ -13,7 +13,7 @@ whenToUse: 维护 RE-Framework 的 DSH 适配层（dsh/ 子树）时——任何
 
 ## 维护铁律
 
-1. **自检全绿**：任何改动前先跑 `pwsh dsh/scripts/selfcheck.ps1` 确认基线，改动后必须再次全绿（七段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁——第 4 项防 2026-08-13 事故复发（插件 schema 扁平化致全部会话崩），第 5 项防 2026-09-09 事故复发（上游改名插件包致 preset 挂载失败），第 6 项防 2026-10-10 事故复发（上游删除 `{{cwd}}` 提示词变量致 persona 模板渲染期抛错）；第 5、6 项**不可执行时按 FAIL 处理**，仅 `DSH_SKIP_PRESET_AUDIT=1` / `DSH_SKIP_PROMPT_VAR_AUDIT=1` 可显式接受缺口）。
+1. **自检全绿**：任何改动前先跑 `pwsh dsh/scripts/selfcheck.ps1` 确认基线，改动后必须再次全绿（八段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁——第 4 项防 2026-08-13 事故复发（插件 schema 扁平化致全部会话崩），第 5 项防 2026-09-09 事故复发（上游改名插件包致 preset 挂载失败），第 6 项防 2026-10-10 事故复发（上游删除 `{{cwd}}` 提示词变量致 persona 模板渲染期抛错）；第 5、6 项**不可执行时按 FAIL 处理**，仅 `DSH_SKIP_PRESET_AUDIT=1` / `DSH_SKIP_PROMPT_VAR_AUDIT=1` 可显式接受缺口）。
 2. **单一事实源**：技能正文**直接改 `dsh/skills/<name>/SKILL.md`**（无上游派生；Reasonix 归档 `archive/reasonix/` 不参与同步，恢复走其 RESTORE.md）；`tests/test_manifest.py` 守护 manifest 形态（命名/frontmatter/技能集/交叉引用）。
 3. **命名纪律**：DSH 技能名必须 kebab-case（`core-plan` 而非 `core.plan`）；插件工具名 `ref_*`。
 4. **插件持久化纪律**：动态插件（cordis_define 定义）只在当前进程存活——持久能力必须落成 `dsh/plugins/re-framework-tools.js` + preset 行，禁止把维护性能力留在动态插件里。
@@ -25,7 +25,7 @@ whenToUse: 维护 RE-Framework 的 DSH 适配层（dsh/ 子树）时——任何
 
 ## Anchorlaw 协议升级核对
 
-- Anchorlaw 协议引用版本（当前基线 v0.24，`git grep 'v0\.[0-9]'` 核对）或 `spec/engineering-framework-v1.md` 变更后：
+- Anchorlaw 协议引用版本（当前基线 **v0.27.1** = protocol v0.26 + 2026-11-25 FIX，`git grep 'v0\.[0-9]'` 核对）或 `spec/engineering-framework-v1.md` 变更后：
   1. 对照 Anchorlaw changelog 核对 spec §3 同步契约（条款保留/版本基线/同源双写）；
   2. 更新 `dsh/SYNC.md`（来源 commit/时间/差异）；
   3. 若涉及技能正文语义：直接改 `dsh/skills/` 对应技能，并在 `tests/test_manifest.py` 的 ADAPT/EXPECTED 中同步（改名/新增时）；
@@ -40,7 +40,7 @@ python dsh/tests/test_manifest.py
 # 2. 部署到 DSH 运行时（写 ~/.dsh，需全盘权限）
 pwsh dsh/scripts/install.ps1
 
-# 3. 七段总自检（工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁）
+# 3. 八段总自检（工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁 / 已知回归门禁）
 pwsh dsh/scripts/selfcheck.ps1
 ```
 
@@ -48,9 +48,9 @@ pwsh dsh/scripts/selfcheck.ps1
 
 ## Desktop 宿主（2026-11-13）
 
-- Desktop（Electron）把运行时打进 `resources/app.asar`，profile 为 `~/.dsh/profiles/desktop`（**Electron-owned**）。`install.ps1` 一轮同时维护 desktop + web：desktop 由脚本直接写 `dsh.profile.bundles` + `link:` 依赖 + `node_modules` junction（CLI 按设计拒绝 `desktop` 这个 profile 名），web 仍走 `dsh plugin add`；`dsh` CLI 仅在存在非 desktop profile 时必需。
+- Desktop（Electron）把运行时打进 `resources/app.asar`，profile 为 `~/.dsh/profiles/desktop`（**Electron-owned**）。`install.ps1` 一轮同时维护所有 profile（desktop / tavern / web）：desktop 由脚本直接写 `dsh.profile.bundles` + `link:` 依赖 + `node_modules` junction（CLI 按设计拒绝 `desktop` 这个 profile 名），web 仍走 `dsh plugin add`；`dsh` CLI 仅在存在非 desktop profile 时必需。
 - 门禁布局感知：`DSH_NODE_EXECUTABLE` / `DSH_INSTALL_DIR`（后者指向 asar 内的 dsh 包，按 `resources/app.asar` 边界切分）存在时用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"` 跑 `.mjs` 门禁（普通 Node 的 fs 读不到 asar）；源码 checkout 用 `node`。行门禁从 `node_modules/@deepseek-ai/*` 取包，变量门禁扫编译后的 `lib/`。
-- Desktop 验证：`pwsh dsh/scripts/selfcheck.ps1` 首行应显示 `harness layout: asar (...)`，七段全绿；两个 profile 的 `dsh.profile.bundles` 都含 `@dsh-external/dsh-re-framework`。安装后需**重启 Desktop** 并在新会话选 RE-Framework（技能是用户级全局，无需重启即见）。
+- Desktop 验证：`pwsh dsh/scripts/selfcheck.ps1` 首行应显示 `harness layout: asar (...)`，八段全绿；所有 profile 的 `dsh.profile.bundles` 都含 `@dsh-external/dsh-re-framework`。安装后需**重启 Desktop** 并在新会话选 RE-Framework（技能是用户级全局，无需重启即见）。
 
 ## 上游 DSH 升级核对（每次 harness 升级后）
 

@@ -3,7 +3,7 @@
 > 基于《打破传统AI逆向的新思路：多Agent、自主管理上下文》(BitWarden, 看雪学苑 2026.06.18) 的方法论内核，
 > 工程化、Skills化、SubAgents化拆分升级：**领域无关核心 + 按需加载领域模块**，从二进制逆向到代码逆向到常规编程全兼容。
 > **DeepSeek Harness（DSH）是唯一维护宿主**（2026-08-21 起；Reasonix 宿主格式已归档至 `archive/reasonix/`，Fork 可恢复自行迭代）。
-> 验证协议继承 [Anchorlaw Protocol v0.24](https://github.com/unknowbug/anchorlaw)（MIT，协议引用，不复制实现）。
+> 验证协议继承 [Anchorlaw Protocol v0.27.1](https://github.com/unknowbug/anchorlaw)（MIT，协议引用，不复制实现；protocol v0.26 + 2026-11-25 FIX）。
 
 ---
 
@@ -19,7 +19,7 @@ pwsh dsh/scripts/install.ps1
 #    → ref-* 技能开箱即用，cwd 在项目、产物落项目、本仓库零污染
 #    → 需要框架工作台人格时再选 re-framework preset
 
-# 3. 自检（工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 门禁 / 目标模块 + 守卫）
+# 3. 八段自检（工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 门禁 / 目标模块 + 守卫 / 已知回归）
 pwsh dsh/scripts/selfcheck.ps1
 
 # 4. 目标模块化（大型工程建议；spec §5.7）
@@ -34,19 +34,20 @@ python scripts/target_modules.py <项目> verify   # G1-G9 门禁
 ```
 RE-Framework/
 ├── AGENTS.md                  # DSH-first 索引（自动加载入口）
-├── spec/                      # 框架协议（铁律/工作流/产物/知识库/版本）+ Anchorlaw v0.24 引用
+├── spec/                      # 框架协议（铁律/工作流/产物/知识库/版本）+ Anchorlaw v0.26.1 引用
 ├── dsh/                       # DSH 宿主适配层（唯一维护区）
 │   ├── skills/                # 17 个 ref-* 技能（单一事实源，直接维护）
 │   ├── SKILL-MAP.md           # DSH 探测器（强初始化/路由/Phase 0-3/执行强制链 + dot→kebab 映射）
 │   ├── plugins/re-framework-tools.js   # 3 个 ref_* 模型工具 + 契约守卫（R1/R3/R5）
 │   ├── cordis.patch.yml       # agent preset 声明（ACTIVE carrier）
-│   ├── scripts/install.ps1 + selfcheck.ps1 + gen_cheatsheet.py   # 安装 + 七段自检 + 压实派生视图生成模板
+│   ├── scripts/install.ps1 + selfcheck.ps1 + gen_cheatsheet.py   # 安装 + 八段自检 + 压实派生视图生成模板
 │   ├── scripts/patch_layer.py # patch 层 row 级原语（home/profile 共用；存在≠违规）
 │   ├── tests/                 # test_manifest / check_plugin_schema / audit_preset_rows / audit_prompt_variables / test_target_modules / test_contract_guard / test_home_patch
 │   └── AGENTS.md              # DSH 维护入口
 ├── templates/                 # 产物 schema（语言无关）
-├── knowledge-builtin/         # 预置知识库
+├── knowledge-builtin/         # 预置知识库（portable/ = 273 条跨项目实战案例 + index + rules）
 ├── scripts/merge_index.py     # 并行索引合并（ref_merge_index 依赖）
+├── scripts/absorb_portable_knowledge.py  # Portable-Knowledge 导入（8 卷 / 273 条；--check 校验）
 ├── scripts/target_modules.py  # 目标模块管理：derive / verify G1-G9 / plan→apply→rollback / repair（spec §5.7）
 └── archive/reasonix/          # Reasonix 宿主格式归档（只读，RESTORE.md 可恢复）
 ```
@@ -157,10 +158,22 @@ python scripts/target_modules.py <project> repair
 - **Reasonix 宿主格式**（dot 名技能、`.reasonix/skills/` 部署、`install.py`/`validate_manifest.py`）自 2026-08-21 停止维护，归档至 `archive/reasonix/`（含 RESTORE.md + restore-reasonix.ps1，Fork 用户可一键恢复自行迭代）。
 - 框架核心（`spec/`、`templates/`、`knowledge-builtin/`、`scripts/merge_index.py`）保留，DSH 技能正文引用它们。
 
+## 版本命名（2026-11-17 起，对齐 Anchorlaw 的 X.Y.Z 纪律）
+
+本框架有**两个独立版本**，不得混用：
+
+- **协议版本 `v1`**（`spec/engineering-framework-v1.md`）：只在**规范条款**（§0-§9 语义）变化时升版；升版 = 冻结旧文件 + 新增 `engineering-framework-v2.md`；FIX/实现/宿主适配**不改规范条款**。
+- **发布版本 `X.Y.Z`**（`dsh/package.json` + 更新记录）：`X` = 框架世代（当前 2）；`Y` = 能力/条款级变更；`Z` = **FIX**（实现或宿主适配修复，不产生新 spec 文件）。
+- **禁止 `-FIX` / `-fix` 后缀**：semver 视为预发布标记，排序**低于** `X.Y`，与"修复版更高"的意图相反；FIX 只用第三位（`2.15.0` → `2.15.1`）。
+- 与 Anchorlaw 的对应：RE 协议 v1 ↔ Anchorlaw 引用基线（当前 **v0.27.1**）；两侧独立演进，任一侧升版都在 spec §3 登记并跑引用完整性核对。
+
 ## 更新记录
 
 | 版本 | 日期 | 内容 |
 |------|------|------|
+| v2.16.0 | 2026-11-27 | **Anchorlaw 0.27 大版本同步（Rust 注册 + 回归门禁）**：① 协议 v0.26→v0.27 逐节核对：**§2 语言登记 +264 字符、§8 +12、§11 +659、§13 +142；§5/§9/§12/§14/§15/§16 逐字节相同**。v0.27 = **Rust 注册为注释式语言**（仅注解提取；P1-P6 未映射；proc-macros 计划放弃），v0.16 的"Rust 不支持"被 **SUPERSEDED IN PART**（原文保留）；`--lang` 改为按语言选扩展名（不再把 .cpp 混入），scanner 与 DSH 插件 lang enum 增 rust。② 0.27.1 FIX：Anchorlaw 新增 `audit_known_regressions.mjs`（20 条，selfcheck 7→8）。本框架**采纳同型门禁**：`dsh/tests/audit_known_regressions.mjs`（16 条本仓库事故断言 + 引用基线一致性，接入 selfcheck 第 8 段，八段）；persona / 技能 / spec §3 引用基线升 **v0.27.1**。③ `swe-guide` 补 Rust 语言支持说明。**验证**：v0.26→v0.27 逐节 diff；回归门禁 17/17（注入式反例：删 `NO SCAN` → exit 1）；行门禁 27/0；变量门禁 1/0；八段自检全绿；portable `--check` 273。 |
+| v2.15.1 | 2026-11-27 | **Anchorlaw 0.26.2 FIX 同步 + 零覆盖门禁修正**：① 逐项核对 Anchorlaw `972aa12`（FIX，protocol v0.26 未改）：`report` 在 0 个可扫描文件上不再报 `PASS`、注释提取防字符串字面量伪造、persona 引用版本修正、工具插件可选服务改 per-call。② 本框架采纳：`re-framework-tools.js` 的 `skills`/`fs`/`sandboxPolicy` 改为**每次调用** `ctx.get`（不再在 `apply()` 捕获），晚发布服务不再永久降级；行门禁新增**零行 `NO SCAN` 失败**（解析 0 行 ≠ 通过，与 2026-09-09 静默绿同族），汇总打印 `N rows across M files`；插件 schema 门禁已要求 3 个工具齐全。③ 引用基线 v0.26.1 → **v0.26.2**（persona + 技能引用 + spec §3 + README/AGENTS/ref-maintain）。**验证**：行门禁 27/0（空文件反例 exit 1）；插件 schema / 契约守卫 / 七段自检全绿；portable `--check` 273 条。**版本**：2.15.0 → 2.15.1（FIX）。 |
+| v2.15.0 | 2026-11-17 | **Anchorlaw 0.26.1 同步 + Portable Knowledge 吸收（FIX + 功能）**：① Anchorlaw protocol v0.24→v0.25→v0.26 逐节复核（§5/§9/§12/§13/§14/§15/§16 逐字节相同，仅 §8/§11 证据行更新），引用基线升至 **v0.26.1**；采纳 0.26.1 相关 FIX（两个门禁优先 `parseEntryYaml`、回退 `entryListSchema`；`install.ps1` 的 `node_modules` join 改嵌套 `Join-Path`）；落地 **X.Y.Z** 版本纪律（Z=FIX、禁 `-FIX` 后缀、协议 v1 独立）。② 新增 `knowledge-builtin/portable/`——CoreSwap A 类 8 卷 **273 条**（64/76/59/14/21/27/2/10），原文逐字保留 + `index.yaml` 机器索引（key/标题/置信度/出处）+ `rules.md` 人工提炼的 **40 条检查项**（逐条引用条目 key，附候选晋升表）。新增 `scripts/absorb_portable_knowledge.py`：可重复导入、`--check` 校验 273 条与索引一致；`core-knowledge` 增「内置实战知识库」用法（先读 index、引用 `portable/01#12`、条目默认 candidate、晋升需人类确认，candidate 不直接进 spec）。**分层**：案例库（证据）→ rules（建议）→ spec（规范，需人类确认 + 跨域复现）。**验证**：8 卷 273 条解析与索引一致；`test_manifest`（17 技能）通过；行/变量门禁 27/0、1/0；七段自检全绿。 |
 | v2.14.0 | 2026-11-13 | **DSH Desktop 端适配（双宿主并行维护）**：运行时已切到 Electron Desktop（`resources/app.asar`，0.2.2-rc.2；`DSH_PROFILE=desktop`，其 profile 原为 base + web-app + anchorlaw，没有 RE bundle）。本次：① `install.ps1` 一次维护所有 profile——`desktop` 由 Electron 拥有，CLI 按设计拒绝该名字（`apps/cli/src/args.ts` rejectElectronProfile），故直接写入 `dsh.profile.bundles` + `link:` 依赖 + `node_modules/@dsh-external` junction；web profile 仍走 `dsh plugin add`；不再无条件要求 `dsh` CLI。② 门禁布局感知：源码 checkout 用 `node`；Desktop 的 asar 用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"`（普通 Node 的 fs 读不到 asar），行门禁从 `node_modules/@deepseek-ai/*` 取包、变量门禁扫编译后的 `lib/`；install/selfcheck 从 `DSH_NODE_EXECUTABLE` / `DSH_INSTALL_DIR`（后者指向 asar 内）自动判定布局。③ Desktop 实测：两个 profile 均含 bundle，行门禁 27/0、变量门禁 1/0、七段自检全绿（asar 布局）。④ 技能仍为用户级全局（当前 Desktop 会话已可见 17 个 ref-* 技能）；preset 需**重启 Desktop 后开新会话**并选择 RE-Framework。 |
 | v2.13.2 | 2026-11-12 | **DSH 0.2.2-rc.2 同步核对（无破坏性变更）**：checkout `e8f7b93a34`（`dsh-v0.2.2-rc.2`；较 v2.13.1 基线 `8bd073392e` 新增 **1183 commits**；Node v24.22.1）。新增指南：alpha.3 `subagent-names`；rc.1 `package-export-cleanup` / `plugin-update-method` / `ptc-scoped-repl-default` / `ptc-bootstrap-protocol` / `ptc-inspect-output` / `runtime-context-reminders` / `subagent-interrupt-default`（另有 office / cua / forge / account / terminal / web-search 等与框架无关项）。**对 RE 的影响**：① **代码零破坏**——插件 import-free、不调 `ctx.subagents.*`、无自定义 PTC bootstrap、`ctx.tools.guard` 仍在（`packages/core/tools/src/index.ts:384`）；② **采纳** rc.1 的行为对齐：base 与全部官方 preset 现在给 `tool-subagent-control` 设 `interrupt: false`（模型不再获得 `interrupt_agent`；消息、等待与服务端 interrupt API 保留），本 preset 同步设为 `false`（项目可在 profile patch 里改回 `true`）；③ **只记录不改**：`send_message` / `interrupt_agent` 参数 `agent_id`→`agent`、`list_agents` 行改为 `{name,status,description}`（我们的技能不直接调用这些参数，模型侧工具已自带新 schema）、运行时上下文消息包 `<system-reminder>`（persona 里的 `Current working directory` 仍成立）、三个包的根导出清理与本插件无关、`BundleInfo.updatable→update` 仅 Host API/插件管理器。**能力面备注（本轮未改）**：官方 standard 还含 `time-context` / `tool-schedule` / `tool-office`（rc.1 新增）/ `tool-plugin-manager` / `tool-plugin-market`，本 preset 未挂——属可选项，按需再对齐。**验证**：行门禁 27/0；模板变量门禁 1/0；`check_plugin_schema` / `test_manifest` / target-modules / contract-guard / patch-layer 逐项直跑全绿；selfcheck 第 3 段（bundle 选中 + 17 技能 0 drift）在 dot-source 运行中通过。**未执行**：`selfcheck.ps1` 整体与 `install.ps1`——当前沙箱禁止子进程管道（`\\.\pipe\LOCAL\dotnet_*` denied），ps1 无法作为子进程复跑；`engines.dsh` 兼容性按源码核对（`plugin-compatibility.ts:52` 用 includePrerelease），未重装。 |
 | v2.13.1 | 2026-11-04 | **DSH 0.2.2-alpha.3 同步核对（无破坏性变更）**：checkout `8bd073392e`（`dsh-v0.2.2-alpha.3-555`；较 v2.13 基线 `22ddee3792` 新增 **1654 commits**；本机 `dsh --version` = 0.2.2-alpha.3，Node v24.22.1）。**逐份核对**新增升级指南（alpha.3 `plugin-engines-dsh`；rc.2 `conditional-tools` / `tool-executor-plugins` / `subagent-*` / `official-bundle-lists`；rc.3 `independent-session-forks` 等；0.2.2-alpha.2 `cordis-loader-entry-trees` / `fs-observation-policy-default-off` / `subagent-explicit-reasoning`）→ **对本 bundle 无破坏性变更**：`engines.dsh: >=0.2.0 <0.3.0` 兼容；`ctx.tools.guard` 仍在（`packages/core/tools/src/index.ts:384`）；preset 行 **27/0 可解析**；所有配置键逐个对照当前 schema 均有效（persona / agent-instructions / tool-fs-search / plan-mode / tool-result-pruner / tool-subagent / tool-ralph / workflow-ptc / tool-web / tool-todo / skill-filesystem / agent-preset）；官方 standard/ptc/cordis preset 本轮只新增 `tool-fs.applyPatch: false`（默认 false，与本 bundle 行为一致，无需改动）。**同步修正**：① persona 里过时的 `ref-manifest-validate` / `ref-install` / `ref-status` 引用改为现有 3 个 `ref_*` 工具（status / merge_index / init）+ `scripts/target_modules.py`；② `dsh/README` 补 Node **≥ 24.9** 依赖（DSH 硬要求）；③ 记录 `fs-observation-policy` 自 0.2.2 起**默认关闭**——本框架守卫是独立实现（`ctx.tools.guard`），不依赖它；新工具 `apply_patch`（默认关闭）不在 R1/R3/R5 覆盖内，启用需扩展守卫。**验证**：行门禁 27/0；模板变量门禁 1/0；七段自检全绿。 |

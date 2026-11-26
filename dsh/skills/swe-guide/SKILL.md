@@ -9,7 +9,7 @@ whenToUse: 任务是编程类（编写/修改/审查代码、协议设计、常�
 > Module: swe
 > Layer: L0 (Concepts) — 入口指引
 > Execution: inline
-> 协议正文不在此处——引用 [Anchorlaw v0.24](https://github.com/unknowbug/anchorlaw)，单一事实源。
+> 协议正文不在此处——引用 [Anchorlaw v0.27.1](https://github.com/unknowbug/anchorlaw)，单一事实源。
 
 ## 触发场景
 
@@ -26,6 +26,10 @@ whenToUse: 任务是编程类（编写/修改/审查代码、协议设计、常�
 - 写码 / 重构 / 编译 / 运行 / 调试 / 验证全部在**主会话**内直接执行——工程迭代（改→编译→跑→修）需要即时闭环，隔离执行会阻断迭代（实战项目实证：SearchTree 移植在 subagent 沙箱无编译环境，3 版全崩）。
 - **不派 subagent 做核心写码/迭代**；subagent 仅用于隔离审查（独立 code review、独立验证）。
 - 与逆向路径相反：逆向是「subagent 分析 + 主会话只执行不解读」，编程是「主会话全流程 + subagent 可选审查」。
+
+### 语言支持（Anchorlaw v0.27 起）
+
+Rust 已注册为**注释式语言**（仅注解提取；P1-P6 仍不映射，proc-macros 计划放弃）。`anchor.scan --lang rust` 只扫 `.rs`，不再把 `.cpp` 一并扫（v0.27.0 修正了 `--lang` 只判"是否 python"的旧行为）。
 
 ### 方式1: Anchorlaw skills（标注/扫描，主会话调用）
 

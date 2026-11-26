@@ -157,7 +157,7 @@ AGENTS.md 在任务开始时运行**探测器**，按以下决策树只加载匹
 
 ## 3. Anchorlaw 四接口面引用
 
-本框架的验证/执行/集成语义**不自行维护**，全部引用 [Anchorlaw Protocol v0.24](https://github.com/unknowbug/anchorlaw)（MIT），保持单一事实源：
+本框架的验证/执行/集成语义**不自行维护**，全部引用 [Anchorlaw Protocol v0.27.1](https://github.com/unknowbug/anchorlaw)（MIT；protocol spec v0.27 + 2026-11-27 的 0.27.1 FIX），保持单一事实源：
 
 | 接口面 | Anchorlaw 章节 | 本框架的使用方式 |
 |--------|---------------|-----------------|
@@ -167,7 +167,7 @@ AGENTS.md 在任务开始时运行**探测器**，按以下决策树只加载匹
 | **Host（宿主）** | §16 Host Integration Contract | AGENTS.md 作为宿主集成点：触发表注册、confirm hook（confirmed 仅人类授予）、产物契约（落盘 + 索引更新）；hosts 自供执行者（本框架用 core.worker/core.judge）；**input-contract 确认标准（v0.14 泛化，§16.1）**——协议中立：input contract 仅在**语义收敛**后算 confirmed（v0.13 的 RE handover 表述已泛化为 semantic convergence，不再点名 RE framework）；**输入契约分层（v0.14）**：契约 = 需求 + 技术约束规范（facts），架构设计在流水线 stage 1 产出；三协议（requirements / Anchorlaw / RE）独立可操作 |
 
 **与 Anchorlaw 的版本同步契约**：本框架对 Anchorlaw 为**协议引用**（单一事实源），升级时对照其 changelog 核对引用条款：
-- 当前引用基线：**Anchorlaw v0.24**（2026-10-17 升级核对）
+- 当前引用基线：**Anchorlaw v0.27.1**（protocol v0.27 + 0.27.1 FIX；2026-11-27 升级核对）
 - 已知同源双写：本框架 §4.5 执行强制链 ↔ Anchorlaw §15.4 judge institutionalization（同一批实战反馈双侧落地）——升级 Anchorlaw 时须对照其 changelog 同步核对
 - 已知同源双写（v0.17 新增）：v0.17 变更触发点含「§12 challenge（Reasonix/Go audit）」——parse-error 分类修正 + 注释类语言降级声明由 RE 生态反馈回流协议；升级核对时关注此类回流
 - v0.16/v0.17 引用条款核对（2026-08-14）：§5/§9/§12/§13/§14/§15/§16 全部保留，无语义冲突；v0.16 = Go/Java 注释类语言注册 + Rust 明确不支持（设计决策）；v0.17 = parse-error 工具级标记（INFO，非 P1-P6）+ 注释类语言（C++/Go/Java）仅注解提取、P1-P6 不映射 + P7-P10 可靠性风险模式（LIFECYCLE/STATE_MACHINE/PATH-COORDINATION/COMPLEXITY，语言无关定义，Level 1 不要求）
@@ -184,6 +184,12 @@ AGENTS.md 在任务开始时运行**探测器**，按以下决策树只加载匹
   - **证据状态诚实标注**：五条款在 §8/§11 多标 `scoped (no practice data yet)`——**这是诚实标注证据状态，不是"存疑待否"**；条款存在是为让宿主有**一个权威的实施与否证目标**
 - v0.23 引用条款核对（2026-09-23，Anchorlaw commit `cae72ed`）：**纯宿主适配变更，协议核心零变化**——协议自述 *"§16 host-adaptation scope; the protocol core is unchanged."*；**本次用逐节 diff 独立复核该自述**：§5/§9/§12/§13/§14/§15/§16 **逐节差异全为 0**（归一化写法须同时把 v0.22 与 v0.23 归到同一占位符，否则条款标题里字面的 `(v0.22)` 会伪装成差异——本次先踩后修正）；章节标题集合一致（92 = 92，仅版本标题不同）；**全文真实差异共 5 处**（LCS 型比对 `git diff --no-index` 实测）：① 版本头发布说明 **+20 行**；② v0.18 条目的 supersession 注记 **+5 行**；③ v0.18 DSH changelog 表行改写 1 行；④ §8 Maturity 表行改写 1 行；⑤ §11 audit 表行改写 1 行——③④⑤ **均为表格行文本更新，非条款正文**（④⑤ 由发布说明自述 "§8 maturity and §11 audit rows carry the updated DSH evidence"）。**两个比对方法论坑**：(a) 归一化须同时把新旧两个版本号归到同一占位符，否则条款标题里字面的 `(v0.22)` 会伪装成差异（实测可伪造 18 行对）；(b) **不可**用整文件位置对齐式比对（`Compare-Object -SyncWindow 0`）——早段任意插入会使后续全量错位、刷出满屏假差异；须用 LCS 型比对或**逐节独立比对**。v0.23 = **DSH 0.1.7 preset 载体迁移**：preset 不再是 `$DSH_HOME/.agent-presets/<id>/` 目录，而是 **bundle patch 里的 `@deepseek-ai/dsh-agent-preset` 声明行**；`dsh/` 成为一等 bundle 包（`package.json` + `cordis.patch.yml`）；`config.plugins[]` 内的行**不做路径锚定**（须用裸包名子路径）；preset 子树的 `baseUrl` 是 **profile 目录**而非 bundle（技能根须经已安装包解析）；11 个 anchor-* 技能改为装**用户级全局**而非内嵌。**另有一项对宿主有实质影响**：**项目级（Reasonix 式）安装模式被撤回**——DSH 没有项目级 plugin/preset 机制，项目级安装只能交付技能、永远交不到 preset persona 与四个工具；项目级技能改由 DSH 自带的 `<projectRoot>/.dsh/skills` 根提供（无需 installer）。→ **本框架的对应**：本框架是**用户级全局技能 + preset**形态，**不依赖**项目级安装模式，故该撤回**不影响本框架的既有安装语义**；但 preset 载体迁移**影响本框架的 dsh 适配层**（见 `.investigations/dsh-preset-bundle-migration/报告.md` 与 `dsh/SYNC.md`）。本框架的 `preset/` 目录形态已由该迁移**取代**（详见 SYNC）
 - v0.24 引用条款核对（2026-10-17，Anchorlaw commit `b7a7a4a`）：**纯宿主适配变更，协议核心零变化**——协议自述 *"§16 host-adaptation scope; the protocol core is unchanged."*；**逐节 diff 独立复核**：§5/§9/§12/§13/§14/§15/§16 **差异全为 0**（对称归一化 v0.23/v0.24 → 同一占位符）；标题集合 92 = 92（仅版本标题不同）；**全文真实差异 4 处**（LCS 比对）：① 版本头发布说明 **+18 行**；② changelog 表新增 **3 行**（两条变更条目 + 版本号行）；③ §8 Maturity 表行 1 行；④ §11 audit 表行 1 行——②③④ 均为**表格行文本更新，非条款正文**。v0.24 = **DSH 0.2.x 宿主适配收尾**：① 删除 persona 模板里已死的 `{{cwd}}` 提示词变量（上游 0.2.x 移除；严格插值会让 preset 在**组装期**直接失败）+ 新增 fail-closed 模板变量门禁；② 删除 4 个子代理行上**已不存在**的 `backgroundMode` 键（Schemastery 静默丢弃，从未生效）。**两项都不改协议条款**：§14 Skill Manifest / §15 Execution Topology / §16 Host Integration Contract 依然成立。→ **本框架的对应**：v2.9 已独立完成 ①（同源事故、各自门禁）；② 由本次 v2.10 完成，并顺带补 `agentPreset` 让子代理挂载本 preset（加强 §15.3 角色绑定）
+- v0.25 引用条款核对（2026-10-24，Anchorlaw commit `ccd9105`）：**纯宿主适配变更，协议核心零变化**——逐节 diff 复核（v0.24 vs v0.25，归一化版本号）：§5/§9/§12/§13/§14/§15/§16 **逐字节相同**；仅 §8 Maturity（+178 字符）与 §11 audit（+116 字符）的**证据行文本**更新，标题集合 17 = 17。v0.25 = ① 删除上游已移除的 `tool-subagent-list-agents` 子路径 row（`ERR_PACKAGE_PATH_NOT_EXPORTED`），控制工具并入 `tool-subagent-control`；② bundle 声明 `engines.dsh`。→ 本框架 v2.11 已独立完成 ①（同源门禁在维护期抓到），② 由 v2.13 补 `engines.dsh >=0.2.0 <0.3.0`
+- v0.26 引用条款核对（2026-11-13，Anchorlaw commit `346ea8c`）：**纯宿主适配变更，协议核心零变化**——同一逐节 diff 方法：§5/§9/§12/§13/§14/§15/§16 **逐字节相同**；仅 §8 Maturity（+247 字符）与 §11 audit（+111 字符）证据行更新。v0.26 = **DSH Desktop 双宿主**：Electron-owned `desktop` profile 由 installer 直接写 bundles + `link:` 依赖 + `node_modules` junction；门禁在 asar 布局下用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"`，行门禁从 `node_modules/@deepseek-ai/*` 取包、变量门禁扫编译后的 `lib/`。→ 本框架 v2.14 已独立完成同一适配（对照 Anchorlaw 做法）
+- v0.26.1 引用条款核对（2026-11-17，Anchorlaw commits `d7da4d7` / `8529dd6` / `ee82d33`）：**FIX 释放，无协议 spec 变更**——`spec/protocol-v0.26.md` 未改；新增版本纪律：X.Y = spec 版本，Z = FIX，`-FIX` 后缀非法（semver 视为预发布，排序低于 X.Y）。八项宿主修复：① `inject` 补 `subprocess`；② `python`→`python3` 回退；③ identity manifest 用 .NET 无 BOM 写（PS 5.1 的 `Set-Content -Encoding UTF8` 带 BOM，DSH 裸 `JSON.parse` 会报 REQUEST_EXTENSION）；④ PyYAML 合并前 stash `!!js`；⑤ schema 门禁局部 EAP=Continue；⑥ 修正 patch 层注释（profile 先、home 后 → home 更高）；⑦ `Join-Path` 反斜杠改可移植写法 + python 只解析一次；⑧ 两个门禁优先 `parseEntryYaml`、回退 `entryListSchema`（0.2.2-rc.3 的 cordis include 重构）。→ 本框架对应：①/②/⑤ 自 v2.13 已有；③/④ 不适用（无 DSH identity JSON；patch 层是文本级 row 操作，不做 YAML merge）；⑥ 文档已按 home 在后记录；⑦ 本轮修掉 `node_modules` 反斜杠 join；⑧ **本轮采纳**（否则 Desktop 升到 0.2.2-rc.3 时行门禁会 PARSE FAIL）。引用基线随本轮升到 0.26.1
+- v0.26.2 引用条款核对（2026-11-27，Anchorlaw commit `972aa12`）：**FIX 释放，无协议 spec 变更**（`protocol-v0.26.md` 未改；0.26.1 → 0.26.2）。四项修复：① `report` 在 **0 个可扫描文件**上不再打印 `[PASS] Code healthy`——改为 `[NO SCAN]` + 明确"非健康裁决"（"green on things never looked at" 与 2026-09-09 行门禁事故同族）；② 注释提取改为 quote/块注释状态机，字符串字面量里的 `@anchor` 不再伪造 anchor；③ anchorlaw persona 的引用版本从 v0.23 修正到 v0.26；④ 工具插件的 `skills`/`fs`/`sandboxPolicy` 改为**每次调用解析**（不再在 `apply()` 捕获），避免晚发布服务被永久降级，`subprocess` 缺失时告警而非静默返回。→ 本框架对应：④ **本轮采纳**（`re-framework-tools.js` 三个可选服务改 `*Of()` per-call，`subprocess` 缺失告警保留）；① 的"零覆盖不得报绿"同族缺陷在本框架行门禁**本轮补**（解析 0 行 → `NO SCAN` fail；插件 schema 门禁本就要求 3 个工具齐全）；② 不适用（无 anchor 注释提取器）；③ 引用版本已随本轮升 0.26.2（persona/README/AGENTS/ref-maintain）
+- v0.27.0 引用条款核对（2026-11-27，Anchorlaw commit `2593d4e`）：**规范变更（语言注册，非纯宿主适配）**——新增 `spec/protocol-v0.27.md`（第 26 个 spec 文件）。逐节 diff（v0.26 vs v0.27，归一化版本号）：**§2 语言登记 +264 字符、§8 Maturity +12、§11 audit +659、§13 语言表 +142；§5/§9/§12/§14/§15/§16 逐字节相同**。v0.27 = **Rust 注册为注释式语言**（保留 v0.16 决策的修正）：§2.4 Rust bullet 改为 registration；§10 v0.16 行与 §2.4 "All languages" 句加 **SUPERSEDED IN PART** 标注（原文保留）；§8 comment-form 列 / §11 新 Rust 行 / §13 语言表加入 Rust。**范围**：仅注解提取（annotation extraction）；P1-P6 仍不映射；proc-macros 计划放弃。证据：Java→Rust 移植中 5 个编译器看不见的静默语义缺陷 + 1 个跨会话未验证命名被当公理。→ 本框架：`swe` 模块经 anchor-* 获得 Rust 注解提取；本框架 spec 的 v0.16 历史行**不改写**（v0.27 记 supersession）；无技能正文语义需改（`swe-guide` 仅补语言支持说明）
+- v0.27.1 引用条款核对（2026-11-27，Anchorlaw commit `2d0401f`）：**FIX 释放，protocol v0.27 不变**（`spec/` untouched）。新增 `dsh/tests/audit_known_regressions.mjs`（20 条 fail-closed 断言，覆盖 0.24-0.27 的 14 个已修缺陷；`absent`/`present` 两类 + 版本对齐），接入 selfcheck 第 8 项（七段→八段），并用注入式实验证明（把 `backgroundMode` 加回 → exit 1 并引用 2026-10-17 事故）；另加报告行为反例（0 个 `.py` 必须 `[NO SCAN]`，不得 `[PASS]`）。→ 本框架采纳同型门禁：`dsh/tests/audit_known_regressions.mjs`（16 条本仓库事故断言 + 引用基线一致性），接入 selfcheck 第 8 段；历史事故不改写
 - 检查动作（§14.7 引用完整性的本框架实例）：Anchorlaw 发新版本后，重新 `git grep 'v0\.[0-9]'` 本仓库，核对**版本时效 / 条款号是否仍存在 / anchor 是否可解析**（可判定层）；**语义兼容性不机械尝试**（不可判定），**历史归档不改写**
 - 复核记录（2026-08-14，Anchorlaw HEAD `4931a1c`）：协议仍 **v0.17**（无新协议版本，基线不变）；HEAD 新增提交均为 dsh 适配层演进——`project-level install mode`（`-Project` 参数，Reasonix 式项目级技能部署到 `<dir>/.dsh/skills/`，借鉴本框架部署思路）+ `anchor.maintain` 正文修正（移除易变测试计数，不在本框架 swe 路由表内）——均不影响本框架引用条款
 
@@ -248,7 +254,7 @@ Phase 3: 审查（judge 角色，subagent）
 - **编程任务**：写码/重构/编译/运行/调试/验证 → 主会话直接闭环；subagent 仅用于隔离审查（如独立 code review），**不派 subagent 做核心写码/迭代**。
 - **混合任务**（如"逆向 API 并复刻其行为"）：按子任务类型分别路由——逆向部分 subagent，编程部分主会话。
 
-**与 Anchorlaw v0.24 的两域对齐**：Anchorlaw 将 "programming is constructive" 收窄到 input-contract 域（§11 audit 注册），**逆向工程明确协议域外**（探索型、验证无界），两模式互补。本框架的执行模式路由与两域结构**同构**：
+**与 Anchorlaw v0.27.1 的两域对齐**：Anchorlaw 将 "programming is constructive" 收窄到 input-contract 域（§11 audit 注册），**逆向工程明确协议域外**（探索型、验证无界），两模式互补。本框架的执行模式路由与两域结构**同构**：
 - **RE 探索域（re-binary/re-code）** = Anchorlaw 域外——由本框架自理（subagent 勘探/分析 + 主会话命令委托闭环）；探索收敛后按 §16.1 **input-contract 确认标准**（v0.14 泛化：semantic convergence，协议中立）产出 confirmed input contract
 - **构造域（swe）** = Anchorlaw input-contract 域内——接 Anchorlaw 流水线语义（判据先行 + evidence saturation + C-gate halted escalation v0.24 + Judge 门禁），但执行模式保留主会话为主（§15.3 SHOULD 允许 host 自选；RE 复刻的"确定的子部分"是混合任务切片，非纯构造域）
 
@@ -528,6 +534,7 @@ history: [{revision, action, detail, at, plan}]
 ## 6. 知识库生长机制
 
 - 知识库分两层：`knowledge/builtin/`（预置，不随项目变化）+ `knowledge/discovered/`（项目运行中 AI 自动写入）。
+- **跨项目实战案例库（2026-11-17 起）**：`knowledge-builtin/portable/` 存放跨项目 A 类实战条目（8 卷 / 273 条），逐字保留来源与置信度——它是**证据库，不是规范**：引用 `portable/<卷>#<条目>`，条目默认继承来源状态（`candidate` 不具规范效力）；提炼检查项在 `rules.md`（人工维护），晋升为 spec 条款需人类确认 + 跨域复现。导入器 `scripts/absorb_portable_knowledge.py`（`--check` 校验索引与 273 条一致）。
 - `knowledge/INDEX.md` 是总入口，分析前先查。
 - **优先级：错误信息 > 正确信息。** 错误/失败链条（现象 → 诊断 → 排除 → 发现）是知识库最高优先级资产：
   - 独立存放于 `discovered/errors/`（每条错误一个文件，`error-<NNN>-<slug>.md`）
@@ -555,6 +562,19 @@ history: [{revision, action, detail, at, plan}]
 - `<name>.bN.yaml` — fan-out 候选分支（多假设并行探索）
 - 升级流程: 旧主文件改名 .vN → 新候选确认为活跃 → 复制为 .yaml
 - **禁止在没有用户确认的情况下删除旧产物**（.vN 保留，.bN 淘汰后仍留审计追溯）
+
+### 框架与协议版本（2026-11-17 起，对齐 Anchorlaw 的 X.Y.Z 纪律）
+
+本框架有**两个独立版本**，不得混用：
+
+| 版本 | 载体 | 何时变化 |
+|------|------|----------|
+| **协议版本 `v1`** | `spec/engineering-framework-v1.md` | 只在**规范条款**（§0-§9 的语义）变化时升版；升版 = 冻结旧文件 + 新增 `spec/engineering-framework-v2.md`；FIX/实现/宿主适配**不改规范条款** |
+| **发布版本 `X.Y.Z`** | `dsh/package.json` + README 更新记录 | `X` = 框架世代（当前 2）；`Y` = 能力/条款级变更；`Z` = **FIX**（实现或宿主适配修复，不产生新 spec 文件、不修改规范条款） |
+
+- **禁止 `-FIX` / `-fix` 后缀**：semver 把它读作预发布标记，排序**低于** `X.Y`，与"修复版更高"的意图相反；FIX 只用第三位数字表达（`2.14.0` → `2.14.1`）。
+- 每个发布在 README 更新记录留一行；Z 释放只列修复，不宣称协议变化；协议版本变化单独记录（§3 引用基线 + spec 新文件 + 引用完整性核对）。
+- **与 Anchorlaw 的对应**：RE 的协议文档是 **v1 单文件**，故 `X.Y` 不直接等于 Anchorlaw 的协议版本；对应关系是 **RE 协议 v1 ↔ Anchorlaw 引用基线**（当前 v0.27.1）。两侧独立演进，任一侧升版都在 §3 登记并跑引用完整性核对。
 
 ### Fan-out 并行
 

@@ -222,7 +222,13 @@ const yaml = await import(pathToFileURL(yamlPath).href)
 
 /** 收集 composition 里所有字符串标量，附带其路径标签（preset 子行在 config.plugins[] 内） */
 function collectStrings(file) {
-  const rows = yaml.load(readFileSync(file, 'utf8'), { schema: include.entryListSchema })
+  // DSH 0.2.2-rc.3 replaced the exported `entryListSchema` with `parseEntryYaml`
+  // (cordis 4.0.0-rc.12 include refactor). Older harnesses only expose the
+  // schema, so prefer the function and fall back.
+  const text = readFileSync(file, 'utf8')
+  const rows = typeof include.parseEntryYaml === 'function'
+    ? include.parseEntryYaml(text)
+    : yaml.load(text, { schema: include.entryListSchema })
   const out = []
   const walk = (value, path) => {
     if (typeof value === 'string') { out.push({ text: value, path }); return }

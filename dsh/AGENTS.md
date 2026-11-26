@@ -6,7 +6,7 @@
 ## 〇、开始工作前（每个 session 必做）
 
 1. 确认仓库状态：仓库根即框架协议/方法论文档事实源，本目录（`dsh/`）即 DSH 适配事实源——**单一仓库，无第二份框架副本**；`archive/reasonix/` 为只读归档（不再同步）。
-2. 跑自检确认基线全绿：`pwsh dsh/scripts/selfcheck.ps1`（七段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁）。脚本会自动识别宿主布局：源码 checkout 用 `node`，DSH Desktop 的 `resources/app.asar` 用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"`（普通 Node 的 fs 读不到 asar；布局取自 `DSH_NODE_EXECUTABLE` / `DSH_INSTALL_DIR`）。
+2. 跑自检确认基线全绿：`pwsh dsh/scripts/selfcheck.ps1`（八段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁 / 已知回归门禁）。脚本会自动识别宿主布局：源码 checkout 用 `node`，DSH Desktop 的 `resources/app.asar` 用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"`（普通 Node 的 fs 读不到 asar；布局取自 `DSH_NODE_EXECUTABLE` / `DSH_INSTALL_DIR`）。
 3. 若改动涉及技能正文：**直接改本目录 `skills/`**（单一事实源，无上游派生），`tests/test_manifest.py` 守护 manifest 形态。
 
 ## 一、本目录定位（一句话）
@@ -25,7 +25,7 @@
 | `assets/plugin.svg` | 子路径插件的图标（导出为 `./plugin/icon`） | **事实源**（改这里） |
 | ~~`preset/`~~ | **已于 2026-09-23 删除**——DSH 0.1.7 起 preset 载体换成 bundle patch，该目录**无任何代码读取**（上游原话 "Nothing reads that directory any more"）。旧分支/旧文档若提到它，那是迁移前形态 | —（已不存在） |
 | `scripts/install.ps1` | 安装/同步到 DSH 运行时（校验 bundle → 跑行门禁 → 技能装用户级 → 逐 profile 选中 bundle）。源码/CLI 宿主走 `dsh plugin --profile <p> add <bundle>`；**Electron-owned `desktop` profile 直接写** `dsh.profile.bundles` + `link:` 依赖 + `node_modules` junction（CLI 按设计拒绝该 profile 名） | 维护工具 |
-| `scripts/selfcheck.ps1` | 七段自检（工具链 / 技能 manifest / **bundle 选中 + 产物对账** / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁）；按 checkout/asar 布局自动选择 `node` 或 Electron-as-node | 维护工具 |
+| `scripts/selfcheck.ps1` | 八段自检（工具链 / 技能 manifest / **bundle 选中 + 产物对账** / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁 / 已知回归门禁）；按 checkout/asar 布局自动选择 `node` 或 Electron-as-node | 维护工具 |
 | `scripts/patch_layer.py` | **patch 层原语**（install/selfcheck 共用）：`--has-row` / `--remove-row`，**row 级**、文本级（保留注释/BOM/行尾/同 insert 的兄弟条目）、原子写、只在真删到 row 时备份；home 级 patch 是合法层，**存在 ≠ 违规** | 维护工具 |
 | `scripts/target_modules.py` | **目标模块管理**（spec §5.7）：`derive`（构建文件/hints 推导）/ `verify`（G1-G9）/ `plan`→`apply`（事务 + 回滚）/ `repair`；产出 `target-modules.yaml` + 守卫用 `state.json` + `_migrations/<rev>/` | 维护工具 |
 | `tests/test_manifest.py` | 技能 manifest 校验（DSH 命名 + frontmatter + 技能集 + 交叉引用） | 维护测试 |
@@ -44,7 +44,7 @@
 
 **载体迁移（2026-09-23，DSH 0.1.7）**：preset 载体由「目录 `$DSH_HOME/.agent-presets/<id>/`」改为「bundle patch 的 `@deepseek-ai/dsh-agent-preset` 声明行」。三处语义差异：① `config.plugins[]` 内的行**不做路径锚定**，本地插件须用**裸包名子路径**（`@dsh-external/dsh-re-framework/plugin`）；② preset 子树的 `baseUrl` 是 **profile 目录**而非 bundle，技能根须经已安装包解析（`createRequire(baseUrl).resolve('<pkg>/package.json')`）；③ 装/选中走 `dsh plugin --profile <p> add <dsh 目录>`。
 
-**Desktop 宿主（2026-11-13，DSH Desktop / Electron）**：运行时打进 `resources/app.asar`（本机 `D:\Program Files\DeepSeek Harness\resources\app.asar\dsh`），profile 为 `~/.dsh/profiles/desktop`（**Electron-owned**）。两处差异：① 安装——CLI 按设计拒绝 `desktop` 这个 profile 名（`apps/cli/src/args.ts` rejectElectronProfile），`install.ps1` 对该 profile **直接写** `dsh.profile.bundles` + `link:` 依赖 + `node_modules/@dsh-external/...` junction，与 `dsh plugin add` 写出的内容同形；② 门禁——普通 Node 的 fs 读不到 asar，`install.ps1`/`selfcheck.ps1` 检测到 `DSH_NODE_EXECUTABLE`（或 asar 布局）时用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"` 跑同一批 `.mjs` 门禁，行门禁从 `node_modules/@deepseek-ai/*` 取包、变量门禁扫编译后的 `lib/`。两个 profile（desktop + web）在同一轮安装中一起维护，不互相替代；技能仍是用户级全局，preset 需重启 Desktop 后新会话选用。
+**Desktop 宿主（2026-11-13，DSH Desktop / Electron）**：运行时打进 `resources/app.asar`（本机 `D:\Program Files\DeepSeek Harness\resources\app.asar\dsh`），profile 为 `~/.dsh/profiles/desktop`（**Electron-owned**）。两处差异：① 安装——CLI 按设计拒绝 `desktop` 这个 profile 名（`apps/cli/src/args.ts` rejectElectronProfile），`install.ps1` 对该 profile **直接写** `dsh.profile.bundles` + `link:` 依赖 + `node_modules/@dsh-external/...` junction，与 `dsh plugin add` 写出的内容同形；② 门禁——普通 Node 的 fs 读不到 asar，`install.ps1`/`selfcheck.ps1` 检测到 `DSH_NODE_EXECUTABLE`（或 asar 布局）时用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"` 跑同一批 `.mjs` 门禁，行门禁从 `node_modules/@deepseek-ai/*` 取包、变量门禁扫编译后的 `lib/`。所有 profile（本机 desktop + tavern + web）在同一轮安装中一起维护，不互相替代；技能仍是用户级全局，preset 需重启 Desktop 后新会话选用。
 
 **安装产物具备身份（2026-09-17 起）**：`install.ps1` 生成 `.re-framework-manifest.yaml`（`source_commit` + `bundle_name` + `selected_in_profiles` + 每件 `sha256`），`selfcheck.ps1` 第 3 段据此**内容对账**（MISSING / DRIFT / ORPHAN 三态，非零退出），并**另检 bundle 是否被某 profile 选中**。**计数检查降为二级断言**——只数目录证明不了内容一致，那是与 preset 行门禁同类的"静默变绿"失败模式。同时 `install.ps1` 清理**本框架命名空间内**的上游已删技能（**绝不触碰 `anchor-*` 等其他框架技能**，`~/.dsh/skills` 是多框架共享树）；profile/home patch 只按 row 摘除（`patch_layer.py`：保留注释/BOM/行尾与同 insert 的兄弟条目，**绝不整文件删除**）。
 
@@ -52,7 +52,7 @@
 
 ## 三、维护铁律（对应 ref-maintain，DSH 版）
 
-1. **自检全绿**：任何改动必须 `dsh/scripts/selfcheck.ps1` 全绿（七段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁）。
+1. **自检全绿**：任何改动必须 `dsh/scripts/selfcheck.ps1` 全绿（八段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁 / 已知回归门禁）。
 2. **单一事实源**：`dsh/skills/` 是技能唯一事实源（直接维护；Reasonix 归档 `archive/reasonix/` 不参与同步）。
 3. **新能力必须配验证**：新增技能/工具要能通过自检或实测证明，否则标注 Unverified。
 4. **命名纪律**：DSH 技能名必须 kebab-case（`core-plan` 而非 `core.plan`）；插件工具名 `ref_*`。
@@ -60,6 +60,7 @@
 6. **preset 纪律（2026-09-23 载体迁移后）**：preset 的**存在性 = bundle 被某 profile 的 `dsh.profile.bundles` 选中**（源码/CLI 宿主由 `install.ps1` 调 `dsh plugin --profile <p> add <dsh 目录>` 完成；**Electron-owned `desktop` profile 由 install.ps1 直接写入同形条目**——`dsh.profile.bundles` 追加 + `link:` 依赖 + `node_modules` junction；DSH >= 0.1.7）。旧的 `~/.dsh/.agent-presets/re-framework/` 目录**已死**——没有任何代码读它，本脚本不再写入，**不要再把它当作"装好了"的证据**。shipped preset（harness 安装目录）一律只读，改动只能以复制派生。
 7. **可见性纪律（v2.1 修订，2026-08-15 用户拍板：无 global 工具组）**：技能走**双路径**——① preset 内的 `skill-filesystem customSkillDirs` 从 **bundle 包内**解析 `skills/`（经 `createRequire(baseUrl).resolve('<pkg>/package.json')`，因 preset 子树 `baseUrl` 是 profile 目录）；② 用户级全局 `~/.dsh/skills/ref-*`（任何 preset/工作目录的会话按需加载）。**工具仅 re-framework preset**（3 个 ref_*：status/merge_index/init——manifest_validate/install 依赖的 Reasonix 脚本已随 2026-08-21 归档退役；其他会话用 pwsh 直接跑脚本：`python scripts/merge_index.py <project>`）；曾尝试的 profile patch global 挂载（`<profile>/cordis.patch.yml` insert 行）已**撤销**（2026-08-15），install.ps1 幂等清理；多框架共存靠前缀命名空间（ref-*/ref_* 与 anchor-*/anchorlaw_*）；**插件 schema 门禁**：install/selfcheck 必跑 tests/check_plugin_schema.mjs（parameters 必须编译后 JSON Schema，扁平 spec 投影给模型无顶层 type → 所有会话崩，2026-08-13 事故教训）。
 8. **提交纪律**：提交前自检全绿；**不自动 git 提交**（仓库可能有未提交的人类改动，提交时机由人类决定）。
+9. **版本纪律（2026-11-17 起，对齐 Anchorlaw）**：发布版本 `X.Y.Z`（`dsh/package.json`）中 **`Z` = FIX**——实现或宿主适配修复，不产生新 spec 文件、不改规范条款；`X` = 框架世代（当前 2），`Y` = 能力/条款级变更。**禁止 `-FIX` / `-fix` 后缀**（semver 视为预发布，排序低于 `X.Y`）。协议版本 **v1**（`spec/engineering-framework-v1.md`）独立演进：升版 = 冻结旧文件 + 新增 `engineering-framework-v2.md`；FIX 释放不碰规范条款（仅 §3 引用基线/证据行可按核对结果更新）。
 
 ## 四、与框架核心及归档的关系（同一个仓库内）
 

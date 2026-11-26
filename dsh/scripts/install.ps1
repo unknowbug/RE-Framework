@@ -359,7 +359,7 @@ if ($targetProfiles.Count -eq 0) {
       $manifest.dependencies | Add-Member -NotePropertyName $bundleName -NotePropertyValue $bundleSpec -Force
       [IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Depth 8), (New-Object System.Text.UTF8Encoding($false)))
 
-      $scopeDir = Join-Path $desktopDir ('node_modules\' + (Split-Path $bundleName -Parent))
+      $scopeDir = Join-Path (Join-Path $desktopDir 'node_modules') (Split-Path $bundleName -Parent)
       New-Item -ItemType Directory -Path $scopeDir -Force | Out-Null
       $linkPath = Join-Path $scopeDir (Split-Path $bundleName -Leaf)
       if (-not (Test-Path $linkPath)) {
