@@ -61,6 +61,8 @@ const GUARDS = [
     why: '2026-11-17 DSH 0.2.2-rc.3 起 include 不再导出 entryListSchema' },
   { id: 'gate-zero-row-fails', kind: 'present', file: 'dsh/tests/audit_preset_rows.mjs', needle: 'NO SCAN',
     why: '2026-11-27 Anchorlaw 0.26.2：解析 0 行却报绿 = 假绿；零覆盖必须 fail-closed' },
+  { id: 'spec-equivalence-ladder', kind: 'present', file: 'spec/engineering-framework-v1.md', needle: '### 5.8 等价性证据形态阶梯',
+    why: '2026-11-28 Portable-Knowledge P03 晋升 spec §5.8；删除即回退到只用行数/计数命名的弱证据' },
   { id: 'prompt-gate-parse-entry-yaml', kind: 'present', file: 'dsh/tests/audit_prompt_variables.mjs', needle: 'parseEntryYaml',
     why: '同 gate-parse-entry-yaml（变量门禁共享同一解析器）' },
 ]

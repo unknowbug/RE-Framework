@@ -3,6 +3,10 @@ schema_version: 1
 class_name: <name>
 locator: <地址 | 字节码偏移 | 类全名>            # 语言无关定位
 status: draft | candidate | confirmed
+producer:                                       # spec §4.6；subagent 返回后回填
+  dsh_name: <role-scope>
+  session_id: <session>
+  preset: re-framework
 members:
   - offset: <偏移>
     type: <type>

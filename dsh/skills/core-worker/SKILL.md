@@ -21,7 +21,7 @@ whenToUse: 需要隔离分析/解读原始数据或阶段产物并产出 .artifa
 
 1. **解读**：解读原始数据/阶段产物（trace 输出、探针结果、phase 数据、反编译输出）——worker 的核心工作（实战实证：大量解读任务因框架无 worker 角色曾被勘探角色顶替，职责错位）
 2. **分析**：按任务类型加载领域动作 skill 作操作手册执行精确分析
-3. **产出**：`.artifacts/` 产物（draft）+ 按工作单回填 producer + 附 retry 轮次与自检声明；**不写 `index.yaml`**（Lead 统一写）
+3. **产出**：`.artifacts/` 产物（draft）+ 按工作单回填 producer + 附 retry 轮次与自检声明；**不写根 `index.yaml`**（可交 `index-entry.yaml` 片段，Lead 统一合并）
 
 ## 操作手册（按任务类型加载领域动作 skill）
 
@@ -37,7 +37,14 @@ whenToUse: 需要隔离分析/解读原始数据或阶段产物并产出 .artifa
 
 ## 产出
 
-`.artifacts/<binary|project>/classes|functions/.../<name>.yaml`（status: draft、来源定位、证据、retry 轮次、`producer`）+ 交回 Lead 更新 `.artifacts/index.yaml` 主索引。
+`.artifacts/<binary|project>/classes|functions/.../<name>.yaml`（status: draft、来源定位、证据、retry 轮次、`producer`）+ 交回 Lead 合并（可附 `index-entry.yaml` 片段）。
+
+## 便携检查项（P 规则，归因/解读用）
+
+- 对拍中间层用**解析产物树 dump**（P01）；`0==0` 不算覆盖（P05）；门禁只判"存在/数量"不算语义（P09）。
+- 探针先 sanity check（P11）；残差先**阶段分解**（P12）；打印坐标 ≠ 采样坐标（P13）。
+- 死参数必须行为化验证（P14）；静态机制断言先实测（P15）；env 默认值/门控三查（P16）。
+- 排除法列出未测候选（P17）；VOID/GATE 非零退出（P18）；一次性诊断隔离（P19）；judge 复算不复用同一变换代码（P20）。
 
 ## 约束
 

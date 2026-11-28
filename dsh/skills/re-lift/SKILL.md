@@ -46,6 +46,11 @@ whenToUse: 二进制逆向需高精度还原函数/方法时（汇编→C++ 六�
 - 对应的 anchor 载体文件（Python `_anchors.py` / 等效）
 - 无法独立编译时 → `.artifacts/uncompilable_functions.yaml` 声明（Anchorlaw §9.3）
 
+## 便携检查项（P 规则）
+
+- 整数位宽/符号/溢出（P28）、JSON 类型形态（P29）、文档与源码失准（P30）。
+- 反编译/javap 输出不可直接信任；引用源码树/反编译参照前核版本/DataVersion（P38）。
+
 ## 约束
 
 - 产物默认 `draft`；验证走 Anchorlaw（全功能 test / degraded 声明）。

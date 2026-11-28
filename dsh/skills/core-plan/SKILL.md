@@ -54,7 +54,7 @@ whenToUse: 任何工程任务（re-binary / re-code / swe 所有模块）开始�
 - 委派名预置为 `<role>-<scope>`（如 `worker-mod-a`、`judge-mod-a@3`），保证同父唯一；执行阶段只按预置工作单派单，不临时改名/改范围。
 - `write_scopes` 在计划阶段就排互斥（模块目录/`.bN`/`reviews/`）；**`index.yaml` 只由 Lead 写**，工作单一律 `index_update: false`。
 - 计划中标记每个工作单是否需要 judge（`acceptance.requires_judge`），与 §4.5 的 judge 预置一一对应。
-- Team 是可选：计划里写 `team.enabled: false`；只有模块分区 ≥4 或长流水线才在计划阶段声明 Team 任务与 `blocked_by`。
+- Team 是可选：计划里写 `team.enabled: false`；只有模块分区 ≥4（带依赖）或长流水线才在计划阶段声明 Team 任务与 `blocked_by`。
 
 ## 架构文档模板
 
@@ -117,6 +117,13 @@ whenToUse: 任何工程任务（re-binary / re-code / swe 所有模块）开始�
    - judge:  节点 <W> | 级别: MUST/SHOULD | 审查对象: <快照/git diff/验证记录>
    - knowledge: 节点 <V> | 结论性落盘 | subagent 产出 + 主会话应用验证
 ```
+
+## 便携检查项（P 规则，Phase 0 设计判据用）
+
+- 预登记判据写死**读法**（取哪列/哪档/边界归属）（P02）；等价性证据按 **整文件 sha > 多重集 > 行数/计数** 取强（P03；已入 spec §5.8）。
+- 判据覆盖面失效 → 声明 VOID/降级，不把"没测到"写成"不存在"（P06）；跨 run 先做**同配置噪声基线**（P07）；口径换代旧基线**同口径复算**（P08）。
+- 先修再发版：修后 ≡ 修前在噪声带内 + "臂变量生效"自证（P10）。
+- 明细与证据：`knowledge-builtin/portable/rules.md`（P01-P40）。
 
 ## 约束
 

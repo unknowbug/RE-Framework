@@ -7,3 +7,4 @@ entries:
     path: '<产物相对路径>'
     kind: class | method | function | xref
     status: draft | candidate | confirmed
+    producer: <dsh_name | lead>              # spec §4.6；Lead 合并时回填

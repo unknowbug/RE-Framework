@@ -54,7 +54,7 @@ pwsh dsh/scripts/selfcheck.ps1
 
 ## 上游 DSH 升级核对（每次 harness 升级后）
 
-- harness 升级后按序核对：① `pwsh dsh/scripts/selfcheck.ps1` 全绿（第 5/6 段任一不可执行即 FAIL，不是通过）；② 有升级指南时逐条读 `docs/upgrade-guide/<版本>/`，**自定义 prompt 模板类改动必然影响 persona**（2026-10-10 事故：`{{cwd}}` 被删）；③ 改 `dsh/cordis.patch.yml` 跟上游 → 在 `dsh/SYNC.md` 登记（来源 commit + 差异 + 证据）→ README 更新记录 + `package.json` 版本号。
+- harness 升级后按序核对：① `pwsh dsh/scripts/selfcheck.ps1` 全绿（第 5/6 段任一不可执行即 FAIL，不是通过）；② 有升级指南时逐条读 `docs/upgrade-guide/<版本>/`，**自定义 prompt 模板类改动必然影响 persona**（2026-10-10 事故：`{{cwd}}` 被删）；③ 改 `dsh/cordis.patch.yml` 跟上游 → 在 `dsh/SYNC.md` 登记（来源 commit + 差异 + 证据）→ `CHANGELOG.md` + `package.json` 版本号。
 
 ## 约束
 

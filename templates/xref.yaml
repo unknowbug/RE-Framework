@@ -1,6 +1,7 @@
 # 跨引用模板 — 复制到 <project>/.artifacts/cross_refs/xref_<NNN>.yaml
 编号: xref_<NNN>
 状态: draft | candidate | confirmed
+producer: {dsh_name: <role-scope>, session_id: <session>, preset: re-framework}   # spec §4.6
 从:
   binary: <来源>
   定位: <locator>

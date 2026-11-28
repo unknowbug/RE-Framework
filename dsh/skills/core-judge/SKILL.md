@@ -54,6 +54,12 @@ whenToUse: confirmed 授予前/重大转向/收尾交付 MUST、candidate 授予
 
 模块验收另须写 `.artifacts/modules/<id>/reviews/<rev>.md`（front-matter：`scope: module:<id>@<rev>`、`verdict: pass|reject`、`findings`）；这是 G8 与守卫 R3 放行 candidate 的唯一依据，缺它则 candidate 写入被拒。
 
+## 便携检查项（P 规则，审查用）
+
+- 门禁用**注入式负向测试**自证（P04）；判据覆盖域失效按 VOID/降级（P06）；存在/数量门不算语义（P09）。
+- 排除法列出未测候选（P17）；VOID/GATE 非零退出（P18）；judge 复算不复用同一变换代码（P20）。
+- judge 门强制、收敛门 ≠ 自评（P39）；交接物用确定性 dump，接手先核 git HEAD（P40）。
+
 ## 约束
 
 - 审查意见是建议不是命令；用户是最终拍板者（Anchorlaw §16.1 confirm hook）。

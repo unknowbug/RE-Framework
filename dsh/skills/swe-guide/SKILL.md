@@ -67,6 +67,14 @@ anchorlaw-scanner check src/ --lang cpp     # C++/Go/Java 注解提取（v0.17�
 - 遵循 core.artifact（.artifacts/ + index.yaml）
 - anchor 载体按 Anchorlaw §13 三语言等价：Python 装饰器 / TS JSDoc / C++ 行注释
 
+## 便携检查项（P 规则，工具链/语言/性能）
+
+- 构建 daemon/env 会吞参数（P21）；缓存/时间戳 ≠ 本次执行体（P22）；裁剪历史参数会丢必带项（P23）。
+- 写入型工具 round-trip 丢注释（P24）；目录级 ignore 吃资产（P25）；路径/编码/CRLF 坑（P26）；PowerShell 语义坑（P27）。
+- 整数位宽/符号/溢出（P28）；JSON 类型形态（P29）；文档可能先于源码失准（P30）。
+- 跨 session 基准不可续推（P31）；bench 顺序效应（P32）；延迟/吞吐分母（P33）；并发度 = 调用方池宽（P34）。
+- 明细与证据：`knowledge-builtin/portable/rules.md`（P21-P34）。
+
 ## 约束
 
 - 本 skill 只指路；Anchorlaw 协议正文（anchor 语义/source 规则/staleness/噪声卡）一律引用原文。

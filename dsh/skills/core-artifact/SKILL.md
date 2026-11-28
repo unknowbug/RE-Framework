@@ -54,7 +54,7 @@ whenToUse: 任何产物需要落盘或索引时——.artifacts/（index.yaml �
 
 每次 worker/scout/judge 产出必须同时满足：
 1. **落盘**: 产物写入 `.artifacts/modules/<id>/` 或 `unassigned/`（或 `.investigations/`）
-2. **索引（Lead 单写）**: 产出者只交回产物路径与元数据；`index.yaml` 由 **Lead** 统一写（`entries` 加一行，带 `target_module` / `module_revision`）。子代理写索引视为越权（spec §4.6）
+2. **索引（Lead 单写）**: 产出者可写 `index-entry.yaml` 片段（`ref_merge_index` 输入），但**不得写根 `index.yaml`**；Lead 负责合并（`entries` 加一行，带 `target_module` / `module_revision`）。子代理写根索引视为越权（spec §4.6）
 3. **状态标记**: `status: draft | candidate`（AI 绝不写 confirmed）；**candidate 必须有该模块当前修订的 `reviews/<rev>.md`**（G8 / 守卫 R3）
 4. **producer**: 产物带 `producer: {dsh_name, session_id, preset}`，与 Work Order 的委派身份一致（spec §4.6）
 

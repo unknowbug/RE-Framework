@@ -32,7 +32,8 @@
 #   7. target-module manager + contract guard (spec §5.7) via fixture tests:
 #      scripts/target_modules.py (derive / G1-G9 / plan-apply-rollback) and the
 #      plugin guard (R1/R3/R5 + audit + REF_GUARD=off); plus the Work Order
-#      contract template (spec §4.6) — Team-off compatible defaults, Lead-only index.
+#      contract template (spec §4.6) and the Portable-Knowledge index integrity
+#      (273 entries / status counts / every rules.md key resolves).
 #   8. known regressions via tests/audit_known_regressions.mjs — every already
 #      fixed defect ({{cwd}}, backgroundMode, removed subpaths, inject race,
 #      desktop direct-install, asar runtime, parseEntryYaml, zero-row silent
@@ -340,7 +341,7 @@ if ($variableAudit -eq 2) {
 # patch-layer tests lock the "a patch file is not a violation, a row is" rule
 # (PR #2 / 2026-09-18). All local; no harness checkout needed.
 Write-Host ""
-Write-Host "[7] fixture gates (target modules / contract guard / patch layer / work order)"
+Write-Host "[7] fixture gates (target modules / contract guard / patch layer / work order / portable index)"
 if ($pythonExe) {
   & $pythonExe (Join-Path (Join-Path $srcRoot 'tests') 'test_target_modules.py') 2>&1 | Select-Object -Last 6
   if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: target_modules fixture tests failed"; $fail = 1 }
@@ -348,6 +349,8 @@ if ($pythonExe) {
   if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: patch-layer tests failed"; $fail = 1 }
   & $pythonExe (Join-Path (Join-Path $srcRoot 'tests') 'test_work_order.py') 2>&1 | Select-Object -Last 2
   if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: work-order contract test failed"; $fail = 1 }
+  & $pythonExe (Join-Path (Join-Path $srcRoot 'tests') 'test_portable_index.py') 2>&1 | Select-Object -Last 2
+  if ($LASTEXITCODE -ne 0) { Write-Host "  FAIL: portable index/data test failed"; $fail = 1 }
 } else { $fail = 1 }
 $guardAudit = Invoke-HarnessGate (Join-Path (Join-Path $srcRoot 'tests') 'test_contract_guard.mjs')
 if ($guardAudit -ne 0) { Write-Host "  FAIL: contract-guard tests failed"; $fail = 1 }

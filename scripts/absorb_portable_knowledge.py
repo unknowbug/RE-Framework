@@ -33,8 +33,29 @@ VOLUMES = [
 ]
 
 ENTRY = re.compile(r"^### #((?:V)?\d+)\s+(.+?)\s*$")
-STATUS = re.compile(r"置信度\**\s*[：:]\s*(candidate|confirmed)", re.IGNORECASE)
 SOURCE = re.compile(r"^>\s*出处[：:]\s*(.+)$")
+
+
+def status_of(body: str) -> str:
+    """Read the confidence from the entry's own 置信度 line.
+
+    Labels vary: `置信度：candidate`, `**置信度**：confirmed`, or
+    `**时间/置信度/module**：2609xx，candidate`. Only a bare colon-anchored
+    regex misses the latter two and silently turns most entries into
+    "unspecified" (the v2.15.0 index reported 3 confirmed while the source had 92).
+    """
+    for line in body.splitlines():
+        if "置信度" not in line:
+            continue
+        low = line.lower()
+        if "confirmed" in low:
+            return "confirmed"
+        if "candidate" in low:
+            return "candidate"
+        if "draft" in low:
+            return "draft"
+        return "unspecified"
+    return "unspecified"
 
 EXPECTED_TOTAL = 273
 
@@ -51,7 +72,7 @@ def parse_volume(path: Path, volume_id: str) -> list[dict]:
     for n, (start, entry_id, title) in enumerate(heads):
         end = heads[n + 1][0] if n + 1 < len(heads) else len(lines)
         body = "\n".join(lines[start:end])
-        status = STATUS.search(body)
+        status = status_of(body)
         source = SOURCE.search(body)
         key = f"{volume_id}#{entry_id}"
         seen[key] = seen.get(key, 0) + 1
@@ -62,7 +83,7 @@ def parse_volume(path: Path, volume_id: str) -> list[dict]:
             "volume": volume_id,
             "id": entry_id,
             "title": title,
-            "status": status.group(1).lower() if status else "unspecified",
+            "status": status,
             "source": source.group(1).strip() if source else "",
         })
     return entries

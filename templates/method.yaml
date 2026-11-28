@@ -3,6 +3,10 @@ schema_version: 1
 name: <方法名>
 locator: <地址 | 字节码偏移 | 签名>              # 语言无关定位
 status: draft | candidate | confirmed
+producer:                                       # spec §4.6；subagent 返回后回填
+  dsh_name: <role-scope>
+  session_id: <session>
+  preset: re-framework
 signature: <签名>
 return_type: <类型>
 anchor_path: <对应 anchor 载体路径，如 _anchors.py 或 JSDoc/C++ 注释位置>
