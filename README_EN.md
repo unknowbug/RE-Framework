@@ -51,7 +51,7 @@ RE-Framework is packaged as a DSH bundle: the repository-root `package.json` dec
 # Source install (available through Plugin Hub now; requires DSH >= 0.2.0)
 dsh plugin --profile web add github:unknowbug/RE-Framework
 
-# npm install (after the package is published; the in-app plugin center needs npm)
+# npm install (2.20.0 is published; the in-app plugin center needs npm)
 dsh plugin --profile web add @unknowerror/dsh-re-framework
 ```
 

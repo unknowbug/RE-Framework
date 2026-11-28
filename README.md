@@ -51,7 +51,7 @@ RE-Framework 已按 DSH Bundle 规范打包，仓库根 `package.json` 声明 `d
 # 源码安装（Plugin Hub 当前可用；需要 DSH >= 0.2.0）
 dsh plugin --profile web add github:unknowbug/RE-Framework
 
-# npm 安装（包发布后可用；插件中心的展示需要 npm 包）
+# npm 安装（已发布 2.20.0；插件中心的展示需要 npm 包）
 dsh plugin --profile web add @unknowerror/dsh-re-framework
 ```
 
