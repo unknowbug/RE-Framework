@@ -258,7 +258,7 @@
             name: '@deepseek-ai/dsh-skill-filesystem'
             config:
               customSkillDirs:
-                - !!js "process.getBuiltinModule('node:path').join(process.getBuiltinModule('node:path').dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('@dsh-external/dsh-re-framework/package.json')), 'skills')"
+                - !!js "(() => { const p = process.getBuiltinModule('node:path'); const fs = process.getBuiltinModule('node:fs'); const root = p.dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('@dsh-external/dsh-re-framework/package.json')); const nested = p.join(root, 'dsh', 'skills'); return fs.existsSync(nested) ? nested : p.join(root, 'skills'); })()"
 
           - id: tool-skill
             name: '@deepseek-ai/dsh-tool-skill'

@@ -1,6 +1,6 @@
 {
   "name": "@dsh-external/dsh-re-framework",
-  "version": "2.19.0",
+  "version": "2.20.0",
   "private": true,
   "description": "RE-Framework 方法论工作台 —— 逆向+编程通用工程框架的 DSH 宿主适配 bundle：re-framework agent preset + ref_* 工具插件",
   "type": "module",
@@ -14,7 +14,8 @@
     "plugins/re-framework-tools.js",
     "cordis.patch.yml",
     "assets/plugin.svg",
-    "locale/plugin/*.json"
+    "locale/plugin/*.json",
+    "skills/"
   ],
   "engines": {
     "dsh": ">=0.2.0 <0.3.0"

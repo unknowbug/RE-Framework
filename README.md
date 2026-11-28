@@ -43,11 +43,30 @@ pwsh dsh/scripts/selfcheck.ps1
 
 DSH Desktop（Electron / `app.asar`）由同一轮安装覆盖；安装后需**重启 Desktop** 并在新会话选择 RE-Framework。详见 [dsh/README.md](dsh/README.md)。
 
+## 从 DSH 插件市场安装
+
+RE-Framework 已按 DSH Bundle 规范打包，仓库根 `package.json` 声明 `dsh.bundle.patch`：
+
+```powershell
+# 源码安装（Plugin Hub 当前可用；需要 DSH >= 0.2.0）
+dsh plugin --profile web add github:unknowbug/RE-Framework
+
+# npm 安装（包发布后可用；插件中心的展示需要 npm 包）
+dsh plugin --profile web add @dsh-external/dsh-re-framework
+```
+
+- **Plugin Hub 分类**：Skills & Agents（agent）→ 子智能体 / 技能包；不是 Development & Operations。
+- **兼容**：DSH `>=0.2.0 <0.3.0`；Desktop 与 CLI 同一 bundle；安装后重启并新开会话。
+- **权限**：工作区文件读写、subprocess（python 脚本）、subagent 工具；不发网络请求，不读取工作区外凭据。
+- **许可证**：MIT（见 [LICENSE](LICENSE)）。
+
 ## 架构
 
 ```
 RE-Framework/
 ├── AGENTS.md                  # DSH-first 索引（自动加载入口）
+├── package.json               # DSH bundle 入口（Plugin Hub / npm 打包）
+├── LICENSE                    # MIT
 ├── spec/                      # 框架协议（§1-§9；§4.6 协作契约、§5.7 目标模块、§5.8 等价性阶梯）
 ├── dsh/                       # DSH 宿主适配层（唯一维护区）
 │   ├── skills/                # 17 个 ref-* 技能（单一事实源）
@@ -91,6 +110,10 @@ RE-Framework/
 - 技能**单一事实源**是 `dsh/skills/`；安装产物一律可再生，改完跑 `install.ps1`，不要手改 `~/.dsh`。
 - 任何改动必须 `selfcheck.ps1` 八段全绿；门禁 fail-closed，不可执行按失败处理。
 - 版本：发布版 `X.Y.Z`，`Z` = FIX（不产生新 spec 文件）；协议版本独立（当前 v1）。完整规则与历史见 [CHANGELOG.md](CHANGELOG.md)。
+
+## License
+
+MIT。见 [LICENSE](LICENSE)。
 
 ## 归档
 

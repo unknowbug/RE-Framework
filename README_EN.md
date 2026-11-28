@@ -43,11 +43,30 @@ pwsh dsh/scripts/selfcheck.ps1
 
 DSH Desktop (Electron / `app.asar`) is covered by the same install; restart Desktop and choose RE-Framework in a new session. See [dsh/README.md](dsh/README.md).
 
+## Install from the DSH plugin market
+
+RE-Framework is packaged as a DSH bundle: the repository-root `package.json` declares `dsh.bundle.patch`.
+
+```powershell
+# Source install (available through Plugin Hub now; requires DSH >= 0.2.0)
+dsh plugin --profile web add github:unknowbug/RE-Framework
+
+# npm install (after the package is published; the in-app plugin center needs npm)
+dsh plugin --profile web add @dsh-external/dsh-re-framework
+```
+
+- **Plugin Hub category**: Skills & Agents (agent) → subagents / skill packs; not Development & Operations.
+- **Compatibility**: DSH `>=0.2.0 <0.3.0`; the same bundle works in Desktop and CLI; restart and open a new session after install.
+- **Permissions**: workspace file read/write, subprocess (python scripts), subagent tools; no network requests, no credentials outside the workspace.
+- **License**: MIT (see [LICENSE](LICENSE)).
+
 ## Architecture
 
 ```
 RE-Framework/
 ├── AGENTS.md                  # DSH-first index (auto-loaded entry)
+├── package.json               # DSH bundle entry (Plugin Hub / npm packaging)
+├── LICENSE                    # MIT
 ├── spec/                      # Framework protocol (§1-§9; §4.6 contract, §5.7 modules, §5.8 evidence ladder)
 ├── dsh/                       # DSH host adaptation (the only maintained area)
 │   ├── skills/                # 17 ref-* skills (single source of truth)
@@ -91,6 +110,10 @@ RE-Framework/
 - The **single source of truth** for skills is `dsh/skills/`; installed artifacts are regenerable. Re-run `install.ps1` after edits; never hand-edit `~/.dsh`.
 - Every change must pass all eight self-check sections; gates are fail-closed (unable to run counts as failure).
 - Versioning: release `X.Y.Z`, where `Z` is a FIX (no new spec file); the protocol version is separate (currently v1). Full rules and history: [CHANGELOG_EN.md](CHANGELOG_EN.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).
 
 ## Archive
 

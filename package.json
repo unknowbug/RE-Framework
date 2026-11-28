@@ -1,0 +1,60 @@
+{
+  "name": "@dsh-external/dsh-re-framework",
+  "version": "2.20.0",
+  "description": "RE-Framework — 逆向 + 编程的通用工程方法论工作台（DSH bundle：17 个技能 + re-framework preset + ref_* 工具 + 契约守卫）",
+  "type": "module",
+  "license": "MIT",
+  "author": "unknowbug",
+  "homepage": "https://github.com/unknowbug/RE-Framework#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unknowbug/RE-Framework.git"
+  },
+  "bugs": {
+    "url": "https://github.com/unknowbug/RE-Framework/issues"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "reverse-engineering",
+    "binary-analysis",
+    "deobfuscation",
+    "engineering-workflow",
+    "multi-agent",
+    "subagents"
+  ],
+  "exports": {
+    "./plugin": "./dsh/plugins/re-framework-tools.js",
+    "./plugin/icon": "./dsh/assets/plugin.svg",
+    "./plugin/locale/*.json": "./dsh/locale/plugin/*.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dsh/plugins/re-framework-tools.js",
+    "dsh/cordis.patch.yml",
+    "dsh/assets/plugin.svg",
+    "dsh/locale/plugin/*.json",
+    "dsh/skills/",
+    "dsh/package.json",
+    "spec/",
+    "templates/",
+    "knowledge-builtin/",
+    "scripts/merge_index.py",
+    "scripts/target_modules.py",
+    "scripts/absorb_portable_knowledge.py",
+    "AGENTS.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "dsh": ">=0.2.0 <0.3.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./dsh/cordis.patch.yml"
+    }
+  }
+}
