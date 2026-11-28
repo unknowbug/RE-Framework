@@ -15,12 +15,13 @@ whenToUse: 需要隔离分析/解读原始数据或阶段产物并产出 .artifa
 - 本角色在**隔离子进程**中运行：工作上下文（工具调用/中间推理）绝不进入主会话。
 - 只返回：最终答案 + 引用的产物路径。不返回中间过程。
 - 产物写 `.artifacts/`，状态默认 `draft`（AI 绝不写 confirmed）。
+- **协作契约（spec §4.6）**：开工前读 Work Order（`templates/agent-work-order.yaml`）——scope / inputs / deliverables / acceptance / stop 必须与工作单一致；产物写 `producer: {dsh_name, session_id, preset}`；**索引只由 Lead 写**，本角色只交回产物路径。子代理之间不交换结论/产物（Lead-only 编排）。
 
 ## 职责
 
 1. **解读**：解读原始数据/阶段产物（trace 输出、探针结果、phase 数据、反编译输出）——worker 的核心工作（实战实证：大量解读任务因框架无 worker 角色曾被勘探角色顶替，职责错位）
 2. **分析**：按任务类型加载领域动作 skill 作操作手册执行精确分析
-3. **产出**：`.artifacts/` 产物（draft）+ 更新 index.yaml + 附 retry 轮次与自检声明
+3. **产出**：`.artifacts/` 产物（draft）+ 按工作单回填 producer + 附 retry 轮次与自检声明；**不写 `index.yaml`**（Lead 统一写）
 
 ## 操作手册（按任务类型加载领域动作 skill）
 
@@ -36,7 +37,7 @@ whenToUse: 需要隔离分析/解读原始数据或阶段产物并产出 .artifa
 
 ## 产出
 
-`.artifacts/<binary|project>/classes|functions/.../<name>.yaml`（status: draft、来源定位、证据、retry 轮次）+ 更新 `.artifacts/index.yaml` 主索引。
+`.artifacts/<binary|project>/classes|functions/.../<name>.yaml`（status: draft、来源定位、证据、retry 轮次、`producer`）+ 交回 Lead 更新 `.artifacts/index.yaml` 主索引。
 
 ## 约束
 
@@ -44,3 +45,4 @@ whenToUse: 需要隔离分析/解读原始数据或阶段产物并产出 .artifa
 - 交付代码前过 **subagent 写码强制自检清单**（spec §4.4），结果附在交付物。
 - retry 轮次如实记录（spec §5.3 retry 字段）；超限回勘探取新证据（§4.5 执行强制链）。
 - 角色边界：只读勘探走 `re.scout` / `recode.scout`（本角色不承担勘探）；审查走 `core.judge`（本角色不自我审查）。
+- 叶子角色：不再委派子代理；需要再拆解时把拆分理由交回 Lead，由 Lead 新建工作单。

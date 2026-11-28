@@ -1,0 +1,58 @@
+# Agent Work Order — RE-Framework 多智能体协作契约模板（spec §4.6）
+#
+# 用法：每次 subagent/subagent_fork 委派时复制本文件，填完后
+#   ① 作为 prompt 首段；或 ② 落盘到 .investigations/<任务>/work-orders/<id>.yaml 并引用路径。
+# 本文件本身是一份**合法的默认工作单**（worker/module），不是占位符集合；
+# 把 <...> 换成实际值即可。Team 字段默认关闭；Team 不可用时保持默认值。
+schema_version: 1
+id: WO-2-01
+role: worker                     # scout | worker | judge | reconciler
+phase: 2                         # 0 | 1 | 2 | 2.5 | 3
+objective: "<一句话目标>"
+
+scope:
+  kind: module                   # module | hypothesis | file-set | global-readonly
+  module: "<module-id>"
+  module_revision: 1             # 对应 target-modules.yaml 的 revision
+  hypothesis: null               # kind=hypothesis 时填 <id>
+  write_scopes:                  # 并行工作单必须互斥；与 DSH Team writeScopes 同形
+    - ".artifacts/modules/<module-id>/"
+  read_only: []
+
+inputs:
+  contract_ref: ".investigations/<task>/architecture.md"
+  contract_sha256: null          # 可选；防止用过期契约开工
+  artifact_refs: []
+  read_only_refs: []
+
+deliverables:
+  artifacts:
+    - path: ".artifacts/modules/<module-id>/<name>.yaml"
+      status: draft              # 只允许 draft | candidate；confirmed 仅人类
+      required_fields: [evidence, source, retry]
+  index_update: false            # 索引只由 Lead 写；子角色一律 false
+  review_record: null            # judge 必填：.artifacts/modules/<id>/reviews/<rev>.md
+
+acceptance:
+  criteria: []                   # 预登记判据（优先可机械检查）
+  negative_tests: []             # 门禁类任务必填注入式反证
+  requires_judge: false
+
+stop:
+  retry_cap: 3                   # 证据饱和：连续 3 轮无新数据层证据即停
+  evidence_saturation: true
+  halt_on: []                    # B1-B4 级阻塞条件
+
+authority:
+  confirmed_by: human-only       # 任何角色不得改写本字段
+
+producer:                        # 子代理返回后由 Lead 回填
+  dsh_name: "worker-mod-a"       # DSH subagent name：<role>-<scope>，同父唯一
+  session_id: null
+  preset: re-framework
+
+team:                            # 默认关闭；仅 B 档 Team 试点填写
+  enabled: false
+  task_id: null
+  blocked_by: []
+  owner: null

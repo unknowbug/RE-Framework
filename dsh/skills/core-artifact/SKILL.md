@@ -54,10 +54,11 @@ whenToUse: 任何产物需要落盘或索引时——.artifacts/（index.yaml �
 
 每次 worker/scout/judge 产出必须同时满足：
 1. **落盘**: 产物写入 `.artifacts/modules/<id>/` 或 `unassigned/`（或 `.investigations/`）
-2. **索引更新**: 新产物同步写入 `index.yaml`（`entries` 加一行，带 `target_module` / `module_revision`）
+2. **索引（Lead 单写）**: 产出者只交回产物路径与元数据；`index.yaml` 由 **Lead** 统一写（`entries` 加一行，带 `target_module` / `module_revision`）。子代理写索引视为越权（spec §4.6）
 3. **状态标记**: `status: draft | candidate`（AI 绝不写 confirmed）；**candidate 必须有该模块当前修订的 `reviews/<rev>.md`**（G8 / 守卫 R3）
+4. **producer**: 产物带 `producer: {dsh_name, session_id, preset}`，与 Work Order 的委派身份一致（spec §4.6）
 
-三者缺一 = 产物契约未满足，judge 驳回。
+四者缺一 = 产物契约未满足，judge 驳回。
 
 ## schema 速查（完整版见 spec §5）
 
@@ -74,7 +75,7 @@ locator 语言无关：虚拟地址（re-binary）/ 字节码偏移或类全名�
 - 产物归属模块记录在 index.yaml 的 `module` 字段——模块卸载不影响已落盘产物。
 - 删除/移动产物需用户确认（见 core.version）。
 
-## 副作用边界与逆登记（spec §5.6，Anchorlaw v0.26 §9.8）
+## 副作用边界与逆登记（spec §5.6，Anchorlaw v0.27.1 §9.8）
 
 落盘动作本身可能是**副作用**，不只是"写出一个产物"。落盘时 MUST 判断并声明：
 

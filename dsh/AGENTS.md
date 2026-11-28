@@ -6,7 +6,7 @@
 ## 〇、开始工作前（每个 session 必做）
 
 1. 确认仓库状态：仓库根即框架协议/方法论文档事实源，本目录（`dsh/`）即 DSH 适配事实源——**单一仓库，无第二份框架副本**；`archive/reasonix/` 为只读归档（不再同步）。
-2. 跑自检确认基线全绿：`pwsh dsh/scripts/selfcheck.ps1`（八段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁 / 已知回归门禁）。脚本会自动识别宿主布局：源码 checkout 用 `node`，DSH Desktop 的 `resources/app.asar` 用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"`（普通 Node 的 fs 读不到 asar；布局取自 `DSH_NODE_EXECUTABLE` / `DSH_INSTALL_DIR`）。
+2. 跑自检确认基线全绿：`pwsh dsh/scripts/selfcheck.ps1`（八段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 + 工作单 fixture 门禁 / 已知回归门禁）。脚本会自动识别宿主布局：源码 checkout 用 `node`，DSH Desktop 的 `resources/app.asar` 用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"`（普通 Node 的 fs 读不到 asar；布局取自 `DSH_NODE_EXECUTABLE` / `DSH_INSTALL_DIR`）。
 3. 若改动涉及技能正文：**直接改本目录 `skills/`**（单一事实源，无上游派生），`tests/test_manifest.py` 守护 manifest 形态。
 
 ## 一、本目录定位（一句话）
@@ -25,7 +25,7 @@
 | `assets/plugin.svg` | 子路径插件的图标（导出为 `./plugin/icon`） | **事实源**（改这里） |
 | ~~`preset/`~~ | **已于 2026-09-23 删除**——DSH 0.1.7 起 preset 载体换成 bundle patch，该目录**无任何代码读取**（上游原话 "Nothing reads that directory any more"）。旧分支/旧文档若提到它，那是迁移前形态 | —（已不存在） |
 | `scripts/install.ps1` | 安装/同步到 DSH 运行时（校验 bundle → 跑行门禁 → 技能装用户级 → 逐 profile 选中 bundle）。源码/CLI 宿主走 `dsh plugin --profile <p> add <bundle>`；**Electron-owned `desktop` profile 直接写** `dsh.profile.bundles` + `link:` 依赖 + `node_modules` junction（CLI 按设计拒绝该 profile 名） | 维护工具 |
-| `scripts/selfcheck.ps1` | 八段自检（工具链 / 技能 manifest / **bundle 选中 + 产物对账** / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁 / 已知回归门禁）；按 checkout/asar 布局自动选择 `node` 或 Electron-as-node | 维护工具 |
+| `scripts/selfcheck.ps1` | 八段自检（工具链 / 技能 manifest / **bundle 选中 + 产物对账** / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 + 工作单 fixture 门禁 / 已知回归门禁）；按 checkout/asar 布局自动选择 `node` 或 Electron-as-node | 维护工具 |
 | `scripts/patch_layer.py` | **patch 层原语**（install/selfcheck 共用）：`--has-row` / `--remove-row`，**row 级**、文本级（保留注释/BOM/行尾/同 insert 的兄弟条目）、原子写、只在真删到 row 时备份；home 级 patch 是合法层，**存在 ≠ 违规** | 维护工具 |
 | `scripts/target_modules.py` | **目标模块管理**（spec §5.7）：`derive`（构建文件/hints 推导）/ `verify`（G1-G9）/ `plan`→`apply`（事务 + 回滚）/ `repair`；产出 `target-modules.yaml` + 守卫用 `state.json` + `_migrations/<rev>/` | 维护工具 |
 | `tests/test_manifest.py` | 技能 manifest 校验（DSH 命名 + frontmatter + 技能集 + 交叉引用） | 维护测试 |
@@ -35,6 +35,7 @@
 | `tests/test_target_modules.py` | 目标模块 fixture 测试：derive → G1-G9 逐条反证 → adopt-legacy → reassign（候选降级）→ 失败 apply 回滚 → repair | 维护测试 |
 | `tests/test_contract_guard.mjs` | 契约守卫测试（fake Cordis ctx）：R1 未声明模块 / R3 无评审 candidate / R5 缺 front-matter / 审计 / `REF_GUARD=off` 自救 | 维护测试 |
 | `tests/test_home_patch.py` | patch 层原语回归（13 例）：row 判定 vs 注释/外框架 row、整文件字节保留（BOM/CRLF/注释/兄弟条目）、无 row 不写盘、注释-only 层补 `[]`、备份原始字节 | 维护测试 |
+| `tests/test_work_order.py` | Work Order 契约模板测试（spec §4.6）：字段/角色/阶段合法、`index_update: false`、`confirmed_by: human-only`、producer 前缀、Team 默认关闭（Team-off 兼容） | 维护测试 |
 | `SYNC.md` | 溯源戳（上次同步的上游 commit + 时间 + 差异） | 溯源记录 |
 | `SKILL-MAP.md` | **DSH 探测器 + 调用接口速查**（kebab 名路由表 + 强初始化/Phase 0-3 流程驱动 + dot→kebab 映射 + ref_* 工具/脚本对照；根 AGENTS.md 的 DSH 指引行指向这里，DSH 会话先读） | 接口桥接 + 流程驱动文档 |
 | **安装产物（勿手改）** | | |
@@ -52,7 +53,7 @@
 
 ## 三、维护铁律（对应 ref-maintain，DSH 版）
 
-1. **自检全绿**：任何改动必须 `dsh/scripts/selfcheck.ps1` 全绿（八段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 fixture 门禁 / 已知回归门禁）。
+1. **自检全绿**：任何改动必须 `dsh/scripts/selfcheck.ps1` 全绿（八段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + patch 层 + 工作单 fixture 门禁 / 已知回归门禁）。
 2. **单一事实源**：`dsh/skills/` 是技能唯一事实源（直接维护；Reasonix 归档 `archive/reasonix/` 不参与同步）。
 3. **新能力必须配验证**：新增技能/工具要能通过自检或实测证明，否则标注 Unverified。
 4. **命名纪律**：DSH 技能名必须 kebab-case（`core-plan` 而非 `core.plan`）；插件工具名 `ref_*`。

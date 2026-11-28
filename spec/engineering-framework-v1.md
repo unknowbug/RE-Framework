@@ -381,6 +381,57 @@ subagent 交付代码（逆向还原/移植/修复）前**必须逐项自检**�
 
 > PI-1 的实证：一次只打印不退出的 gate，使 VOID 轮的污染产物成为下一轮基底——halt 从未成为**终止态**。这与本框架 §4.5「执行强制链」的签核要求同源：**裁决的价值在执行不在打印**。
 
+### 4.6 多智能体协作契约（Work Order / 身份 / 状态）
+
+> 2026-11-28 新增。对齐 DSH 的 subagent 树与可选 Agent Team：把委派从散文 prompt 升级为**可携带、可核对、可回指**的工作单；**不引入 Team 硬依赖**（Team 关闭、旧宿主、外部子代理均走同一文件路径）。
+
+**委派单元 = 工作单（Work Order）**：每次 `subagent` / `subagent_fork` 调用 MUST 携带一个工作单（模板 `templates/agent-work-order.yaml`；或落盘到 `.investigations/<任务>/work-orders/<id>.yaml` 后在 prompt 中引用路径）。最小字段：
+
+| 字段 | 必填 | 说明 |
+|---|---|---|
+| `id` / `role` / `phase` | MUST | `role ∈ {scout, worker, judge, reconciler}`；phase 对应 §4 阶段 |
+| `scope` | MUST | `kind ∈ {module, hypothesis, file-set, global-readonly}`；module 必带 `module_revision`；`write_scopes` 与 DSH Team 工具参数同形 |
+| `inputs` | MUST | 已确认契约（路径 + 可选 sha256）、产物引用、只读范围 |
+| `deliverables` | MUST | 产物路径/状态（只允许 `draft|candidate`）、`index_update: false`、judge 的 `review_record` |
+| `acceptance` | MUST | 预登记判据 + 负向测试；`requires_judge` |
+| `stop` | MUST | `retry_cap`（默认 3）、证据饱和、halt 条件 |
+| `authority` | MUST | `confirmed_by: human-only`（任何角色不得改写） |
+| `producer` | 产出后回填 | `dsh_name` / `session_id` / `preset` |
+| `team` | 可选 | `enabled`（默认 false）、`task_id`、`blocked_by`、`owner`；Team 关闭时全部为空 |
+
+**身份与溯源（MUST）**：
+- 委派 MUST 传 DSH `name`（`<role>-<scope>`，如 `worker-mod-a`、`judge-mod-a@3`；同父唯一）和 3–5 词 `description`；
+- 产物 MUST 带 `producer: {dsh_name, session_id, preset}`；
+- judge 审查清单 MUST 核对 producer 与工作单/任务 owner 一致；无 producer 的产物不得升 `candidate`。
+
+**三套状态，禁止混用**：
+
+| 状态 | 载体 | 合法值 | 谁改 |
+|---|---|---|---|
+| 工作任务 | 工作单（或 Team task，若开启） | pending / in_progress / completed | 成员认领/完成；Lead 可分配 |
+| 产物状态 | `.artifacts/**` front-matter | draft / candidate / confirmed | 产出者写 draft；Lead 可升 candidate；**仅人类 confirmed** |
+| 审查结论 | `reviews/<rev>.md` | pass / reject | judge |
+
+**task completed ≠ candidate ≠ confirmed**：任务完成只表示交付物存在且验收判据满足；judge 通过才建议 candidate；`confirmed` 仅人类授予。
+
+**通信与等待（MUST）**：
+- **Lead-only 编排**：子代理之间 MUST NOT 交换结论/产物内容；需澄清只与 Lead `send_message`，由 Lead 转达。
+- `wait_agent` 只等**收件箱**；任务变更不会唤醒；需唤醒队友时用 `send_message`；禁止把轮询任务板当等待。
+- 完成通知由 runtime 投递；Lead 不重复追问，除非需要补充信息。
+
+**写范围与索引（MUST）**：
+- 并行工作单的 `write_scopes` MUST 互斥（模块目录 / `.bN` 文件 / `reviews/` 目录）；
+- **`index.yaml` 单写者 = Lead**；worker/scout/judge 只写自己的产物，绝不写索引（`core.worker`/`core.artifact`）；
+- Team `writeScopes` 仅提示、不是锁；Lead 在派单前做重叠检查。
+
+**Team 可选政策（MAY，B 档）**：
+- 默认关闭；base 已挂载服务与工具，根 Session 开关即可，不需要改 preset；
+- 只在「模块分区 ≥4 且带依赖」或「多阶段长流水线」开启；**不用于 fan-out**（任务板会暴露分支假设，破坏防锚定）；
+- Lead 建任务并派单；成员 claim；`blocked_by` 表达阶段依赖；judge 任务只写 `reviews/`；
+- Team 关闭、旧宿主无 Team、外部子代理（codex/claude-code）→ **自动退化为工作单 + 产物文件**；技能 MUST 保留该分支，禁止无条件调用 `team_task_*`。
+
+**叶子角色与深度**：scout/worker/judge 为叶子角色，不再委派；需要再拆时由 Lead 新建工作单。DSH subagent 服务 `maxDepth` 默认 1（只允许一层子级），与本契约一致。
+
 ---
 
 ## 5. 产物 schema 通用约定（语言无关）

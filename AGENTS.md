@@ -8,7 +8,7 @@
 
 ## 〇、开始工作前（每个 DSH session 必做，MUST 按序执行）
 
-1. 跑自检确认基线全绿：`pwsh dsh/scripts/selfcheck.ps1`（八段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 fixture 门禁 / 已知回归门禁）。
+1. 跑自检确认基线全绿：`pwsh dsh/scripts/selfcheck.ps1`（八段：工具链 / 技能 manifest / 安装产物 / 插件 schema / preset 行解析门禁 / preset 模板变量门禁 / 目标模块 + 守卫 + 工作单 fixture 门禁 / 已知回归门禁）。
 2. 读 `dsh/SKILL-MAP.md`（DSH 探测器）——技能一律按 **kebab 名**加载（`core-plan` 而非 `core.plan`）。
 3. 按 SKILL-MAP §〇 执行强初始化：读知识库（`knowledge/INDEX.md`）→ 架构设计待用户确认 → 预置子角色介入点。
 

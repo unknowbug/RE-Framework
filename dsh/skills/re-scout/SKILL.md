@@ -16,6 +16,7 @@ whenToUse: 「机制未明」大排查初期 MUST 只读勘探（入口/xref/依
 - 本角色在**隔离子进程**中运行：工作上下文（工具调用/中间推理）绝不进入主会话。
 - 只返回：最终答案 + 引用的产物路径。不返回中间过程。
 - 产物只写 `.investigations/`（勘探结果），**不写 `.artifacts/`**（那是 worker 的领地）。
+- **协作契约（spec §4.6）**：按 Work Order 执行（scope/read_only/deliverables）；产物回填 `producer`；不写 `index.yaml`；叶子角色不再委派。
 
 ## 触发条件（强制，spec §4.5）
 

@@ -48,6 +48,14 @@ whenToUse: 任何工程任务（re-binary / re-code / swe 所有模块）开始�
 - 模块 = **目标程序**的模块；框架的 core/re-binary/re-code/swe 是领域模块，两者不混用（index 的 `module` vs `target_module`）。
 - 边界是假设：无证据进 `unassigned/`；边界变更走 `plan/apply`（升 revision，候选/确认回 draft，原状态记 journal）。
 
+## 工作单预置（Phase 0，spec §4.6）
+
+- 架构计划中的**每个子角色介入点**同时产出一个 Work Order（`templates/agent-work-order.yaml`）：`id`、`role`、`phase`、`scope`（module@revision 或 hypothesis）、`deliverables`、`acceptance`、`stop`。
+- 委派名预置为 `<role>-<scope>`（如 `worker-mod-a`、`judge-mod-a@3`），保证同父唯一；执行阶段只按预置工作单派单，不临时改名/改范围。
+- `write_scopes` 在计划阶段就排互斥（模块目录/`.bN`/`reviews/`）；**`index.yaml` 只由 Lead 写**，工作单一律 `index_update: false`。
+- 计划中标记每个工作单是否需要 judge（`acceptance.requires_judge`），与 §4.5 的 judge 预置一一对应。
+- Team 是可选：计划里写 `team.enabled: false`；只有模块分区 ≥4 或长流水线才在计划阶段声明 Team 任务与 `blocked_by`。
+
 ## 架构文档模板
 
 ### 轻量（.investigations/000-架构设计/架构计划.md）

@@ -28,24 +28,33 @@ whenToUse: 判定树分叉 ≥2 个互斥候选时 MUST 并行 fan-out（DSH 中
 ## 调度流程
 
 ```
-主会话（协调者）
-  ├── 创建假设 A → WorkerA (subagent, 隔离) → 产物 <name>.b1.yaml
-  ├── 创建假设 B → WorkerB (subagent, 隔离) → 产物 <name>.b2.yaml
-  └── 创建假设 C → WorkerC (subagent, 隔离) → 产物 <name>.b3.yaml
+主会话（Lead，唯一编排者）
+  ├── Work Order A → WorkerA（subagent name=branch-a）→ 产物 <name>.b1.yaml（producer=branch-a）
+  ├── Work Order B → WorkerB（subagent name=branch-b）→ 产物 <name>.b2.yaml（producer=branch-b）
+  └── Work Order C → WorkerC（subagent name=branch-c）→ 产物 <name>.b3.yaml（producer=branch-c）
 
 全部完成后:
-  主会话 → Judge（core.judge, subagent）对比所有 .bN → 审查意见
+  Lead → Judge（subagent name=judge-<scope>）对比所有 .bN → 审查意见
   用户 → 拍板 → 优胜者复制为活跃 <name>.yaml
   被淘汰的 .bN 保留备查（core.version）
 ```
 
+## 工作单与身份（spec §4.6）
+
+- 每个分支 MUST 一个独立 Work Order（`templates/agent-work-order.yaml`）：`scope.kind=hypothesis`、`hypothesis=<id>`、`write_scopes` 只含本分支 `.bN` 路径；交付物 status 只允许 `draft`。
+- 委派 MUST 传 `name=branch-<x>` + 3–5 词 `description`；产物回填 `producer`；**Lead 写 index.yaml**，分支 worker 不写索引。
+- 分支之间 MUST NOT 交换结论/产物（Lead-only 编排）；不要用 `list_agents` 互看或 `send_message` 互传假设（防锚定）。
+- **Team 不用于 fan-out**：任务板会列出其他分支的标题/范围，破坏互斥分支隔离。Team 开启时也不把分支假设写进任务板；分支仍走工作单。
+- Team 关闭/不可用：工作单文件 + `.bN` 就是任务状态，流程不变。
+
 ## Worker 隔离要求
 
-- 每个 Worker **只看自己的假设指令**，不共享其他假设的上下文（防锚定）。
-- 写路径隔离：Worker 只写自己的产物文件，不交叉写入。
+- 每个 Worker **只看自己的工作单/假设指令**，不共享其他假设的上下文（防锚定）。
+- 写路径隔离：Worker 只写自己的 `.bN` 产物，不交叉写入；`write_scopes` 必须互斥。
 - 若证据同时支持多个假设 → 不强选，标 `candidate`，等更多证据。
+- 子代理是叶子角色（DSH `maxDepth=1`）：worker 不再委派；需要再拆时由 Lead 新建工作单。
 
-## 汇聚完整性（本框架 §7 要求；对齐 Anchorlaw v0.26 §15.4 PI-2 的**登记状态**）
+## 汇聚完整性（本框架 §7 要求；对齐 Anchorlaw v0.27.1 §15.4 PI-2 的**登记状态**）
 
 **性质声明（不得越权）**：Anchorlaw 把 PI-2 登记为 **unverified**（**v0.22 引入**，此后各版未改动该登记）——其前提是判据依赖图**无环**，而该性质是**假设**不是定义的可交付物（自指判据会违反它）；协议要求采用前先做一次**廉价的依赖图枚举**。本节的要求**来源于本框架自身的 §7 并发/版本纪律**（`.bN` 淘汰后仍留审计追溯），**不主张 PI-2 已被验证**，也不要求先做该枚举才执行——两者是不同的事，混同会伪造协议状态。
 
@@ -62,5 +71,5 @@ whenToUse: 判定树分叉 ≥2 个互斥候选时 MUST 并行 fan-out（DSH 中
 
 ## 输出
 
-- 每个候选 = 独立 `.bN.yaml` 产物（含 status: draft、证据、来源）。
+- 每个候选 = 独立 `.bN.yaml` 产物（含 status: draft、`producer`、证据、来源）；`index.yaml` 由 Lead 写，分支不写。
 - 决策记录写入 `.investigations/<任务>/`（fan-out 决策 + 对比结论）。
