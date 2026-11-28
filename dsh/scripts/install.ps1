@@ -10,7 +10,7 @@
 #   dsh/package.json                                 → bundle identity (`dsh.bundle.patch`)
 #   dsh/cordis.patch.yml                             → the preset declaration (ACTIVE carrier)
 #   dsh/plugins/re-framework-tools.js                → addressed by bare package subpath
-#                                                      (`@dsh-external/dsh-re-framework/plugin`)
+#                                                      (`@unknowerror/dsh-re-framework/plugin`)
 #   dsh/skills/*                                     → served from the bundle via
 #                                                      skill-filesystem customSkillDirs
 #                                                    → copied to ~/.dsh/skills/ (user-global)
@@ -234,8 +234,12 @@ if (-not (Test-Path $bundleManifestPath)) { throw "bundle manifest missing: $bun
 $bundleManifest = Get-Content $bundleManifestPath -Raw | ConvertFrom-Json
 $bundleName = $bundleManifest.name
 $patchRel = $bundleManifest.dsh.bundle.patch
-if (-not $bundleName) { throw "$bundleManifestPath declares no name" }
+if (-not ($bundleName)) { throw "$bundleManifestPath declares no name" }
 if (-not $patchRel) { throw "$bundleManifestPath declares no dsh.bundle.patch" }
+# 2026-11-28: the package moved from @dsh-external to @unknowerror for npm.
+# Profiles that selected the old bundle keep a dangling entry unless removed;
+# do that before the new add (desktop is written directly, others via pnpm).
+$legacyBundleNames = @('@dsh-external/dsh-re-framework')
 $bundlePatchPath = Join-Path $bundleDir $patchRel
 if (-not (Test-Path $bundlePatchPath)) { throw "bundle patch missing: $bundlePatchPath" }
 Write-Host "  OK bundle: $bundleName  patch: $patchRel"
@@ -350,6 +354,23 @@ if ($targetProfiles.Count -eq 0) {
       if (-not (Test-Path $manifestPath)) { throw "desktop profile has no package.json at $desktopDir" }
       $bundleSpec = 'link:' + ($bundleDir -replace '\\', '/')
       $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+      foreach ($legacy in $legacyBundleNames) {
+        if ($legacy -eq $bundleName) { continue }
+        if ($manifest.dsh.profile.bundles -contains $legacy) {
+          $manifest.dsh.profile.bundles = @($manifest.dsh.profile.bundles | Where-Object { $_ -ne $legacy })
+          Write-Host "  - dropped legacy bundle $legacy from desktop"
+        }
+        if ($manifest.PSObject.Properties.Name -contains 'dependencies' -and
+            $manifest.dependencies.PSObject.Properties.Name -contains $legacy) {
+          $manifest.dependencies.PSObject.Properties.Remove($legacy)
+        }
+        $legacyParts = $legacy -split '/'
+        $legacyLink = Join-Path (Join-Path (Join-Path $desktopDir 'node_modules') $legacyParts[0]) $legacyParts[1]
+        if (Test-Path $legacyLink) {
+          Remove-Item $legacyLink -Recurse -Force
+          Write-Host "  - removed legacy link $legacy"
+        }
+      }
       if (-not ($manifest.dsh.profile.bundles -contains $bundleName)) {
         $manifest.dsh.profile.bundles += $bundleName
       }
@@ -368,6 +389,11 @@ if ($targetProfiles.Count -eq 0) {
       $selectedIn += $profileName
       Write-Host "  OK bundle installed + selected directly (Electron-owned profile: the CLI refuses 'desktop')"
       continue
+    }
+    foreach ($legacy in $legacyBundleNames) {
+      if ($legacy -eq $bundleName) { continue }
+      $rm = Invoke-Native 'dsh' @('plugin', '--profile', $profileName, 'remove', $legacy)
+      if ($rm.code -eq 0) { Write-Host "  - removed legacy bundle $legacy" }
     }
     $add = Invoke-Native 'dsh' @('plugin', '--profile', $profileName, 'add', $bundleDir)
     if ($add.output.Trim()) { Write-Host $add.output.Trim() }

@@ -37,7 +37,7 @@ pwsh dsh/scripts/selfcheck.ps1
 
 DSH Desktop（Electron）把运行时打进 `resources/app.asar`，profile 是 `~/.dsh/profiles/desktop`（**Electron-owned**）。`install.ps1` 一轮同时维护所有 profile（desktop / tavern / web）：
 
-- **desktop**：脚本直接写 `dsh.profile.bundles` + `link:` 依赖 + `node_modules/@dsh-external/...` junction——CLI 按设计拒绝 `desktop` 这个 profile 名（`apps/cli/src/args.ts` rejectElectronProfile），直接写出的内容与 `dsh plugin add` 同形。
+- **desktop**：脚本直接写 `dsh.profile.bundles` + `link:` 依赖 + `node_modules/@unknowerror/...` junction——CLI 按设计拒绝 `desktop` 这个 profile 名（`apps/cli/src/args.ts` rejectElectronProfile），直接写出的内容与 `dsh plugin add` 同形。
 - **tavern / web / 源码 checkout**：仍走 `dsh plugin --profile web add <dsh 目录>`。
 
 门禁布局感知：源码 checkout 用 `node`；Desktop 用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"`（普通 Node 的 fs 读不到 asar），行门禁从 `node_modules/@deepseek-ai/*` 取包、变量门禁扫编译后的 `lib/`；布局由 `DSH_NODE_EXECUTABLE` / `DSH_INSTALL_DIR`（指向 asar 内，按 `app.asar` 切分）自动判定。安装后需**重启 Desktop** 并新开会话选择 RE-Framework；17 个 ref-* 技能在任何 Desktop 会话都可见（用户级全局）。

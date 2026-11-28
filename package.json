@@ -1,5 +1,5 @@
 {
-  "name": "@dsh-external/dsh-re-framework",
+  "name": "@unknowerror/dsh-re-framework",
   "version": "2.20.0",
   "description": "RE-Framework — 逆向 + 编程的通用工程方法论工作台（DSH bundle：17 个技能 + re-framework preset + ref_* 工具 + 契约守卫）",
   "type": "module",

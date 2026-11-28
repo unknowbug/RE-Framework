@@ -1,4 +1,4 @@
-# @dsh-external/dsh-re-framework bundle patch — the `re-framework` agent preset.
+# @unknowerror/dsh-re-framework bundle patch — the `re-framework` agent preset.
 #
 # ACTIVE CARRIER (DSH >= 0.1.7). An agent preset is a
 # `@deepseek-ai/dsh-agent-preset` declaration row carried by a bundle patch;
@@ -249,7 +249,7 @@
           # framework's python scripts directly via pwsh instead.
 
           - id: re-framework-tools
-            name: '@dsh-external/dsh-re-framework/plugin'
+            name: '@unknowerror/dsh-re-framework/plugin'
             config: {}
 
           # ── re-framework skills (shipped by this bundle; resolved from the installed package) ──
@@ -258,7 +258,7 @@
             name: '@deepseek-ai/dsh-skill-filesystem'
             config:
               customSkillDirs:
-                - !!js "(() => { const p = process.getBuiltinModule('node:path'); const fs = process.getBuiltinModule('node:fs'); const root = p.dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('@dsh-external/dsh-re-framework/package.json')); const nested = p.join(root, 'dsh', 'skills'); return fs.existsSync(nested) ? nested : p.join(root, 'skills'); })()"
+                - !!js "(() => { const p = process.getBuiltinModule('node:path'); const fs = process.getBuiltinModule('node:fs'); const root = p.dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('@unknowerror/dsh-re-framework/package.json')); const nested = p.join(root, 'dsh', 'skills'); return fs.existsSync(nested) ? nested : p.join(root, 'skills'); })()"
 
           - id: tool-skill
             name: '@deepseek-ai/dsh-tool-skill'

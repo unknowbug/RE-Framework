@@ -52,7 +52,7 @@ RE-Framework 已按 DSH Bundle 规范打包，仓库根 `package.json` 声明 `d
 dsh plugin --profile web add github:unknowbug/RE-Framework
 
 # npm 安装（包发布后可用；插件中心的展示需要 npm 包）
-dsh plugin --profile web add @dsh-external/dsh-re-framework
+dsh plugin --profile web add @unknowerror/dsh-re-framework
 ```
 
 - **Plugin Hub 分类**：Skills & Agents（agent）→ 子智能体 / 技能包；不是 Development & Operations。

@@ -50,7 +50,7 @@ pwsh dsh/scripts/selfcheck.ps1
 
 - Desktop（Electron）把运行时打进 `resources/app.asar`，profile 为 `~/.dsh/profiles/desktop`（**Electron-owned**）。`install.ps1` 一轮同时维护所有 profile（desktop / tavern / web）：desktop 由脚本直接写 `dsh.profile.bundles` + `link:` 依赖 + `node_modules` junction（CLI 按设计拒绝 `desktop` 这个 profile 名），web 仍走 `dsh plugin add`；`dsh` CLI 仅在存在非 desktop profile 时必需。
 - 门禁布局感知：`DSH_NODE_EXECUTABLE` / `DSH_INSTALL_DIR`（后者指向 asar 内的 dsh 包，按 `resources/app.asar` 边界切分）存在时用 `ELECTRON_RUN_AS_NODE=1 "<app>.exe"` 跑 `.mjs` 门禁（普通 Node 的 fs 读不到 asar）；源码 checkout 用 `node`。行门禁从 `node_modules/@deepseek-ai/*` 取包，变量门禁扫编译后的 `lib/`。
-- Desktop 验证：`pwsh dsh/scripts/selfcheck.ps1` 首行应显示 `harness layout: asar (...)`，八段全绿；所有 profile 的 `dsh.profile.bundles` 都含 `@dsh-external/dsh-re-framework`。安装后需**重启 Desktop** 并在新会话选 RE-Framework（技能是用户级全局，无需重启即见）。
+- Desktop 验证：`pwsh dsh/scripts/selfcheck.ps1` 首行应显示 `harness layout: asar (...)`，八段全绿；所有 profile 的 `dsh.profile.bundles` 都含 `@unknowerror/dsh-re-framework`。安装后需**重启 Desktop** 并在新会话选 RE-Framework（技能是用户级全局，无需重启即见）。
 
 ## 上游 DSH 升级核对（每次 harness 升级后）
 

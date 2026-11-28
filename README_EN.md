@@ -52,7 +52,7 @@ RE-Framework is packaged as a DSH bundle: the repository-root `package.json` dec
 dsh plugin --profile web add github:unknowbug/RE-Framework
 
 # npm install (after the package is published; the in-app plugin center needs npm)
-dsh plugin --profile web add @dsh-external/dsh-re-framework
+dsh plugin --profile web add @unknowerror/dsh-re-framework
 ```
 
 - **Plugin Hub category**: Skills & Agents (agent) → subagents / skill packs; not Development & Operations.
